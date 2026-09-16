@@ -110,12 +110,12 @@ function GroupsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sched
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <b className="disp text-[24px]"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm" style={{ background: E.catColor(st, ci) }} />{c.name} <span className="font-sans text-[12px] text-dim">{c.teams.length} ομάδες</span></b>
               <div className="flex gap-2">
-                <Select value={c.splitIdx ?? 0} onChange={e => mutate(x => E.applySplit(x, c, +e.target.value))} className="py-1 text-[12px]">{sp.map((s, i) => <option key={i} value={i}>{s.five ? '1 όμιλος των 5' : s.sizes[0] === 2 ? 'Ένας αγώνας (τελικός)' : `${s.a ? s.a + '×4' : ''}${s.a && s.b ? ' + ' : ''}${s.b ? s.b + '×3' : ''}`}</option>)}</Select>
+                <Select value={c.splitIdx ?? 0} onChange={e => mutate(x => E.applySplit(x, c, +e.target.value))} className="py-1 text-[12px]" style={{ width: 'auto' }}>{sp.map((s, i) => <option key={i} value={i}>{s.five ? '1 όμιλος των 5' : s.sizes[0] === 2 ? 'Ένας αγώνας (τελικός)' : `${s.a ? s.a + '×4' : ''}${s.a && s.b ? ' + ' : ''}${s.b ? s.b + '×3' : ''}`}</option>)}</Select>
                 <Btn variant="ghost" className="py-1 text-[12px]" onClick={() => mutate(() => E.drawSerpentine(c))}>Κλήρωση</Btn>
               </div>
             </div>
             {!sp.length && <div className="text-[13px] text-red">Δεν βγαίνει χωρισμός με {c.teams.length} ομάδες — συγχώνευσε κατηγορίες ή πρόσθεσε ομάδα.</div>}
-            {c.split && <div className="mb-2 flex flex-wrap gap-3 text-[12px]">{[...new Set(c.split.sizes)].map(sz => <label key={sz} className="flex items-center gap-2">Όμιλοι των {sz}: <Select value={c.format[sz]} onChange={e => mutate(x => { c.format[sz] = e.target.value; E.clearOverridesOf(x, c) })} className="w-auto py-1">{E.FORMATS_BY_SIZE[sz].map(f => <option key={f} value={f}>{E.FORMATS[f].name} ({E.fmtMatches(f)} αγ.)</option>)}</Select></label>)}</div>}
+            {c.split && <div className="mb-2 flex flex-wrap gap-4 text-[12px]">{[...new Set(c.split.sizes)].map(sz => <label key={sz} className="flex items-center gap-2 whitespace-nowrap">Όμιλοι των {sz}: <Select value={c.format[sz]} onChange={e => mutate(x => { c.format[sz] = e.target.value; E.clearOverridesOf(x, c) })} className="py-1" style={{ width: 'auto' }}>{E.FORMATS_BY_SIZE[sz].map(f => <option key={f} value={f}>{E.FORMATS[f].name} ({E.fmtMatches(f)} αγ.)</option>)}</Select></label>)}</div>}
             <div className="grid gap-2 sm:grid-cols-2">
               {c.groups?.map((g, gi) => (
                 <div key={gi} className={cn('rounded-[10px] border border-line p-2', g.length !== c.split!.sizes[gi] && 'border-red')}
