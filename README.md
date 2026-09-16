@@ -11,7 +11,9 @@ npm run build    # tsc + vite build → dist/
 ## Structure
 - `src/styles/theme.css` — the single source of design tokens (colours, fonts, radii, motion). The Capacitor app imports the same file.
 - `src/data/types.ts` — domain types (Tournament, Category, Team, Player, Match, Group).
-- `src/data/mock.ts` — Pefki 2026 mock data. Swap for `src/lib/api.ts` when the backend is wired.
+- `src/data/mock.ts` — Pefki 2026 mock data, used when `.env.local` is absent.
+- `src/data/store.tsx` — `DataProvider` / `useData()`: one `Bundle` for the active tournament, from Supabase (`src/lib/api.ts`) or the mock. Realtime on `matches`.
+- `supabase/` — migrations + README for the backend.
 - `src/i18n` — EL/EN dictionaries + provider. Chrome strings only; content comes from the API in both languages.
 - `src/components/layout` — Ticker, Nav, Footer, Band (page header), SubTabs.
 - `src/components/ui` — Heading (two-tone), Button, Chip, Reveal (appear on scroll), Countdown, Marquee, Avatar, Timeline.

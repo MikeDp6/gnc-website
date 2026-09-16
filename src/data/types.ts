@@ -11,6 +11,7 @@ export interface Team {
   id: string
   name: string
   categoryId: string
+  tournamentId?: string
   city?: string
   captainId?: string
   playerIds?: string[]
@@ -96,4 +97,20 @@ export interface ArchiveItem {
   title: string
   blurb: string
   tint: 'orange' | 'blue' | 'mono' | 'teal'
+}
+
+export interface TickerItem { tag: string; text: string; textEn?: string; tone: 'blue' | 'orange' }
+
+/** Everything the public site needs, loaded once (active tournament + marketing). Same shape from Supabase or mock. */
+export interface Bundle {
+  categories: Category[]
+  tournaments: Tournament[]
+  teams: Team[]
+  players: Player[]
+  matches: Match[]
+  groups: Group[]
+  stops: Stop[]
+  archive: ArchiveItem[]
+  ticker: TickerItem[]
+  sponsors: string[]
 }

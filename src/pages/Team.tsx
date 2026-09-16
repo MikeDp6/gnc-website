@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { categoryById, groups, matches, playerById, teamById, tournaments } from '@/data/mock'
+import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { useI18n } from '@/i18n'
 import { Band } from '@/components/layout/Band'
@@ -15,10 +15,11 @@ import { NotFound } from './NotFound'
 export function Team() {
   const { id = '' } = useParams()
   const { t } = useI18n()
+  const { categoryById, groups, matches, playerById, teamById, tournaments, loading } = useData()
   const team = teamById(id)
-  if (!team) return <NotFound />
+  if (!team) return loading ? <div className="wrap py-[120px] text-dim">Φόρτωση…</div> : <NotFound />
   const cat = categoryById(team.categoryId)
-  const tour = tournaments[0]
+  const tour = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const my = matches.filter(m => m.homeId === team.id || m.awayId === team.id)
   const next = my.find(m => m.status === 'scheduled')
   const group = groups.find(g => g.rows.some(r => r.teamId === team.id))
@@ -30,7 +31,7 @@ export function Team() {
   return (
     <>
       <Crumb items={[{ label: t.nav.teams }, { label: tour.name, to: `/tournaments/${tour.slug}` }, { label: cat.name }, { label: team.name }]} />
-      <Band kicker={<><i className="mr-2 inline-block h-[10px] w-[10px] rounded-full align-[-1px]" style={{ background: catColor[cat.key] }} />{cat.name} · {group?.name} · {tour.city} 2026</>}
+      <Band kicker={<><i className="mr-2 inline-block h-[10px] w-[10px] rounded-full align-[-1px]" style={{ background: catColor[cat.key] }} />{cat.name} · {group?.name} · {tour.name}</>}
         title={a} title2={rest.join(' ') || undefined}
         sub={`${team.city ?? ''}${captain ? ` · Αρχηγός: ${captain.name}` : ''} · 3η συμμετοχή σε τουρνουά GNC`}
         stats={row ? [{ v: `${row.wins}–${row.losses}`, l: 'Νίκες–Ήττες' }, { v: `${pos}η`, l: group!.name }, { v: `${row.pointsFor - row.pointsAgainst > 0 ? '+' : ''}${row.pointsFor - row.pointsAgainst}`, l: 'Διαφορά' }, { v: team.playerIds?.length ?? 4, l: 'Παίκτες' }] : undefined} />
@@ -59,12 +60,12 @@ export function Team() {
       </section>
 
       <section className="wrap pt-[70px]">
-        <Heading a="Αγώνες" b={`${tour.city} 2026`} size="md" className="mb-[26px]" />
+        <Heading a="Αγώνες" b={tour.city} size="md" className="mb-[26px]" />
         {my.map(m => <MatchRow key={m.id} m={m} mine showCategory={false} />)}
       </section>
 
       <section className="wrap grid gap-5 pt-[70px] lg:grid-cols-2">
-        {group && <StandingsTable g={{ ...group, note: 'Μπλε = προκρίνονται · Πορτοκαλί = η ομάδα σου' }} meId={team.id} subtitle={`${cat.name} · ${tour.city} 2026`} />}
+        {group && <StandingsTable g={{ ...group, note: 'Μπλε = προκρίνονται · Πορτοκαλί = η ομάδα σου' }} meId={team.id} subtitle={`${cat.name} · ${tour.city}`} />}
         <div>
           <div className="mb-[14px] flex items-end justify-between"><Heading a="Ρόστερ" size="sm" /><a className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">Αλλαγή ρόστερ έως Παρ 18/9 →</a></div>
           <div className="grid gap-[14px] sm:grid-cols-2">

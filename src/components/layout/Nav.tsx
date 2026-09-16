@@ -3,15 +3,18 @@ import { NavLink } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { Button } from '@/components/ui/Button'
 import { Logo } from './Logo'
+import { useData } from '@/data/store'
 import { cn } from '@/lib/cn'
 
 export function Nav() {
   const { t, lang, setLang } = useI18n()
   const [open, setOpen] = useState(false)
+  const { tournaments } = useData()
+  const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const links = [
     { to: '/', label: t.nav.tournaments, end: true },
-    { to: '/tournaments/pefki-2026', label: t.nav.schedule },
-    { to: '/teams/erasi', label: t.nav.teams },
+    { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule },
+    { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams },
     { to: '/archive', label: t.nav.archive },
     { to: '/contact', label: t.nav.contact },
   ]

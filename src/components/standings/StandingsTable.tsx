@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import type { Group } from '@/data/types'
-import { categoryById, teamById } from '@/data/mock'
+import { useData } from '@/data/store'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
 /** Group standings card. `dark` = solid black card (light sections); default = translucent card. `meId` highlights a team. */
 export function StandingsTable({ g, subtitle, meId, solid }: { g: Group; subtitle?: string; meId?: string; solid?: boolean }) {
   const { t } = useI18n()
+  const { categoryById, teamById } = useData()
   const cat = categoryById(g.categoryId)
   return (
     <div className={cn('rounded-[20px] px-4 pb-3 pt-5 text-white md:px-6 md:pt-[22px]', solid ? 'bg-bg' : 'card')}>

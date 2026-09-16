@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Match } from '@/data/types'
-import { categoryById, teamById } from '@/data/mock'
+import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { cn } from '@/lib/cn'
 
@@ -8,6 +8,7 @@ const DAY = ['', 'Σάβ', 'Κυρ']
 
 /** One schedule row: time/court · category · home · score · away · status. Highlight with `mine`. */
 export function MatchRow({ m, mine, showCategory = true }: { m: Match; mine?: boolean; showCategory?: boolean }) {
+  const { categoryById, teamById } = useData()
   const cat = categoryById(m.categoryId)
   const home = teamById(m.homeId), away = teamById(m.awayId)
   const fin = m.status === 'final' && m.homeScore != null && m.awayScore != null

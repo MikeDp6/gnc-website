@@ -1,11 +1,12 @@
 import type { Match } from '@/data/types'
-import { teamById } from '@/data/mock'
+import { useData } from '@/data/store'
 import { cn } from '@/lib/cn'
 
 const DAY = ['', 'Σάβ', 'Κυρ']
 
 /** Knockout as a grid of cards: QFs, SFs, and a wide Final card. Works with 4 or 8 teams. */
 export function BracketGrid({ matches }: { matches: Match[] }) {
+  const { teamById } = useData()
   const line = (id?: string, label?: string, score?: number, win?: boolean, fin?: boolean) => (
     <div className={cn('flex items-center justify-between border-t border-line py-[9px] text-[15px] font-semibold', !id && 'italic text-mute', fin && (win ? 'text-white' : 'text-dim'))}>
       <span>{teamById(id)?.name ?? label ?? 'TBD'}</span><b className="mono text-[18px]">{score ?? '–'}</b>

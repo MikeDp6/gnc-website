@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '@/i18n'
-import { archive, categories, categoryById, groups, matches, sponsors, stops, tournaments } from '@/data/mock'
+import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { cn } from '@/lib/cn'
 import { Heading } from '@/components/ui/Heading'
@@ -15,15 +15,18 @@ import { StandingsTable } from '@/components/standings/StandingsTable'
 import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { GreeceMap } from '@/components/GreeceMap'
 
-const next = tournaments[0]
-
 export function Home() {
   const { t } = useI18n()
-  const [cat, setCat] = useState('o35')
+  const { archive, categories, categoryById, groups, matches, sponsors, stops, tournaments, teamById } = useData()
+  const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
+  const [cat, setCat] = useState('o35_men')
   const live = matches.find(m => m.status === 'live')
   const upcoming = matches.filter(m => m.status === 'scheduled').slice(0, 4)
+  const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
+  if (!next) return null
   const catGroups = groups.filter(g => g.categoryId === cat)
-  const ko = matches.filter(m => m.categoryId === 'o35' && m.phase !== 'group')
+  const koCat = matches.find(m => m.phase !== 'group')?.categoryId
+  const ko = matches.filter(m => m.categoryId === koCat && m.phase !== 'group')
 
   return (
     <>
@@ -59,7 +62,7 @@ export function Home() {
             <div>
               <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">● {t.status.live} · {t.misc.court} {live?.court}</div>
               <div className="disp my-2 text-[64px]">{live?.homeScore} – {live?.awayScore}</div>
-              <div className="text-[20px] font-bold uppercase tracking-[.02em]">ΤεΣαΠεΠα vs Sea Men</div>
+              <div className="text-[20px] font-bold uppercase tracking-[.02em]">{live ? `${teamById(live.homeId)?.name} vs ${teamById(live.awayId)?.name}` : '—'}</div>
               <div className="mt-[6px] text-[13px] opacity-85">{live && categoryById(live.categoryId).name} · {live?.label} · 19 Σεπ, {live?.time}</div>
             </div>
             <div className="mt-[22px] flex items-center justify-between text-[12px] font-bold uppercase tracking-[.1em]"><span className="rounded-lg bg-black/15 px-3 py-2">Δες live →</span><span>{next.venue}</span></div>
@@ -76,11 +79,11 @@ export function Home() {
           <Reveal delay={160} className="flex min-h-[290px] flex-col justify-between rounded-[20px] bg-slate p-[26px] pb-[22px] text-white">
             <div>
               <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">{t.status.done}</div>
-              <div className="disp my-2 text-[64px]">Παλλήνη</div>
+              <div className="disp my-2 text-[64px]">{lastDone?.city ?? 'Παλλήνη'}</div>
               <div className="text-[20px] font-bold uppercase tracking-[.02em]">Νικητές ανά κατηγορία</div>
               <div className="mt-[6px] text-[13px] opacity-85">18+ GOONLANDERS · 40+ PINK ROSES · U18 ΘΥΜΙΟΛΑΣ · U15 COURT KINGS</div>
             </div>
-            <div className="mt-[22px] flex items-center justify-between text-[12px] font-bold uppercase tracking-[.1em]"><Link to="/archive" className="rounded-lg bg-black/20 px-3 py-2">Αποτελέσματα →</Link><span>66 ομάδες</span></div>
+            <div className="mt-[22px] flex items-center justify-between text-[12px] font-bold uppercase tracking-[.1em]"><Link to="/archive" className="rounded-lg bg-black/20 px-3 py-2">Αποτελέσματα →</Link><span>{lastDone ? `${lastDone.teamsCount} ομάδες` : '66 ομάδες'}</span></div>
           </Reveal>
         </div>
       </section>
@@ -90,20 +93,20 @@ export function Home() {
         <div className="wrap py-[90px]">
           <Heading a={t.sections.standings1} b={t.sections.standings2} dark={false} className="mb-[26px]" />
           <div className="mb-[26px] flex flex-wrap gap-2">
-            {categories.filter(c => c.id !== 'o18w').map(c => (
+            {categories.filter(c => c.id !== 'o18_women').map(c => (
               <Chip key={c.id} light active={cat === c.id} color={catColor[c.key]} onClick={() => setCat(c.id)}>{c.short}</Chip>
             ))}
           </div>
           {catGroups.length
-            ? <div className="grid gap-5 lg:grid-cols-2">{catGroups.map(g => <StandingsTable key={g.id} g={g} solid subtitle={`${categoryById(g.categoryId).name} · Πεύκη 2026`} />)}</div>
+            ? <div className="grid gap-5 lg:grid-cols-2">{catGroups.map(g => <StandingsTable key={g.id} g={g} solid subtitle={`${categoryById(g.categoryId).name} · ${next.city}`} />)}</div>
             : <div className="rounded-[20px] bg-bg p-8 text-[14px] text-dim">Οι όμιλοι της κατηγορίας ανακοινώνονται με το πρόγραμμα.</div>}
         </div>
       </section>
 
       {/* ---------- KNOCKOUT ---------- */}
       <section className="wrap pt-[100px]">
-        <Heading a={t.sections.ko} b="35+ MEN" className="mb-[34px]" />
-        <BracketGrid matches={ko} />
+        {ko.length > 0 && <><Heading a={t.sections.ko} b={categoryById(ko[0].categoryId).name} className="mb-[34px]" />
+        <BracketGrid matches={ko} /></>}
       </section>
 
       {/* ---------- TOUR ---------- */}

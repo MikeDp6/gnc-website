@@ -1,9 +1,10 @@
 import type { Match } from '@/data/types'
-import { categoryById, teamById } from '@/data/mock'
+import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 
 /** Compact card for the hero strip / app list: category + time, two team lines, court. */
 export function MatchCard({ m }: { m: Match }) {
+  const { categoryById, teamById } = useData()
   const cat = categoryById(m.categoryId)
   const home = teamById(m.homeId), away = teamById(m.awayId)
   const line = (n?: string, s?: number, label?: string) => (

@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { matches, playerById, teamById, categoryById, tournaments } from '@/data/mock'
+import { useData } from '@/data/store'
 import { Band } from '@/components/layout/Band'
 import { Crumb } from '@/components/ui/Crumb'
 import { Heading } from '@/components/ui/Heading'
@@ -11,11 +11,12 @@ import { NotFound } from './NotFound'
 
 export function Player() {
   const { id = '' } = useParams()
+  const { matches, playerById, teamById, categoryById, tournaments, loading } = useData()
   const p = playerById(id)
-  if (!p) return <NotFound />
+  if (!p) return loading ? <div className="wrap py-[120px] text-dim">Φόρτωση…</div> : <NotFound />
   const team = teamById(p.teamId)
   const cat = team ? categoryById(team.categoryId) : undefined
-  const tour = tournaments[0]
+  const tour = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const my = team ? matches.filter(m => m.homeId === team.id || m.awayId === team.id) : []
   const [first, ...rest] = p.name.split(' ')
 
@@ -38,7 +39,7 @@ export function Player() {
                 <Avatar name={team.name} tone="red" size={72} />
                 <div className="flex-1">
                   <div className="text-[22px] font-bold">{team.name}<span className="ml-2 rounded-[5px] bg-orange px-[7px] py-[3px] align-[3px] text-[10px] font-extrabold tracking-[.12em] text-[#111]">ΑΡΧΗΓΟΣ</span></div>
-                  <div className="mt-1 text-[12px] font-bold uppercase tracking-[.06em] text-dim">{cat?.name} · Όμιλος Α · {tour.city} 2026 · 1η θέση 3–0</div>
+                  <div className="mt-1 text-[12px] font-bold uppercase tracking-[.06em] text-dim">{cat?.name} · {tour.name}</div>
                 </div>
                 <div className="flex gap-2"><Button variant="ghost">Πρόσκληση συμπαίκτη</Button><Button>QR check-in</Button></div>
               </div>
