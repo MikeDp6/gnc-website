@@ -63,7 +63,7 @@ function SettingsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sch
   )
   const move = (i: number, dir: -1 | 1) => mutate(x => { const j = i + dir; if (j < 0 || j >= x.categories.length) return; [x.categories[i], x.categories[j]] = [x.categories[j], x.categories[i]] })
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+    <div className="grid gap-6 xl:grid-cols-[1fr_1.8fr]">
       <div className="card grid gap-4 p-5">
         <div className="kicker">Κριτήρια</div>
         {opt('Διάρκεια slot', s.slot, [[15, '15΄'], [20, '20΄'], [25, '25΄'], [30, '30΄']], v => mutate(x => { x.settings.slot = v }))}
@@ -78,11 +78,11 @@ function SettingsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sch
       </div>
       <div className="card p-5">
         <div className="kicker mb-3">Σειρά κατηγοριών & μέρες</div>
-        <div className="mb-2 grid grid-cols-[24px_1fr_60px_150px_150px_150px_90px] gap-2 text-[11px] uppercase tracking-[.1em] text-dim"><span /><span>Κατηγορία</span><span>Ομάδες</span><span>Όμιλοι από</span><span>έως</span><span>Νοκ-άουτ</span><span>Q</span></div>
+        <div className="mb-2 grid grid-cols-[24px_minmax(200px,1fr)_50px_130px_130px_130px_80px] gap-2 text-[11px] uppercase tracking-[.1em] text-dim"><span /><span>Κατηγορία</span><span>Ομάδες</span><span>Όμιλοι από</span><span>έως</span><span>Νοκ-άουτ</span><span>Q</span></div>
         {st.categories.map((c, i) => (
-          <div key={c.id} className="grid grid-cols-[24px_1fr_60px_150px_150px_150px_90px] items-center gap-2 border-t border-line py-2 text-[13px]">
+          <div key={c.id} className="grid grid-cols-[24px_minmax(200px,1fr)_50px_130px_130px_130px_80px] items-center gap-2 border-t border-line py-2 text-[13px]">
             <div className="flex flex-col text-[10px] leading-none text-dim"><button onClick={() => move(i, -1)}>▲</button><button onClick={() => move(i, 1)}>▼</button></div>
-            <span className="font-semibold"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm align-[-1px]" style={{ background: E.catColor(st, i) }} />{c.name}{!c.split && <span className="ml-2 rounded bg-red/20 px-2 py-[2px] text-[11px] text-red">{c.teams.length < 2 ? 'μόνο 1 ομάδα — συγχώνευση ή ακύρωση' : 'χωρίς χωρισμό'}</span>}</span>
+            <span className="truncate font-semibold"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm align-[-1px]" style={{ background: E.catColor(st, i) }} />{c.name}{!c.split && <span title={c.teams.length < 2 ? 'Μόνο μία ομάδα: συγχώνευσέ την με άλλη κατηγορία ή ακύρωσε την κατηγορία.' : 'Δεν βγαίνει χωρισμός σε ομίλους με αυτόν τον αριθμό ομάδων.'} className="ml-2 whitespace-nowrap rounded-full border border-red/60 px-2 py-[1px] text-[10px] font-bold text-red">⚠ {c.teams.length < 2 ? '1 ομάδα' : 'χωρισμός'}</span>}</span>
             <span className="mono">{c.teams.length}</span>
             <Select value={c.day} onChange={e => mutate(x => E.setCatDay(x, c, 'day', e.target.value))} className="py-1 text-[12px]">{s.days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}</Select>
             <Select value={c.dayTo} onChange={e => mutate(x => E.setCatDay(x, c, 'dayTo', e.target.value))} className="py-1 text-[12px]">{s.days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}</Select>

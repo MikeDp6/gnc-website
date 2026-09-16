@@ -11,7 +11,7 @@ export interface DbDay { id: string; day_index: number; date: string; start_time
 export interface DbTeam { id: string; category_id: string; name: string; status: string }
 export interface DbTc { category_id: string; format: string; qualifiers: number | null; sort_order: number }
 
-const DAYNAMES = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο']
+const DAYNAMES = ['Κυρ', 'Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ', 'Σάβ']
 const dayLabel = (d: DbDay) => { const D = new Date(d.date + 'T00:00:00'); return `${DAYNAMES[D.getDay()]} ${D.getDate()}/${D.getMonth() + 1}` }
 
 /** Persisted scheduler state lives in tournaments.settings_json.scheduler (settings + per-category choices + overrides). */
