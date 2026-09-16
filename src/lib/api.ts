@@ -136,7 +136,8 @@ export async function fetchBundle(): Promise<Bundle> {
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */
 export function subscribeMatches(onChange: () => void): () => void {
-  if (!supabase) return () => {}
-  const ch = supabase.channel('public:matches').on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, onChange).subscribe()
-  return () => { supabase.removeChannel(ch) }
+  const sb = supabase
+  if (!sb) return () => {}
+  const ch = sb.channel('public:matches').on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, onChange).subscribe()
+  return () => { sb.removeChannel(ch) }
 }
