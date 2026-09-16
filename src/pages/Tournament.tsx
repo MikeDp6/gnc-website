@@ -13,6 +13,7 @@ import { MatchRow } from '@/components/match/MatchRow'
 import { StandingsTable } from '@/components/standings/StandingsTable'
 import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { NotFound } from './NotFound'
+import { PrintSchedule } from '@/components/PrintSchedule'
 
 const TABS = ['Πρόγραμμα', 'Όμιλοι', 'Νοκ-άουτ', 'Ομάδες', 'Πληροφορίες']
 
@@ -40,7 +41,8 @@ export function Tournament() {
       <Band kicker={`${tour.dates} · ${tour.venue}`} title={tour.name.split('–')[0]} title2={tour.name.split('–')[1]}
         sub={`${tour.days.join(' και ')}, ${tour.courts} γήπεδα. Όμιλοι και νοκ-άουτ σε ${tour.categoryIds.length} κατηγορίες.`}
         stats={[{ v: tour.teamsCount, l: 'Ομάδες' }, { v: tour.categoryIds.length, l: 'Κατηγορίες' }, { v: matches.filter(m => m.tournamentId === tour.id).length, l: 'Αγώνες' }, { v: tour.courts, l: 'Γήπεδα' }]} />
-      <SubTabs tabs={TABS} active={tab} onChange={setTab} right={<Button variant="ghost" className="border-orange text-orange">↓ {t.misc.schedulePdf}</Button>} />
+      <SubTabs tabs={TABS} active={tab} onChange={setTab} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
+      <PrintSchedule tour={tour} />
 
       {tab === 'Πρόγραμμα' && (
         <section className="wrap pt-[70px]">

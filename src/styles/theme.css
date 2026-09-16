@@ -101,3 +101,31 @@ a { color: inherit; text-decoration: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .pop, .pop:hover { transition: none; transform: none; }
 }
+
+/* ---------- Print (schedule PDF) ---------- */
+.print-only { display: none; }
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  html, body { background: #fff !important; color: #111 !important; }
+  body > #root > * > :not(main), main > :not(.print-only), .no-print { display: none !important; }
+  .print-only { display: block; font-family: var(--font-sans); color: #111; }
+  .print-head { display: flex; gap: 14px; align-items: center; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 10px; }
+  .print-title { font-family: var(--font-display); font-weight: 800; font-size: 30px; text-transform: uppercase; line-height: 1; }
+  .print-sub { font-size: 10px; color: #555; margin-top: 3px; }
+  .print-day { break-inside: avoid; margin-top: 10px; }
+  .print-dayhead { font-family: var(--font-display); font-weight: 800; font-size: 20px; text-transform: uppercase; margin: 6px 0 4px; }
+  .print-table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+  .print-table th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #555; border-bottom: 1px solid #999; padding: 3px 4px; }
+  .print-table td { border-bottom: 1px solid #ddd; padding: 3px 4px; vertical-align: top; }
+  .print-time { font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
+  .print-m { border-left: 4px solid #999; }
+  .print-cat { font-size: 8px; text-transform: uppercase; letter-spacing: .06em; color: #555; }
+  .print-teams { font-weight: 600; }
+  .print-score { font-family: var(--font-mono); font-weight: 700; }
+  .cat-u11 { border-left-color: var(--color-cat-u11); } .cat-u13 { border-left-color: var(--color-cat-u13); } .cat-u15 { border-left-color: var(--color-cat-u15); }
+  .cat-u18 { border-left-color: var(--color-cat-u18); } .cat-o18 { border-left-color: var(--color-cat-o18); } .cat-o35 { border-left-color: var(--color-cat-o35); }
+  .print-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 14px; font-size: 9.5px; }
+  .print-group { break-inside: avoid; border-top: 1px solid #999; padding-top: 3px; }
+  .print-row { display: flex; justify-content: space-between; }
+  .print-foot { margin-top: 12px; border-top: 1px solid #999; padding-top: 6px; font-size: 8.5px; color: #555; }
+}
