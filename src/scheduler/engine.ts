@@ -10,13 +10,14 @@ export type Src = { pos: number } | { win: number } | { lose: number }
 const P = (k: number): Src => ({ pos: k }), W = (i: number): Src => ({ win: i }), L = (i: number): Src => ({ lose: i })
 export interface Format { size: number; name: string; g: number; rounds: Array<Array<[Src, Src]>> }
 export const FORMATS: Record<string, Format> = {
+  rr2: { size: 2, name: 'Ένας αγώνας', g: 1, rounds: [[[P(0), P(1)]]] },
   rr3: { size: 3, name: 'Όλοι με όλους', g: 2, rounds: [[[P(0), P(1)]], [[P(0), P(2)]], [[P(1), P(2)]]] },
   x4: { size: 4, name: 'Σταυρωτό', g: 2, rounds: [[[P(0), P(1)], [P(2), P(3)]], [[W(0), L(1)], [W(1), L(0)]]] },
   rr4: { size: 4, name: 'Όλοι με όλους', g: 3, rounds: [[[P(0), P(1)], [P(2), P(3)]], [[P(0), P(2)], [P(1), P(3)]], [[P(0), P(3)], [P(1), P(2)]]] },
   fast5: { size: 5, name: 'Γρήγορο', g: 2, rounds: [[[P(0), P(1)], [P(2), P(3)]], [[L(0), L(1)]], [[W(2), P(4)], [W(0), W(1)]], [[W(3), L(4)]]] },
   rr5: { size: 5, name: 'Όλοι με όλους', g: 4, rounds: [[[P(0), P(1)], [P(2), P(3)]], [[P(0), P(2)], [P(1), P(4)]], [[P(0), P(3)], [P(2), P(4)]], [[P(0), P(4)], [P(1), P(3)]], [[P(1), P(2)], [P(3), P(4)]]] },
 }
-export const FORMATS_BY_SIZE: Record<number, string[]> = { 3: ['rr3'], 4: ['x4', 'rr4'], 5: ['fast5', 'rr5'] }
+export const FORMATS_BY_SIZE: Record<number, string[]> = { 2: ['rr2'], 3: ['rr3'], 4: ['x4', 'rr4'], 5: ['fast5', 'rr5'] }
 export const fmtMatches = (id: string) => FORMATS[id].rounds.reduce((a, r) => a + r.length, 0)
 export const GREEK = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ'
 
@@ -29,6 +30,7 @@ export function splits(T: number): Split[] {
     if (r >= 0 && r % 3 === 0) { const b = r / 3; out.push({ a, b, G: a + b, sizes: [...Array(a).fill(4), ...Array(b).fill(3)] }) }
   }
   if (out.length === 0 && T === 5) out.push({ a: 0, b: 0, G: 1, sizes: [5], five: true })
+  if (T === 2) out.push({ a: 0, b: 0, G: 1, sizes: [2] })
   out.sort((x, y) => { const ux = (x.a === 0 || x.b === 0) ? 0 : 1, uy = (y.a === 0 || y.b === 0) ? 0 : 1; if (ux !== uy) return ux - uy; return y.b - x.b })
   return out
 }

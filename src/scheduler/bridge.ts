@@ -60,7 +60,7 @@ export function fromDb(inp: Awaited<ReturnType<typeof loadInputs>>): E.SchedStat
         const all = g.flat(); if (all.length === c.teams.length && new Set(all).size === all.length) c.groups = g
       }
       c.Q = s?.Q !== undefined ? s.Q : (tc.qualifiers ?? null)
-      if (c.Q && c.Q > c.teams.length) c.Q = null
+      if (c.Q && c.Q >= c.teams.length) c.Q = null   // KO of everyone is pointless; 2 teams = one match
     }
     st.categories.push(c)
   }
@@ -118,7 +118,8 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
         : ('win' in src) ? { team: null, label: 'Νικ. Μ' + (src.win + 1), source: 'W:' + ids.get(c.id + '|g' + m.grp + '|' + src.win) }
         : { team: null, label: 'Ηττ. Μ' + (src.lose + 1), source: 'L:' + ids.get(c.id + '|g' + m.grp + '|' + src.lose) }
       const h = side(m.a!), a = side(m.b!)
-      return { ...base, phase: 'group', label: 'Όμιλος ' + E.GREEK[m.grp!], group_id: gid(m.cat, m.grp!), home_team_id: h.team, away_team_id: a.team, home_label: h.label, away_label: a.label, home_source: h.source, away_source: a.source }
+      const single = c.split!.sizes[m.grp!] === 2 && c.groups!.length === 1
+      return { ...base, phase: single ? 'final' : 'group', label: single ? 'Τελικός' : 'Όμιλος ' + E.GREEK[m.grp!], group_id: gid(m.cat, m.grp!), home_team_id: h.team, away_team_id: a.team, home_label: h.label, away_label: a.label, home_source: h.source, away_source: a.source }
     }
     const phase = (m.label ?? '').startsWith('Τελικός') ? 'final' : (m.label ?? '').startsWith('Ημιτελικοί') ? 'sf' : (m.label ?? '').startsWith('Φάση των 8') ? 'qf' : (m.label ?? '').startsWith('Φάση των 16') ? 'r16' : 'qf'
     // first main round without prelims: standard seeded bracket (1–8, 4–5, 3–6, 2–7). Seeds resolve from group standings (DB trigger).

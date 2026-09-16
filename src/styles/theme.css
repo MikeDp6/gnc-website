@@ -43,7 +43,8 @@
 }
 
 /* ---------- Base ---------- */
-html { background: var(--color-bg); color: var(--color-ink); -webkit-font-smoothing: antialiased; }
+html { background: var(--color-bg); color: var(--color-ink); -webkit-font-smoothing: antialiased; color-scheme: dark; }
+select option { background: #141416; color: var(--color-ink); }
 body { font-family: var(--font-sans); margin: 0; }
 * { box-sizing: border-box; }
 a { color: inherit; text-decoration: none; }

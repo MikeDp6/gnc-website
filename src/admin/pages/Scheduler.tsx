@@ -82,12 +82,12 @@ function SettingsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sch
         {st.categories.map((c, i) => (
           <div key={c.id} className="grid grid-cols-[24px_1fr_60px_110px_110px_110px_90px] items-center gap-2 border-t border-line py-2 text-[13px]">
             <div className="flex flex-col text-[10px] leading-none text-dim"><button onClick={() => move(i, -1)}>▲</button><button onClick={() => move(i, 1)}>▼</button></div>
-            <span className="font-semibold"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm align-[-1px]" style={{ background: E.catColor(st, i) }} />{c.name}</span>
+            <span className="font-semibold"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm align-[-1px]" style={{ background: E.catColor(st, i) }} />{c.name}{!c.split && <span className="ml-2 rounded bg-red/20 px-2 py-[2px] text-[11px] text-red">{c.teams.length < 2 ? 'μόνο 1 ομάδα — συγχώνευση ή ακύρωση' : 'χωρίς χωρισμό'}</span>}</span>
             <span className="mono">{c.teams.length}</span>
             <Select value={c.day} onChange={e => mutate(x => E.setCatDay(x, c, 'day', e.target.value))} className="py-1 text-[12px]">{s.days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}</Select>
             <Select value={c.dayTo} onChange={e => mutate(x => E.setCatDay(x, c, 'dayTo', e.target.value))} className="py-1 text-[12px]">{s.days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}</Select>
             <Select value={c.koDay} onChange={e => mutate(x => E.setCatDay(x, c, 'koDay', e.target.value))} className="py-1 text-[12px]">{s.days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}</Select>
-            <Select value={c.Q ?? ''} onChange={e => mutate(() => { c.Q = e.target.value ? +e.target.value : null })} className="py-1 text-[12px]"><option value="">—</option>{[2, 4, 8, 16].filter(q => q <= c.teams.length).map(q => <option key={q} value={q}>{q}</option>)}</Select>
+            <Select value={c.Q ?? ''} disabled={c.teams.length <= 2} onChange={e => mutate(() => { c.Q = e.target.value ? +e.target.value : null })} className="py-1 text-[12px]"><option value="">—</option>{[2, 4, 8, 16].filter(q => q < c.teams.length).map(q => <option key={q} value={q}>{q}</option>)}</Select>
           </div>
         ))}
         <div className="mt-3 text-[12px] text-mute">Η σειρά εδώ είναι η σειρά της μέρας (πρώτη = παίζει πρώτη). Q = πόσες προκρίνονται στα νοκ-άουτ.</div>
@@ -110,7 +110,7 @@ function GroupsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sched
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <b className="disp text-[24px]"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm" style={{ background: E.catColor(st, ci) }} />{c.name} <span className="font-sans text-[12px] text-dim">{c.teams.length} ομάδες</span></b>
               <div className="flex gap-2">
-                <Select value={c.splitIdx ?? 0} onChange={e => mutate(x => E.applySplit(x, c, +e.target.value))} className="py-1 text-[12px]">{sp.map((s, i) => <option key={i} value={i}>{s.five ? '1 όμιλος των 5' : `${s.a ? s.a + '×4' : ''}${s.a && s.b ? ' + ' : ''}${s.b ? s.b + '×3' : ''}`}</option>)}</Select>
+                <Select value={c.splitIdx ?? 0} onChange={e => mutate(x => E.applySplit(x, c, +e.target.value))} className="py-1 text-[12px]">{sp.map((s, i) => <option key={i} value={i}>{s.five ? '1 όμιλος των 5' : s.sizes[0] === 2 ? 'Ένας αγώνας (τελικός)' : `${s.a ? s.a + '×4' : ''}${s.a && s.b ? ' + ' : ''}${s.b ? s.b + '×3' : ''}`}</option>)}</Select>
                 <Btn variant="ghost" className="py-1 text-[12px]" onClick={() => mutate(() => E.drawSerpentine(c))}>Κλήρωση</Btn>
               </div>
             </div>
