@@ -21,3 +21,9 @@
 
 ## Frontend
 `src/lib/api.ts` → `fetchBundle()` διαβάζει τα πάντα για την ενεργή διοργάνωση σε ένα `Bundle`. Χωρίς `.env.local` το site τρέχει με `src/data/mock.ts`. Realtime στα `matches` ξαναφορτώνει το bundle.
+
+## Admin panel (`/admin`)
+1. Authentication → Users → «Add user» (email + κωδικός, με «Auto confirm»).
+2. SQL editor: `insert into public.admins (user_id, role) select id, 'owner' from auth.users where email = 'EMAIL';`
+3. Άνοιξε `/admin/login`.
+Καρτέλες ανά διοργάνωση: Στοιχεία (status, δημόσιο, ημέρες/ώρες/γήπεδα) · Κατηγορίες (format, νοκ-άουτ) · Ομάδες (επικόλληση λίστας, έγκριση, check-in) · Αγώνες & σκορ (live/τελικό — realtime στο site) · Πρόγραμμα (scheduler — επόμενο βήμα).
