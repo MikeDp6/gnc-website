@@ -67,6 +67,14 @@ a { color: inherit; text-decoration: none; }
 @utility wrap { padding-inline: 16px; @media (min-width: 768px) { padding-inline: 40px; } @media (min-width: 1280px) { padding-inline: 64px; } }
 
 /* ---------- Motion ---------- */
+/* hero intro (BIFA-style): image starts scaled + blurred, settles; text rises */
+@keyframes hero-in { from { transform: scale(1.18); filter: blur(18px); opacity: .6; } to { transform: scale(1); filter: blur(0); opacity: 1; } }
+@keyframes rise-in { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@utility hero-in { animation: hero-in 1.4s cubic-bezier(.22,1,.36,1) both; }
+@utility rise-in { animation: rise-in .9s cubic-bezier(.22,1,.36,1) both; }
+/* horizontal snap carousel without visible scrollbar */
+@utility snap-row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; &::-webkit-scrollbar { display: none; } & > * { scroll-snap-align: start; flex: none; } }
+
 /* marquee: the track holds the content twice; translate by half */
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @utility marquee-track {
@@ -89,6 +97,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .marquee-track { animation: none; }
+  .hero-in, .rise-in { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .pop, .pop:hover { transition: none; transform: none; }
 }

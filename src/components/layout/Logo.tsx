@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 
-export function Logo({ className }: { className?: string }) {
+/** GNC logo: uses /img/logo.png when present (drop the file in public/img), otherwise the text mark. */
+export function Logo({ className, height = 34 }: { className?: string; height?: number }) {
+  const [img, setImg] = useState(true)
   return (
-    <Link to="/" className={cn('disp text-[34px] font-black leading-none tracking-[.01em]', className)}>
-      GNC <span className="text-blue">3</span>ON<span className="text-orange">3</span>
+    <Link to="/" className={cn('inline-flex items-center', className)} aria-label="GNC 3on3">
+      {img
+        ? <img src="/img/logo.png" alt="GNC 3on3" style={{ height }} onError={() => setImg(false)} />
+        : <span className="disp font-black leading-none tracking-[.01em]" style={{ fontSize: height }}>GNC <span className="text-blue">3</span>ON<span className="text-orange">3</span></span>}
     </Link>
   )
 }

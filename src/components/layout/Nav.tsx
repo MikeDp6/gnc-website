@@ -6,7 +6,7 @@ import { Logo } from './Logo'
 import { useData } from '@/data/store'
 import { cn } from '@/lib/cn'
 
-export function Nav() {
+export function Nav({ overlay = false }: { overlay?: boolean }) {
   const { t, lang, setLang } = useI18n()
   const [open, setOpen] = useState(false)
   const { tournaments } = useData()
@@ -15,7 +15,8 @@ export function Nav() {
     { to: '/', label: t.nav.tournaments, end: true },
     { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule },
     { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams },
-    { to: '/archive', label: t.nav.archive },
+    { to: '/news', label: 'News' },
+    { to: '/rentals', label: 'Ενοικιάσεις' },
     { to: '/contact', label: t.nav.contact },
   ]
   const item = (l: typeof links[number]) => (
@@ -25,7 +26,7 @@ export function Nav() {
     </NavLink>
   )
   return (
-    <header className="wrap flex items-center justify-between py-5">
+    <header className={cn('wrap flex items-center justify-between py-5', overlay && 'absolute left-0 right-0 top-[38px] z-20')}>
       <Logo />
       <nav className="hidden gap-9 lg:flex">{links.map(item)}</nav>
       <div className="hidden items-center gap-[22px] text-[13px] font-semibold lg:flex">

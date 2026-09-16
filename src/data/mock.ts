@@ -1,6 +1,6 @@
 // Mock data for development — Pefki 2026 registrations (real team names) + invented results.
 // Replaced by the API layer (src/lib/api.ts) once the backend is wired.
-import type { ArchiveItem, Bundle, Category, Group, Match, Player, Stop, Team, TickerItem, Tournament } from './types'
+import type { ArchiveItem, Bundle, Category, Group, Match, NewsItem, Player, RentalItem, Stop, Team, TickerItem, Tournament } from './types'
 
 export const categories: Category[] = [
   { id: 'u11_mixed', key: 'u11', name: 'U11 MIXED', short: 'U11' },
@@ -132,4 +132,17 @@ export const tickerItems: TickerItem[] = [
 
 export const sponsors = ['Χορηγός 1', 'Χορηγός 2', 'Δήμος Λυκόβρυσης–Πεύκης', 'Χορηγός 3', 'Χορηγός 4', 'Media partner', 'Χορηγός 5']
 
-export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors }
+export const news: NewsItem[] = [
+  { id: 'n1', slug: 'pefki-programma', tag: 'Πρόγραμμα', date: '16 Σεπ 2026', title: 'Αναρτήθηκε το πρόγραμμα της Πεύκης', excerpt: '52 ομάδες, 8 κατηγορίες, δύο γήπεδα. Δες πότε παίζει η ομάδα σου.', tint: 'orange' },
+  { id: 'n2', slug: 'pallini-diloseis', tag: 'Δηλώσεις', date: '12 Σεπ 2026', title: 'Άνοιξαν οι δηλώσεις για την Παλλήνη', excerpt: 'Φθινοπωρινό τουρνουά 10–11 Οκτωβρίου στο Κλειστό Παλλήνης, 7 κατηγορίες.', tint: 'blue' },
+  { id: 'n3', slug: 'app', tag: 'Νέο', date: '8 Σεπ 2026', title: 'Το app της GNC στο App Store και Google Play', excerpt: 'Πρόγραμμα, ειδοποιήσεις 15΄ πριν τον αγώνα σου, QR check-in.', tint: 'mono' },
+  { id: 'n4', slug: 'pallini-2026-nikites', tag: 'Αποτελέσματα', date: '15 Ιουν 2026', title: 'Παλλήνη 2026: οι νικητές', excerpt: 'GOONLANDERS στους 18+, PINK ROSES στους 40+, ΘΥΜΙΟΛΑΣ στο U18, COURT KINGS στο U15.', tint: 'teal' },
+]
+export const rentals: RentalItem[] = [
+  { id: 'r1', name: 'Φορητό γήπεδο 3on3', blurb: 'Δάπεδο, μπασκέτα, περίφραξη. Στήσιμο και αποξήλωση από την ομάδα μας.', price: 'Ζήτησε προσφορά' },
+  { id: 'r2', name: 'Πακέτο διοργάνωσης', blurb: 'Γήπεδα, γραμματεία, scoreboard, ηχητικά, εκφωνητής. Για δήμους και εταιρείες.', price: 'Ζήτησε προσφορά' },
+  { id: 'r3', name: 'Scoreboard & ηχητικά', blurb: 'Ηλεκτρονικός πίνακας, χρονόμετρο, ηχοσύστημα για εκδηλώσεις.', price: 'Ζήτησε προσφορά' },
+  { id: 'r4', name: 'Μπασκέτες & μπάλες', blurb: 'Φορητές μπασκέτες και μπάλες Νο6 για σχολεία, camps, γιορτές.', price: 'Ζήτησε προσφορά' },
+]
+
+export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals }

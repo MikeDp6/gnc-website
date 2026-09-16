@@ -113,4 +113,9 @@ export interface Bundle {
   archive: ArchiveItem[]
   ticker: TickerItem[]
   sponsors: string[]
+  news: NewsItem[]
+  rentals: RentalItem[]
 }
+
+export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string }
+export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }

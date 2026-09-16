@@ -1,5 +1,6 @@
 // API layer: Supabase → frontend Bundle. Every query uses the anon key and goes through RLS (public read only).
 import type { ArchiveItem, Bundle, Category, CategoryKey, Group, Match, Player, Stop, Team, TickerItem, Tournament } from '@/data/types'
+import { news as mockNews, rentals as mockRentals } from '@/data/mock'
 import { supabase } from './supabase'
 
 const MONTHS = ['ΙΑΝ', 'ΦΕΒ', 'ΜΑΡ', 'ΑΠΡ', 'ΜΑΪ', 'ΙΟΥΝ', 'ΙΟΥΛ', 'ΑΥΓ', 'ΣΕΠ', 'ΟΚΤ', 'ΝΟΕ', 'ΔΕΚ']
@@ -129,13 +130,13 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
 
-  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name) }
+  // news & rentals: content tables come with the CMS step; until then the mock content is shown
+  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news: mockNews, rentals: mockRentals }
 }
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */
 export function subscribeMatches(onChange: () => void): () => void {
-  const sb = supabase
-  if (!sb) return () => {}
-  const ch = sb.channel('public:matches').on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, onChange).subscribe()
-  return () => { sb.removeChannel(ch) }
+  if (!supabase) return () => {}
+  const ch = supabase.channel('public:matches').on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, onChange).subscribe()
+  return () => { supabase.removeChannel(ch) }
 }
