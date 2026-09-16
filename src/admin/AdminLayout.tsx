@@ -22,7 +22,7 @@ export function AdminLayout() {
     <NavLink to={to} end={end} className={({ isActive }) => cn('block rounded-lg px-3 py-2 text-[13px] font-semibold text-dim hover:text-white', isActive && 'bg-white/8 text-white')}>{label}</NavLink>
   )
   return (
-    <div className="grid min-h-screen bg-bg text-ink md:grid-cols-[220px_1fr]">
+    <div data-admin className="grid min-h-screen bg-bg text-ink md:grid-cols-[220px_1fr]">
       <aside className="flex flex-col gap-1 border-b border-line p-4 md:border-b-0 md:border-r">
         <Logo className="mb-4" height={48} />
         <div className="kicker mb-1 px-3">Διαχείριση</div>
