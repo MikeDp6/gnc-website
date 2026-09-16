@@ -8,6 +8,7 @@
    - `migrations/001_schema.sql` — πίνακες, views (`group_standings`, `players_public`), triggers
    - `migrations/002_rls.sql` — RLS: public read, admin write, players βλέπουν μόνο τον εαυτό τους
    - `migrations/003_seed_pefki.sql` — Πεύκη 2026 (52 πραγματικές ομάδες) + δείγμα ομίλων/αποτελεσμάτων 35+
+   - `migrations/004_grants.sql` — grants στους ρόλους anon/authenticated (απαραίτητο με «expose new tables» OFF)
 3. Database → Replication → enable για `matches` (live σκορ / μετακινήσεις) και `ticker_items`.
 4. Project Settings → API → URL + anon key → `.env.local` (δες `.env.example`).
 5. Για admin: Authentication → πρόσθεσε χρήστη, μετά `insert into public.admins (user_id, role) values ('<uuid>', 'owner');`
