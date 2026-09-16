@@ -100,35 +100,34 @@ export function Home() {
         )}
       </section>
 
-      {/* ---------- UPCOMING TOURNAMENTS (collective schedule) + map ---------- */}
+      {/* ---------- UPCOMING TOURNAMENTS: full-width map, list sits in the open sea ---------- */}
       <section className="wrap pt-[110px]">
         <Heading a={t.sections.schedule1} b={t.sections.schedule2} className="mb-[34px]" />
-        <div className="grid gap-[22px] lg:grid-cols-[1fr_1.1fr]">
-          <div className="flex flex-col gap-[10px]">
+        <Reveal className="card relative overflow-hidden rounded-band">
+          <div className="kicker absolute left-[26px] top-[26px] z-10">25 πόλεις · 2018–2026</div>
+          <div className="h-[520px] p-4 md:h-[760px] md:p-8 lg:pr-[440px]">
+            <GreeceMap className="h-full w-full" />
+          </div>
+          <div className="flex flex-col gap-[10px] p-4 lg:absolute lg:right-8 lg:top-1/2 lg:w-[400px] lg:-translate-y-1/2 lg:p-0">
             {stops.map(s => {
               const tour = tournaments.find(x => x.id === s.id)
               const inner = (
                 <>
-                  <div className="disp text-[34px]">{s.dateShort.day}<span className="block font-sans text-[14px] font-bold tracking-[.1em] text-dim">{s.dateShort.month}</span></div>
+                  <div className="disp text-[30px]">{s.dateShort.day}<span className="block font-sans text-[12px] font-bold tracking-[.1em] text-dim">{s.dateShort.month}</span></div>
                   <div className="min-w-0">
-                    <div className="truncate text-[17px] font-bold">{s.name}</div>
-                    <div className="mt-[3px] text-[13px] text-dim">{s.detail}</div>
-                    {tour && <div className="mt-2 flex flex-wrap gap-1">{tour.categoryIds.map(cid => { const c = categoryById(cid); return <span key={cid} className="rounded-full border border-line px-2 py-[2px] text-[10px] font-bold uppercase tracking-[.08em]"><i className="mr-1 inline-block h-[6px] w-[6px] rounded-full" style={{ background: catColor[c.key] }} />{c.short}</span> })}</div>}
+                    <div className="truncate text-[16px] font-bold">{s.name}</div>
+                    <div className="mt-[2px] truncate text-[12px] text-dim">{s.detail}</div>
                   </div>
-                  <span className={cn('whitespace-nowrap rounded-lg border border-line px-3 py-2 text-[11px] font-extrabold uppercase tracking-[.12em]', s.status === 'next' && 'border-orange bg-orange text-[#111]', s.status === 'registration' && 'border-blue bg-blue')}>
+                  <span className={cn('whitespace-nowrap rounded-lg border border-line px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.12em]', s.status === 'next' && 'border-orange bg-orange text-[#111]', s.status === 'registration' && 'border-blue bg-blue')}>
                     {s.status === 'next' ? 'Πρόγραμμα' : s.status === 'registration' ? 'Δηλώσεις' : 'Σύντομα'}
                   </span>
                 </>
               )
-              const cls = cn('card pop grid grid-cols-[72px_1fr_auto] items-center gap-[18px] px-[18px] py-4 md:grid-cols-[92px_1fr_auto]', s.status === 'next' && 'border-orange')
+              const cls = cn('pop grid grid-cols-[64px_1fr_auto] items-center gap-4 rounded-[14px] border border-line bg-[rgba(20,20,22,.82)] px-4 py-3 backdrop-blur-md', s.status === 'next' && 'border-orange')
               return tour ? <Link key={s.id} to={`/tournaments/${tour.slug}`} className={cls}>{inner}</Link> : <div key={s.id} className={cls}>{inner}</div>
             })}
           </div>
-          <Reveal className="card relative min-h-[420px] rounded-band p-[26px] md:min-h-[600px]">
-            <div className="kicker absolute left-[26px] top-[26px]">25 πόλεις · 2018–2026</div>
-            <GreeceMap className="h-[380px] md:h-[560px]" />
-          </Reveal>
-        </div>
+        </Reveal>
       </section>
 
       {/* ---------- LATEST NEWS ---------- */}
