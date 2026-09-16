@@ -27,7 +27,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   )
   return (
     <header className={cn('wrap flex items-center justify-between py-5', overlay && 'absolute left-0 right-0 top-[38px] z-20 py-4')}>
-      <Logo />
+      <Logo height={overlay ? 84 : 60} />
       <nav className="hidden gap-9 lg:flex">{links.map(item)}</nav>
       <div className="hidden items-center gap-[22px] text-[13px] font-semibold lg:flex">
         <div>
