@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import * as api from '@/lib/adminApi'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
 import { cn } from '@/lib/cn'
+import { Scheduler } from './Scheduler'
 
 const TABS = ['Στοιχεία', 'Κατηγορίες', 'Ομάδες', 'Αγώνες & σκορ', 'Πρόγραμμα']
 const STATUS = [['draft', 'Πρόχειρο'], ['registration', 'Δηλώσεις ανοιχτές'], ['upcoming', 'Επερχόμενο'], ['live', 'Σε εξέλιξη'], ['done', 'Ολοκληρώθηκε'], ['archived', 'Αρχείο']]
@@ -27,7 +28,7 @@ export function TournamentEdit() {
       {tab === 'Κατηγορίες' && <Categories tid={id} say={say} />}
       {tab === 'Ομάδες' && <Teams tid={id} say={say} />}
       {tab === 'Αγώνες & σκορ' && <Results tid={id} say={say} />}
-      {tab === 'Πρόγραμμα' && <SchedulerStub tid={id} />}
+      {tab === 'Πρόγραμμα' && <Scheduler tid={id} />}
       <Toast msg={toast} />
     </>
   )
@@ -206,15 +207,5 @@ function Results({ tid, say }: { tid: string; say: (m: string) => void }) {
       </div>
       <div className="mt-3 text-[12px] text-mute">Το «Τελικό» ενημερώνει αμέσως βαθμολογίες, site και app (realtime). Οι νικητές των νοκ-άουτ περνούν στον επόμενο γύρο όταν κλείσει ο αγώνας.</div>
     </>
-  )
-}
-
-// ---------- Πρόγραμμα (scheduler — next step) ----------
-function SchedulerStub({ tid }: { tid: string }) {
-  return (
-    <div className="card p-6">
-      <div className="disp mb-2 text-[32px]">Scheduler</div>
-      <p className="max-w-[640px] text-[14px] text-dim">Εδώ μπαίνει το εργαλείο προγράμματος (όμιλοι, κριτήρια, drag-and-drop) που θα γράφει απευθείας στους πίνακες <code>groups</code> και <code>matches</code> της διοργάνωσης <code className="text-white">{tid.slice(0, 8)}</code>. Επόμενο βήμα υλοποίησης.</p>
-    </div>
   )
 }
