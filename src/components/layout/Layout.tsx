@@ -13,7 +13,7 @@ export function Layout() {
       <Ticker overlay={home} />
       <Nav overlay={home} />
       <main><Outlet /></main>
-      <Footer newsletter={pathname === '/'} />
+      <Footer finale={home} />
     </div>
   )
 }

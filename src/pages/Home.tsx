@@ -9,11 +9,12 @@ import { Reveal } from '@/components/ui/Reveal'
 import { Countdown } from '@/components/ui/Countdown'
 import { Marquee } from '@/components/ui/Marquee'
 import { GreeceMap } from '@/components/GreeceMap'
+import { NewsCarousel } from '@/components/NewsCarousel'
 import type { Match } from '@/data/types'
 
 export function Home() {
   const { t } = useI18n()
-  const { categoryById, matches, sponsorList, stops, tournaments, teamById, news, rentals, cities } = useData()
+  const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities } = useData()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
   if (!next) return null
@@ -136,18 +137,7 @@ export function Home() {
           <Heading a={t.sections.news1} b={t.sections.news2} />
           <Link to="/news" className="text-[14px] font-bold uppercase tracking-[.08em] text-orange">{t.sections.viewNews} →</Link>
         </div>
-        <div className="snap-row wrap pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
-          {news.map(a => (
-            <Link to={`/news/${a.slug}`} key={a.id} className="card pop w-[300px] overflow-hidden rounded-[18px] lg:w-auto">
-              <div className="h-[220px] bg-cover bg-[center_30%]" style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
-              <div className="px-[18px] pb-5 pt-4">
-                <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-                <div className="disp text-[32px]">{a.title}</div>
-                <div className="mt-[10px] text-[13px] text-dim">{a.excerpt}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <div className="wrap"><NewsCarousel items={news} /></div>
       </section>
 
       {/* ---------- SHOP / RENTALS ---------- */}
@@ -170,13 +160,7 @@ export function Home() {
         </div>
       </section>
 
-      {/* ---------- PARTNERS ---------- */}
-      <section className="pt-[110px]">
-        <div className="wrap kicker mb-[22px]">{t.sections.sponsors}</div>
-        <Marquee duration={30} className="border-y border-line py-[26px]">
-          {sponsorList.map(s => <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="disp whitespace-nowrap text-[34px] font-bold tracking-[.04em] text-[#6b6f73] hover:text-white">{s.logo ? <img src={s.logo} alt={s.name} className="h-[44px] w-auto opacity-70 hover:opacity-100" /> : s.name}</a>)}
-        </Marquee>
-      </section>
+      {/* partners + newsletter + footer: rendered by <Footer finale /> over a photo (Layout) */}
     </>
   )
 }
@@ -193,7 +177,13 @@ function StackCard({ tone, label, badge, big, title, meta, cta, right }: { tone:
         <div className="text-[22px] font-bold uppercase tracking-[.02em] md:text-[26px]">{title}</div>
         <div className="mt-2 text-[14px] opacity-85">{meta}</div>
       </div>
-      <div className="mt-8 flex items-center justify-between text-[12px] font-bold uppercase tracking-[.1em]"><Link to={cta.to} className="rounded-lg bg-black/20 px-4 py-[10px]">{cta.label}</Link><span>{right}</span></div>
+      <div className="mt-8 flex items-center justify-between gap-4">
+        {/* BIFA-style entry button: white pill with a round arrow */}
+        <Link to={cta.to} className="pop inline-flex items-center gap-3 rounded-full bg-white py-[6px] pl-5 pr-[6px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111] shadow-[0_6px_20px_rgba(0,0,0,.25)]">
+          {cta.label}<span className="grid h-8 w-8 place-items-center rounded-full bg-[#111] text-[16px] text-white" aria-hidden>→</span>
+        </Link>
+        <span className="text-[12px] font-bold uppercase tracking-[.1em]">{right}</span>
+      </div>
     </div>
   )
 }
