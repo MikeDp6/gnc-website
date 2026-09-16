@@ -29,6 +29,7 @@ export function Home() {
         <img src={next.cover} alt="" className="hero-in absolute inset-0 h-full w-full object-cover object-[center_40%]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.15)_35%,rgba(10,10,11,.35)_65%,rgba(10,10,11,.98)_100%)]" />
         <div className="wrap absolute bottom-[56px] left-0 right-0 z-10">
+          <img src="/img/logo.png" alt="" className="rise-in mb-6 h-[120px] w-auto drop-shadow-[0_8px_30px_rgba(0,0,0,.6)] md:h-[170px]" style={{ animationDelay: '.35s' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
           <div className="rise-in mb-3 text-[13px] font-bold uppercase tracking-[.18em] text-orange-soft" style={{ animationDelay: '.5s' }}>{t.hero.kicker} · {next.name} · {next.dates}</div>
           <h1 className="rise-in disp text-[64px] text-white md:text-[112px] xl:text-[150px]" style={{ animationDelay: '.65s' }}>{t.hero.title1}<br /><span className="text-orange">{t.hero.title2}</span></h1>
           <div className="rise-in mt-6 flex flex-wrap gap-3" style={{ animationDelay: '.85s' }}>

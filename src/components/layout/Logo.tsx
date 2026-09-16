@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 
 /** GNC logo: uses /img/logo.png when present (drop the file in public/img), otherwise the text mark. */
-export function Logo({ className, height = 34 }: { className?: string; height?: number }) {
+export function Logo({ className, height = 60 }: { className?: string; height?: number }) {
   const [img, setImg] = useState(true)
   return (
     <Link to="/" className={cn('inline-flex items-center', className)} aria-label="GNC 3on3">

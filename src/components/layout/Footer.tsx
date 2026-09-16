@@ -27,7 +27,7 @@ export function Footer({ newsletter = true }: { newsletter?: boolean }) {
       )}
       <div className="grid gap-8 text-[14px] text-dim md:grid-cols-[2fr_1fr_1fr_1fr_1.2fr]">
         <div>
-          <Logo className="mb-[14px] block text-[28px]" />
+          <Logo className="mb-[14px]" height={72} />
           <span className="block">{t.footer.tagline}</span>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-[9px] text-[12px] font-bold text-white">▲ App Store</span>

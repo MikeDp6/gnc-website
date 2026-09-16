@@ -24,7 +24,7 @@ export function AdminLayout() {
   return (
     <div className="grid min-h-screen bg-bg text-ink md:grid-cols-[220px_1fr]">
       <aside className="flex flex-col gap-1 border-b border-line p-4 md:border-b-0 md:border-r">
-        <Logo className="mb-4 block text-[26px]" />
+        <Logo className="mb-4" height={48} />
         <div className="kicker mb-1 px-3">Διαχείριση</div>
         {link('/admin', 'Διοργανώσεις', true)}
         {link('/admin/ticker', 'Ticker & χορηγοί')}

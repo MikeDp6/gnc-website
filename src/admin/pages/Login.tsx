@@ -12,7 +12,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg p-6 text-ink">
       <form onSubmit={submit} className="card w-full max-w-[400px] p-8">
-        <Logo className="mb-6 block text-[30px]" />
+        <Logo className="mb-6" height={64} />
         <div className="kicker mb-4">Είσοδος διαχειριστή</div>
         <label className="mb-3 block text-[13px]"><span className="mb-1 block text-dim">Email</span>
           <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-[10px] border border-line bg-transparent px-4 py-3 outline-none focus:border-white/30" /></label>
