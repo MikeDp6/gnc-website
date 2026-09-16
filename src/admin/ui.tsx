@@ -7,7 +7,7 @@ export function Field({ label, children, className }: { label: string; children:
   return <label className={cn('block text-[13px]', className)}><span className="mb-1 block text-dim">{label}</span>{children}</label>
 }
 export function Input(p: InputHTMLAttributes<HTMLInputElement>) { return <input {...p} className={cn(inputCls, p.className)} /> }
-export function Select(p: SelectHTMLAttributes<HTMLSelectElement>) { return <select {...p} className={cn(inputCls, 'bg-bg', p.className)} /> }
+export function Select(p: SelectHTMLAttributes<HTMLSelectElement>) { return <select {...p} className={cn(inputCls, 'rounded-full bg-bg pr-8', p.className)} /> }
 export function Btn({ children, onClick, variant = 'blue', disabled, type = 'button', className }: { children: ReactNode; onClick?: () => void; variant?: 'blue' | 'orange' | 'ghost' | 'danger'; disabled?: boolean; type?: 'button' | 'submit'; className?: string }) {
   const v = { blue: 'bg-blue text-white', orange: 'bg-orange text-[#111]', ghost: 'border border-line text-ink', danger: 'border border-red/60 text-red' }[variant]
   return <button type={type} onClick={onClick} disabled={disabled} className={cn('rounded-[10px] px-4 py-[10px] text-[13px] font-bold disabled:opacity-50', v, className)}>{children}</button>

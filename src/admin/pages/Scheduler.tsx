@@ -78,9 +78,9 @@ function SettingsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sch
       </div>
       <div className="card p-5">
         <div className="kicker mb-3">Σειρά κατηγοριών & μέρες</div>
-        <div className="mb-2 grid grid-cols-[24px_1fr_60px_110px_110px_110px_90px] gap-2 text-[11px] uppercase tracking-[.1em] text-dim"><span /><span>Κατηγορία</span><span>Ομάδες</span><span>Όμιλοι από</span><span>έως</span><span>Νοκ-άουτ</span><span>Q</span></div>
+        <div className="mb-2 grid grid-cols-[24px_1fr_60px_150px_150px_150px_90px] gap-2 text-[11px] uppercase tracking-[.1em] text-dim"><span /><span>Κατηγορία</span><span>Ομάδες</span><span>Όμιλοι από</span><span>έως</span><span>Νοκ-άουτ</span><span>Q</span></div>
         {st.categories.map((c, i) => (
-          <div key={c.id} className="grid grid-cols-[24px_1fr_60px_110px_110px_110px_90px] items-center gap-2 border-t border-line py-2 text-[13px]">
+          <div key={c.id} className="grid grid-cols-[24px_1fr_60px_150px_150px_150px_90px] items-center gap-2 border-t border-line py-2 text-[13px]">
             <div className="flex flex-col text-[10px] leading-none text-dim"><button onClick={() => move(i, -1)}>▲</button><button onClick={() => move(i, 1)}>▼</button></div>
             <span className="font-semibold"><i className="mr-2 inline-block h-[10px] w-[10px] rounded-sm align-[-1px]" style={{ background: E.catColor(st, i) }} />{c.name}{!c.split && <span className="ml-2 rounded bg-red/20 px-2 py-[2px] text-[11px] text-red">{c.teams.length < 2 ? 'μόνο 1 ομάδα — συγχώνευση ή ακύρωση' : 'χωρίς χωρισμό'}</span>}</span>
             <span className="mono">{c.teams.length}</span>
