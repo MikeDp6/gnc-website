@@ -20,7 +20,7 @@ export function GreeceMap({ className, compact, nextCityId }: { className?: stri
           <Link key={c.id} to={`/cities/${c.id}`} onMouseEnter={() => setHover(c.id)} onMouseLeave={() => setHover(null)} aria-label={c.name}>
             {next && <circle cx={x} cy={y} r={16} fill="none" stroke="var(--color-orange)" strokeWidth={2} opacity={.7} />}
             <circle cx={x} cy={y} r={on ? 11 : 8} fill={on ? 'var(--color-orange)' : 'var(--color-blue)'} stroke={on ? '#fff' : 'none'} strokeWidth={2} className="cursor-pointer transition-all duration-200" />
-            {!compact && (on || next) && (
+            {!compact && on && (
               <g pointerEvents="none">
                 <rect x={x + 16} y={y - 14} width={c.name.length * 8.2 + 20} height={28} rx={6} fill="#0A0A0B" stroke="var(--color-line)" />
                 <text x={x + 26} y={y + 5} fill="#fff" fontSize={13} fontWeight={700} fontFamily="var(--font-sans)">{c.name}</text>
