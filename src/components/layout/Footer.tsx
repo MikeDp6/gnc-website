@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { Heading } from '@/components/ui/Heading'
 import { Button } from '@/components/ui/Button'
@@ -5,6 +6,12 @@ import { Logo } from './Logo'
 
 export function Footer({ newsletter = true }: { newsletter?: boolean }) {
   const { t } = useI18n()
+  const lcol = (title: string, items: Array<[string, string]>) => (
+    <div>
+      <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{title}</b>
+      {items.map(([i, to]) => <Link key={i} to={to} className="mb-[9px] block hover:text-white">{i}</Link>)}
+    </div>
+  )
   const col = (title: string, items: string[]) => (
     <div>
       <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{title}</b>
@@ -34,9 +41,9 @@ export function Footer({ newsletter = true }: { newsletter?: boolean }) {
             <span className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-[9px] text-[12px] font-bold text-white">▶ Google Play</span>
           </div>
         </div>
-        {col(t.nav.tournaments, ['Επόμενες', 'Πρόγραμμα', 'Αποτελέσματα', 'Αρχείο'])}
-        {col(t.nav.teams, ['Δήλωση συμμετοχής', 'Κανονισμός', 'Κατηγορίες', 'Συχνές ερωτήσεις'])}
-        {col('GNC', ['Ποιοι είμαστε', 'Κανονισμοί', 'Γίνε εθελοντής', 'Επικοινωνία'])}
+        {lcol('Διοργανώσεις', [['Επόμενες', '/'], ['Αρχείο & περιοδεία', '/archive'], ['News', '/news'], ['Ενοικιάσεις', '/rentals']])}
+        {lcol(t.nav.teams, [['Δήλωση συμμετοχής', '/register'], ['Κανονισμοί', '/kanonismoi'], ['Όροι συμμετοχής', '/oroi']])}
+        {lcol('GNC', [['Ποιοι είμαστε', '/about'], ['Γίνε εθελοντής', '/volunteer'], ['Επικοινωνία', '/contact']])}
         <div>
           <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{t.misc.follow}</b>
           {[['Instagram', 'https://instagram.com/gnc_3on3'], ['Facebook', 'https://www.facebook.com/GNC-3on3-101368258807208'], ['TikTok', 'https://www.tiktok.com/@gnc_3on3'], ['YouTube', 'https://www.youtube.com/channel/UCdchPP-K0RjIQG9G68nd4hw']].map(([n, u]) => <a key={n} href={u} target="_blank" rel="noreferrer" className="mb-[9px] block hover:text-white">{n}</a>)}
@@ -44,7 +51,7 @@ export function Footer({ newsletter = true }: { newsletter?: boolean }) {
         </div>
       </div>
       <div className="mt-14 flex justify-between border-t border-line pt-[22px] text-[12px] text-mute">
-        <span>© {new Date().getFullYear()} GNC 3on3 · {t.footer.terms} · {t.footer.privacy}</span>
+        <span>© {new Date().getFullYear()} Greek National Challenge 3on3 · <Link to="/oroi" className="hover:text-white">{t.footer.terms}</Link> · {t.footer.privacy}</span>
         <span>EL / EN</span>
       </div>
     </footer>

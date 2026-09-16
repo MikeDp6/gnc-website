@@ -10,6 +10,7 @@ import { Contact } from '@/pages/Contact'
 import { Archive } from '@/pages/Archive'
 import { Register } from '@/pages/Register'
 import { City } from '@/pages/City'
+import { Rules, About, Volunteer, Terms } from '@/pages/Static'
 import { NotFound } from '@/pages/NotFound'
 import { Suspense, lazy } from 'react'
 
@@ -42,6 +43,10 @@ export default function App() {
         <Route path="cities/:id" element={<City />} />
         <Route path="register" element={<Register />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="kanonismoi" element={<Rules />} />
+        <Route path="about" element={<About />} />
+        <Route path="volunteer" element={<Volunteer />} />
+        <Route path="oroi" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
