@@ -11,6 +11,7 @@ import { Archive } from '@/pages/Archive'
 import { Register } from '@/pages/Register'
 import { City } from '@/pages/City'
 import { Rules, About, Volunteer, Terms } from '@/pages/Static'
+import { Join } from '@/pages/Join'
 import { NotFound } from '@/pages/NotFound'
 import { Suspense, lazy } from 'react'
 
@@ -20,6 +21,8 @@ const Login = lazy(() => import('@/admin/pages/Login').then(m => ({ default: m.L
 const Tournaments = lazy(() => import('@/admin/pages/Tournaments').then(m => ({ default: m.Tournaments })))
 const TournamentEdit = lazy(() => import('@/admin/pages/TournamentEdit').then(m => ({ default: m.TournamentEdit })))
 const Marketing = lazy(() => import('@/admin/pages/Marketing').then(m => ({ default: m.Marketing })))
+const Cities = lazy(() => import('@/admin/pages/Cities').then(m => ({ default: m.Cities })))
+const Requests = lazy(() => import('@/admin/pages/Requests').then(m => ({ default: m.Requests })))
 const fallback = <div className="p-10 text-dim">Φόρτωση…</div>
 
 export default function App() {
@@ -30,6 +33,8 @@ export default function App() {
         <Route index element={<Tournaments />} />
         <Route path="tournaments/:id" element={<TournamentEdit />} />
         <Route path="ticker" element={<Marketing />} />
+        <Route path="cities" element={<Cities />} />
+        <Route path="requests" element={<Requests />} />
       </Route>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
@@ -42,6 +47,7 @@ export default function App() {
         <Route path="archive" element={<Archive />} />
         <Route path="cities/:id" element={<City />} />
         <Route path="register" element={<Register />} />
+        <Route path="join/:code" element={<Join />} />
         <Route path="contact" element={<Contact />} />
         <Route path="kanonismoi" element={<Rules />} />
         <Route path="about" element={<About />} />

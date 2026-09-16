@@ -3,10 +3,15 @@ import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, TextArea, TextInput } from '@/components/ui/Form'
+import { submitContact } from '@/lib/publicApi'
 
 export function Contact() {
   const [sent, setSent] = useState(false)
-  const submit = (e: FormEvent) => { e.preventDefault(); setSent(true) }
+  const [err, setErr] = useState<string | null>(null)
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); const f = new FormData(e.currentTarget as HTMLFormElement)
+    try { await submitContact('contact', { name: String(f.get('name')), email: String(f.get('email')), subject: String(f.get('subject')), message: String(f.get('message')) }); setSent(true) } catch (x) { setErr((x as Error).message) }
+  }
   return (
     <>
       <Crumb items={[{ label: 'Επικοινωνία' }]} />
@@ -24,11 +29,12 @@ export function Contact() {
         <form onSubmit={submit} className="card grid gap-4 rounded-band p-6 md:grid-cols-2 md:p-8">
           {sent ? <div className="rounded-[10px] bg-ok/15 p-5 text-[14px] md:col-span-2">Στάλθηκε. Απαντάμε συνήθως μέσα σε μία εργάσιμη.</div> : (
             <>
-              <Field label="Όνομα"><TextInput required /></Field>
-              <Field label="Email"><TextInput type="email" required /></Field>
-              <Field label="Θέμα" className="md:col-span-2"><SelectInput><option>Ερώτηση για διοργάνωση</option><option>Χορηγία / συνεργασία</option><option>Ενοικίαση / διοργάνωση εκδήλωσης</option><option>Πρόταση πόλης</option><option>Τύπος</option><option>Άλλο</option></SelectInput></Field>
-              <Field label="Μήνυμα" className="md:col-span-2"><TextArea rows={6} required /></Field>
-              <div className="md:col-span-2"><Button variant="orange">Αποστολή</Button></div>
+              <Field label="Όνομα"><TextInput name="name" required /></Field>
+              <Field label="Email"><TextInput name="email" type="email" required /></Field>
+              <Field label="Θέμα" className="md:col-span-2"><SelectInput name="subject"><option>Ερώτηση για διοργάνωση</option><option>Χορηγία / συνεργασία</option><option>Ενοικίαση / διοργάνωση εκδήλωσης</option><option>Πρόταση πόλης</option><option>Τύπος</option><option>Άλλο</option></SelectInput></Field>
+              <Field label="Μήνυμα" className="md:col-span-2"><TextArea name="message" rows={6} required /></Field>
+              {err && <div className="rounded-[10px] border border-red/60 bg-red/10 px-4 py-3 text-[13px] md:col-span-2">{err}</div>}
+              <div className="md:col-span-2"><Button type="submit" variant="orange">Αποστολή</Button></div>
             </>
           )}
         </form>

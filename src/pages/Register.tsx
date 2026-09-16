@@ -7,6 +7,7 @@ import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, Steps, TextInput } from '@/components/ui/Form'
 import { cn } from '@/lib/cn'
+import { registerTeam } from '@/lib/publicApi'
 
 const STEPS = ['Διοργάνωση', 'Ομάδα & αρχηγός', 'Συμπαίκτες']
 const MINOR = ['u11', 'u13', 'u15', 'u18']
@@ -21,12 +22,21 @@ export function Register() {
   const [team, setTeam] = useState({ name: '', city: '' })
   const [cap, setCap] = useState({ first: '', last: '', email: '', phone: '', birth: '', guardian: '', consent: false })
   const [mates, setMates] = useState(['', '', ''])
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState<{ code: string; status: string } | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const tour = tournaments.find(t => t.id === tid)
   const cats = useMemo(() => tour ? categories.filter(c => tour.categoryIds.includes(c.id)) : [], [tour, categories])
   const minor = cid ? MINOR.includes(categoryById(cid).key) : false
-  const code = useMemo(() => Math.random().toString(36).slice(2, 8).toUpperCase(), [])
-  const submit = (e: FormEvent) => { e.preventDefault(); setDone(true) }
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); if (!tour || !cid) return
+    setBusy(true); setErr(null)
+    try {
+      const r = await registerTeam({ tournamentId: tour.id, categoryId: cid, teamName: team.name, city: team.city, first: cap.first, last: cap.last, email: cap.email, phone: cap.phone, birthYear: cap.birth ? +cap.birth : undefined, guardian: minor ? cap.guardian : undefined, mates })
+      setDone({ code: r.invite_code, status: r.status })
+    } catch (x) { setErr((x as Error).message) }
+    setBusy(false)
+  }
 
   return (
     <>
@@ -37,14 +47,15 @@ export function Register() {
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <form onSubmit={submit} className="card rounded-band p-6 md:p-8">
             <Steps steps={STEPS} current={done ? 3 : step} />
+            {err && <div className="mb-4 rounded-[10px] border border-red/60 bg-red/10 px-4 py-3 text-[13px]">{err}</div>}
             {done ? (
               <div>
-                <div className="disp text-[44px] text-ok">Η δήλωση καταχωρήθηκε</div>
-                <p className="mt-3 text-[15px] text-dim">Η ομάδα <b className="text-white">{team.name}</b> μπήκε ως «Εκκρεμεί» στην κατηγορία {cid && categoryById(cid).name}. Θα λάβεις email επιβεβαίωσης όταν εγκριθεί από τη διοργάνωση.</p>
+                <div className="disp text-[44px] text-ok">{done.status === 'waitlist' ? 'Μπήκες στη λίστα αναμονής' : 'Η δήλωση καταχωρήθηκε'}</div>
+                <p className="mt-3 text-[15px] text-dim">Η ομάδα <b className="text-white">{team.name}</b> {done.status === 'waitlist' ? 'μπήκε στη λίστα αναμονής της κατηγορίας' : 'μπήκε ως «Εκκρεμεί» στην κατηγορία'} {cid && categoryById(cid).name}. Θα λάβεις email επιβεβαίωσης όταν εγκριθεί από τη διοργάνωση.</p>
                 <div className="mt-6 rounded-[14px] border border-orange/60 bg-orange/10 p-5">
                   <div className="kicker mb-2">Σύνδεσμος πρόσκλησης συμπαικτών</div>
-                  <div className="mono break-all text-[15px] font-bold">gnc3on3.gr/join/{code}</div>
-                  <div className="mt-3 flex gap-2"><Button variant="orange">Αντιγραφή</Button><Button variant="ghost">Αποστολή με Viber / WhatsApp</Button></div>
+                  <div className="mono break-all text-[15px] font-bold">{window.location.origin}/join/{done.code}</div>
+                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="orange" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/join/${done.code}`)}>Αντιγραφή</Button><Button variant="ghost" href={`https://wa.me/?text=${encodeURIComponent(`Μπες στην ομάδα ${team.name} για το ${tour?.name}: ${window.location.origin}/join/${done.code}`)}`}>WhatsApp</Button><Button variant="ghost" href={`viber://forward?text=${encodeURIComponent(`${window.location.origin}/join/${done.code}`)}`}>Viber</Button></div>
                 </div>
               </div>
             ) : step === 0 ? (
@@ -85,7 +96,7 @@ export function Register() {
                 <p className="text-[14px] text-dim">Βάλε τα email ή τα κινητά 2–3 συμπαικτών. Θα λάβουν σύνδεσμο για να συμπληρώσουν τα στοιχεία τους — ή στείλ' τον εσύ μετά την καταχώρηση.</p>
                 {mates.map((m, i) => <Field key={i} label={`Συμπαίκτης ${i + 1}${i === 2 ? ' (προαιρετικός 4ος)' : ''}`}><TextInput value={m} onChange={e => setMates(mates.map((x, j) => j === i ? e.target.value : x))} placeholder="email ή κινητό" /></Field>)}
                 <label className="flex items-start gap-3 text-[13px] text-dim"><input type="checkbox" required className="mt-1" />Αποδέχομαι τον <Link className="text-white underline" to="/kanonismoi">κανονισμό</Link> και τους <Link className="text-white underline" to="/oroi">όρους συμμετοχής</Link> της διοργάνωσης (4 παίκτες, μισό γήπεδο, 10΄ ή πρώτος στους 21).</label>
-                <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button variant="orange">Καταχώρηση δήλωσης</Button></div>
+                <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button type="submit" variant="orange" className={cn(busy && 'opacity-50')}>{busy ? 'Καταχώρηση…' : 'Καταχώρηση δήλωσης'}</Button></div>
               </div>
             )}
           </form>

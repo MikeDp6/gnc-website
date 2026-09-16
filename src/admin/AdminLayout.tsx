@@ -27,6 +27,8 @@ export function AdminLayout() {
         <Logo className="mb-4" height={48} />
         <div className="kicker mb-1 px-3">Διαχείριση</div>
         {link('/admin', 'Διοργανώσεις', true)}
+        {link('/admin/requests', 'Αιτήματα')}
+        {link('/admin/cities', 'Πόλεις')}
         {link('/admin/ticker', 'Ticker & χορηγοί')}
         <div className="mt-auto px-3 pt-6 text-[12px] text-mute">
           <div className="truncate">{session.user.email}</div>

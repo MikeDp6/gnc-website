@@ -4,12 +4,17 @@ import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, TextArea, TextInput } from '@/components/ui/Form'
+import { submitContact } from '@/lib/publicApi'
 
 export function Rentals() {
   const { rentals } = useData()
   const [sent, setSent] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
   const [item, setItem] = useState('')
-  const submit = (e: FormEvent) => { e.preventDefault(); setSent(true) }   // wired to the backend (quote_requests) in the next step
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); const f = new FormData(e.currentTarget as HTMLFormElement)
+    try { await submitContact('quote', { name: String(f.get('name')), email: String(f.get('email')), phone: String(f.get('phone')), org: String(f.get('org')), item, eventDate: String(f.get('date')), message: String(f.get('message')) }); setSent(true) } catch (x) { setErr((x as Error).message) }
+  }
   return (
     <>
       <Crumb items={[{ label: 'Ενοικιάσεις & διοργάνωση' }]} />
@@ -41,14 +46,15 @@ export function Rentals() {
             <div className="md:col-span-2"><div className="disp text-[36px]">Ζήτησε <span className="text-orange">προσφορά</span></div></div>
             {sent ? <div className="rounded-[10px] bg-ok/15 p-5 text-[14px] md:col-span-2">Ευχαριστούμε — θα επικοινωνήσουμε μέσα σε 2 εργάσιμες.</div> : (
               <>
-                <Field label="Όνομα"><TextInput required /></Field>
-                <Field label="Φορέας / εταιρεία"><TextInput /></Field>
-                <Field label="Email"><TextInput type="email" required /></Field>
-                <Field label="Τηλέφωνο"><TextInput type="tel" /></Field>
+                <Field label="Όνομα"><TextInput name="name" required /></Field>
+                <Field label="Φορέας / εταιρεία"><TextInput name="org" /></Field>
+                <Field label="Email"><TextInput name="email" type="email" required /></Field>
+                <Field label="Τηλέφωνο"><TextInput name="phone" type="tel" /></Field>
                 <Field label="Τι σε ενδιαφέρει"><SelectInput value={item} onChange={e => setItem(e.target.value)}><option value="">—</option>{rentals.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}</SelectInput></Field>
-                <Field label="Ημερομηνία (κατά προσέγγιση)"><TextInput type="date" /></Field>
-                <Field label="Λίγα λόγια" className="md:col-span-2"><TextArea rows={4} placeholder="Πόλη, χώρος, αριθμός συμμετεχόντων, τι περιμένεις από εμάς." /></Field>
-                <div className="md:col-span-2"><Button variant="orange">Αποστολή</Button></div>
+                <Field label="Ημερομηνία (κατά προσέγγιση)"><TextInput name="date" type="date" /></Field>
+                <Field label="Λίγα λόγια" className="md:col-span-2"><TextArea name="message" rows={4} placeholder="Πόλη, χώρος, αριθμός συμμετεχόντων, τι περιμένεις από εμάς." /></Field>
+                {err && <div className="rounded-[10px] border border-red/60 bg-red/10 px-4 py-3 text-[13px] md:col-span-2">{err}</div>}
+                <div className="md:col-span-2"><Button type="submit" variant="orange">Αποστολή</Button></div>
               </>
             )}
           </form>
