@@ -7,7 +7,6 @@ import { Scheduler } from './Scheduler'
 
 const TABS = ['Στοιχεία', 'Κατηγορίες', 'Ομάδες', 'Αγώνες & σκορ', 'Πρόγραμμα']
 const STATUS = [['draft', 'Πρόχειρο'], ['registration', 'Δηλώσεις ανοιχτές'], ['upcoming', 'Επερχόμενο'], ['live', 'Σε εξέλιξη'], ['done', 'Ολοκληρώθηκε'], ['archived', 'Αρχείο']]
-const FORMATS = [['rr3', 'Όμιλοι των 3 (όλοι με όλους)'], ['x4', 'Όμιλοι των 4, σταυρωτά'], ['rr4', 'Όμιλοι των 4 (όλοι με όλους)'], ['fast5', 'Όμιλοι των 5, γρήγορο'], ['rr5', 'Όμιλοι των 5 (όλοι με όλους)']]
 
 export function TournamentEdit() {
   const { id = '' } = useParams()
@@ -102,16 +101,16 @@ function Categories({ tid, say }: { tid: string; say: (m: string) => void }) {
   return (
     <div className="card overflow-hidden">
       <table className="w-full text-[14px]">
-        <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-4 py-3">Κατηγορία</th><th className="px-4 py-3">Στη διοργάνωση</th><th className="px-4 py-3">Format ομίλων</th><th className="px-4 py-3">Νοκ-άουτ (ομάδες)</th><th className="px-4 py-3">Μέγ. ομάδες</th></tr></thead>
+        <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-4 py-3">Κατηγορία</th><th className="px-4 py-3">Στη διοργάνωση</th><th className="px-4 py-3">Νοκ-άουτ (προεπιλογή)</th><th className="px-4 py-3">Μέγ. ομάδες</th></tr></thead>
         <tbody>{all.map(c => { const m = has(c.id); return (
           <tr key={c.id} className="border-t border-line">
             <td className="px-4 py-3 font-semibold">{c.label}</td>
             <td className="px-4 py-3"><input type="checkbox" checked={!!m} onChange={() => toggle(c.id)} className="h-4 w-4" /></td>
-            <td className="px-4 py-3"><Select disabled={!m} value={m?.format ?? 'rr4'} onChange={e => patch(c.id, { format: e.target.value })}>{FORMATS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></td>
             <td className="px-4 py-3"><Select disabled={!m} value={m?.qualifiers ?? ''} onChange={e => patch(c.id, { qualifiers: e.target.value ? +e.target.value : null })}><option value="">Χωρίς νοκ-άουτ</option>{[2, 4, 8, 16].map(n => <option key={n} value={n}>{n}</option>)}</Select></td>
             <td className="px-4 py-3"><Input disabled={!m} type="number" min={2} value={m?.max_teams ?? ''} onChange={e => patch(c.id, { max_teams: e.target.value ? +e.target.value : null })} placeholder="—" /></td>
           </tr>) })}</tbody>
       </table>
+      <div className="px-4 py-3 text-[12px] text-mute">Ο χωρισμός σε ομίλους και το format (όλοι με όλους / σταυρωτό) ορίζονται στο «Πρόγραμμα → Όμιλοι», ανάλογα με τις ομάδες που δηλώθηκαν.</div>
     </div>
   )
 }
