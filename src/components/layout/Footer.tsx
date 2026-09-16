@@ -36,8 +36,12 @@ export function Footer({ newsletter = true }: { newsletter?: boolean }) {
         </div>
         {col(t.nav.tournaments, ['Επόμενες', 'Πρόγραμμα', 'Αποτελέσματα', 'Αρχείο'])}
         {col(t.nav.teams, ['Δήλωση συμμετοχής', 'Κανονισμός', 'Κατηγορίες', 'Συχνές ερωτήσεις'])}
-        {col('GNC', ['Η ομάδα', 'Χορηγοί', 'Επικοινωνία', 'Τύπος'])}
-        {col(t.misc.follow, ['Instagram', 'Facebook', 'TikTok', 'YouTube'])}
+        {col('GNC', ['Ποιοι είμαστε', 'Κανονισμοί', 'Γίνε εθελοντής', 'Επικοινωνία'])}
+        <div>
+          <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{t.misc.follow}</b>
+          {[['Instagram', 'https://instagram.com/gnc_3on3'], ['Facebook', 'https://www.facebook.com/GNC-3on3-101368258807208'], ['TikTok', 'https://www.tiktok.com/@gnc_3on3'], ['YouTube', 'https://www.youtube.com/channel/UCdchPP-K0RjIQG9G68nd4hw']].map(([n, u]) => <a key={n} href={u} target="_blank" rel="noreferrer" className="mb-[9px] block hover:text-white">{n}</a>)}
+          <a href="mailto:gnc3on3@gmail.com" className="mt-2 block text-white">gnc3on3@gmail.com</a>
+        </div>
       </div>
       <div className="mt-14 flex justify-between border-t border-line pt-[22px] text-[12px] text-mute">
         <span>© {new Date().getFullYear()} GNC 3on3 · {t.footer.terms} · {t.footer.privacy}</span>

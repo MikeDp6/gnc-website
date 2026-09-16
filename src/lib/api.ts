@@ -1,6 +1,6 @@
 // API layer: Supabase → frontend Bundle. Every query uses the anon key and goes through RLS (public read only).
 import type { ArchiveItem, Bundle, Category, CategoryKey, Group, Match, Player, Stop, Team, TickerItem, Tournament } from '@/data/types'
-import { news as mockNews, rentals as mockRentals } from '@/data/mock'
+import { news as mockNews, rentals as mockRentals, cities as mockCities, season2026, sponsorList } from '@/data/mock'
 import { supabase } from './supabase'
 
 const MONTHS = ['ΙΑΝ', 'ΦΕΒ', 'ΜΑΡ', 'ΑΠΡ', 'ΜΑΪ', 'ΙΟΥΝ', 'ΙΟΥΛ', 'ΑΥΓ', 'ΣΕΠ', 'ΟΚΤ', 'ΝΟΕ', 'ΔΕΚ']
@@ -132,7 +132,9 @@ export async function fetchBundle(): Promise<Bundle> {
 
   // news & rentals: content tables come with the CMS step; until then the mock content is shown
   return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news: mockNews, rentals: mockRentals,
-    cities: cities.filter(c => c.lat != null && c.lng != null).map(c => ({ id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng! })) }
+    // city media (photos, videos, years) lives in the mock until the CMS step; coordinates/names come from the DB
+    cities: cities.filter(c => c.lat != null && c.lng != null).map(c => { const m = mockCities.find(x => x.id === c.id); return { id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng!, image: m?.image, years: m?.years, videos: m?.videos } }),
+    season: season2026, sponsorList }
 }
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */

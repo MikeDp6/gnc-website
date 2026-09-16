@@ -14,7 +14,7 @@ export function Contact() {
         <div>
           <Heading a="Επικοι-" b="νωνία" />
           <div className="mt-8 space-y-5 text-[15px]">
-            {[['Email', 'info@gnc3on3.gr'], ['Τηλέφωνο', '+30 210 000 0000'], ['Έδρα', 'Αθήνα'], ['Ώρες', 'Δευ–Παρ 10:00–18:00 · τις μέρες τουρνουά στο γήπεδο']].map(([k, v]) => (
+            {[['Email', 'gnc3on3@gmail.com'], ['Έδρα', 'Πάτρα · Αθήνα'], ['Ώρες', 'Δευ–Παρ 10:00–18:00 · τις μέρες τουρνουά στο γήπεδο']].map(([k, v]) => (
               <div key={k} className="border-t border-line pt-4"><div className="kicker mb-1">{k}</div><div className="font-semibold">{v}</div></div>
             ))}
             <div className="border-t border-line pt-4"><div className="kicker mb-2">Social</div><div className="flex gap-4 font-semibold">{['Instagram', 'Facebook', 'TikTok', 'YouTube'].map(s => <span key={s} className="hover:text-orange">{s}</span>)}</div></div>

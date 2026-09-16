@@ -13,7 +13,7 @@ import type { Match } from '@/data/types'
 
 export function Home() {
   const { t } = useI18n()
-  const { categoryById, matches, sponsors, stops, tournaments, teamById, news, rentals, cities } = useData()
+  const { categoryById, matches, sponsorList, stops, tournaments, teamById, news, rentals, cities } = useData()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
   if (!next) return null
@@ -104,7 +104,7 @@ export function Home() {
       <section className="wrap pt-[110px]">
         <Heading a={t.sections.schedule1} b={t.sections.schedule2} className="mb-[34px]" />
         <Reveal className="card relative overflow-hidden rounded-band">
-          <div className="kicker absolute left-[26px] top-[26px] z-10">{cities.length} πόλεις · 2018–2026 · κλικ σε πόλη για τις διοργανώσεις της</div>
+          <div className="kicker absolute left-[26px] top-[26px] z-10">{cities.length} πόλεις · #NEXTSTOPYOURCITY · κλικ σε πόλη</div>
           <div className="h-[560px] p-3 md:h-[900px] md:p-6 lg:pr-[440px]">
             <GreeceMap className="h-full w-full" nextCityId={next.cityId} />
           </div>
@@ -139,10 +139,7 @@ export function Home() {
         <div className="snap-row wrap pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {news.map(a => (
             <Link to={`/news/${a.slug}`} key={a.id} className="card pop w-[300px] overflow-hidden rounded-[18px] lg:w-auto">
-              <div className={cn('h-[190px] bg-cover bg-[center_70%]',
-                a.tint === 'orange' && '[filter:sepia(1)_saturate(2.2)_hue-rotate(-10deg)]', a.tint === 'blue' && '[filter:saturate(1.6)] bg-[20%_80%]',
-                a.tint === 'mono' && '[filter:grayscale(1)_contrast(1.15)] bg-[80%_60%]', a.tint === 'teal' && '[filter:sepia(1)_saturate(1.4)_hue-rotate(160deg)] bg-[40%_90%]')}
-                style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
+              <div className="h-[220px] bg-cover bg-[center_30%]" style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
               <div className="px-[18px] pb-5 pt-4">
                 <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
                 <div className="disp text-[32px]">{a.title}</div>
@@ -160,9 +157,9 @@ export function Home() {
           <Link to="/rentals" className="text-[14px] font-bold uppercase tracking-[.08em] text-orange">{t.sections.viewShop} →</Link>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {rentals.map(r => (
+          {rentals.slice(0, 4).map(r => (
             <div key={r.id} className="card pop flex flex-col overflow-hidden rounded-[18px]">
-              <div className="flex h-[170px] items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>
+              {r.image ? <div className="h-[170px] bg-cover bg-center" style={{ backgroundImage: `url(${r.image})` }} /> : <div className="flex h-[170px] items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>}
               <div className="flex flex-1 flex-col px-[18px] pb-5 pt-4">
                 <div className="disp text-[30px]">{r.name}</div>
                 <div className="mt-2 flex-1 text-[13px] text-dim">{r.blurb}</div>
@@ -177,7 +174,7 @@ export function Home() {
       <section className="pt-[110px]">
         <div className="wrap kicker mb-[22px]">{t.sections.sponsors}</div>
         <Marquee duration={30} className="border-y border-line py-[26px]">
-          {sponsors.map(s => <span key={s} className="disp whitespace-nowrap text-[34px] font-bold tracking-[.04em] text-[#6b6f73]">{s}</span>)}
+          {sponsorList.map(s => <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="disp whitespace-nowrap text-[34px] font-bold tracking-[.04em] text-[#6b6f73] hover:text-white">{s.logo ? <img src={s.logo} alt={s.name} className="h-[44px] w-auto opacity-70 hover:opacity-100" /> : s.name}</a>)}
         </Marquee>
       </section>
     </>

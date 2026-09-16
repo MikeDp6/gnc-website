@@ -117,9 +117,15 @@ export interface Bundle {
   news: NewsItem[]
   rentals: RentalItem[]
   cities: City[]
+  season: SeasonEvent[]
+  sponsorList: Sponsor[]
 }
 
-export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number }
+export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }
+export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[] }
+/** One row of the yearly calendar (from gnc3on3.gr/calendar) — lighter than a full Tournament */
+export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string }
+export interface Sponsor { name: string; url?: string; logo?: string }
 
-export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string }
+export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }

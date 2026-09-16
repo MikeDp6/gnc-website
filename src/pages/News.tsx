@@ -17,7 +17,7 @@ export function NewsList() {
         <Heading a="Latest" b="news" className="mb-[34px]" />
         {first && (
           <Link to={`/news/${first.slug}`} className="card pop mb-6 grid overflow-hidden rounded-band md:grid-cols-[1.3fr_1fr]">
-            <div className={cn('h-[260px] bg-cover bg-[center_70%] md:h-[420px]', tintCls(first.tint))} style={{ backgroundImage: `url(${first.image ?? '/img/hero-dark.jpg'})` }} />
+            <div className={cn('h-[260px] bg-cover bg-[center_30%] md:h-[420px]', !first.image && tintCls(first.tint))} style={{ backgroundImage: `url(${first.image ?? '/img/hero-dark.jpg'})` }} />
             <div className="flex flex-col justify-center p-8 md:p-12">
               <div className="mb-3 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{first.tag}</b><span>{first.date}</span></div>
               <div className="disp text-[48px] md:text-[64px]">{first.title}</div>
@@ -29,7 +29,7 @@ export function NewsList() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {rest.map(a => (
             <Link to={`/news/${a.slug}`} key={a.id} className="card pop overflow-hidden rounded-[18px]">
-              <div className={cn('h-[190px] bg-cover bg-[center_70%]', tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
+              <div className={cn('h-[220px] bg-cover bg-[center_30%]', !a.image && tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
               <div className="px-[18px] pb-5 pt-4">
                 <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
                 <div className="disp text-[32px]">{a.title}</div>
@@ -53,15 +53,13 @@ export function NewsArticle() {
     <>
       <Crumb items={[{ label: 'News', to: '/news' }, { label: a.title }]} />
       <section className="wrap pt-6">
-        <div className={cn('h-[300px] overflow-hidden rounded-band bg-cover bg-[center_60%] md:h-[460px]', tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
+        <div className={cn('h-[300px] overflow-hidden rounded-band bg-cover bg-[center_30%] md:h-[560px]', !a.image && tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
         <div className="mx-auto max-w-[760px] py-12">
           <div className="mb-4 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
           <h1 className="disp text-[48px] md:text-[80px]">{a.title}</h1>
           <p className="mt-6 text-[19px] leading-relaxed text-[#d9d8d3]">{a.excerpt}</p>
-          <div className="mt-6 space-y-4 text-[16px] leading-relaxed text-dim">
-            <p>Το πλήρες κείμενο του άρθρου μπαίνει από το admin panel (CMS). Υποστηρίζει παραγράφους, φωτογραφίες, λίστες και συνδέσμους προς πρόγραμμα, ομάδες και αποτελέσματα.</p>
-            <p>Κάθε άρθρο έχει ελληνική και αγγλική εκδοχή, ημερομηνία, ετικέτα (Πρόγραμμα, Δηλώσεις, Αποτελέσματα, Νέο) και προαιρετική σύνδεση με διοργάνωση, ώστε να εμφανίζεται και στη σελίδα της.</p>
-          </div>
+          {a.source && <a href={a.source} target="_blank" rel="noreferrer" className="mt-6 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">Διάβασε ολόκληρο το άρθρο στο gnc3on3.gr ↗</a>}
+          <p className="mt-6 text-[13px] text-mute">Το πλήρες κείμενο θα μεταφερθεί εδώ με το CMS του admin panel.</p>
           <div className="mt-10 flex gap-3 border-t border-line pt-6 text-[13px] font-bold uppercase tracking-[.08em] text-dim"><span>Κοινοποίηση:</span><span className="text-white">Facebook</span><span className="text-white">Instagram</span><span className="text-white">Αντιγραφή συνδέσμου</span></div>
         </div>
         {more.length > 0 && (

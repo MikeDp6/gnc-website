@@ -1,6 +1,6 @@
 // Mock data for development — Pefki 2026 registrations (real team names) + invented results.
 // Replaced by the API layer (src/lib/api.ts) once the backend is wired.
-import type { ArchiveItem, Bundle, Category, City, Group, Match, NewsItem, Player, RentalItem, Stop, Team, TickerItem, Tournament } from './types'
+import type { ArchiveItem, Bundle, Category, City, Group, Match, NewsItem, Player, RentalItem, SeasonEvent, Sponsor, Stop, Team, TickerItem, Tournament } from './types'
 
 export const categories: Category[] = [
   { id: 'u11_mixed', key: 'u11', name: 'U11 MIXED', short: 'U11' },
@@ -40,7 +40,7 @@ export const tournaments: Tournament[] = [
     venue: 'Δημοτικό Γήπεδο Πεύκης', address: 'Ελ. Βενιζέλου 12, Πεύκη',
     dates: '19–20 Σεπτεμβρίου 2026', startsAt: '2026-09-19T17:00:00+03:00',
     days: ['Σάββατο 19/9', 'Κυριακή 20/9'], courts: 2, status: 'upcoming', teamsCount: 52,
-    categoryIds: categories.map(c => c.id), cover: '/img/hero-dark.jpg',
+    categoryIds: categories.map(c => c.id), cover: '/img/gnc/gnc-pefki-3x3-1-scaled.jpg',
   },
 ]
 
@@ -130,48 +130,104 @@ export const tickerItems: TickerItem[] = [
   { tag: 'ΑΡΧΕΙΟ', text: 'ΠΑΛΛΗΝΗ 2026 · ΝΙΚΗΤΕΣ ΑΝΑ ΚΑΤΗΓΟΡΙΑ', tone: 'blue' },
 ]
 
-export const sponsors = ['Χορηγός 1', 'Χορηγός 2', 'Δήμος Λυκόβρυσης–Πεύκης', 'Χορηγός 3', 'Χορηγός 4', 'Media partner', 'Χορηγός 5']
+export const sponsors = ['LOUX', 'Σκέντζος', 'Kerasidis Group', 'Affidea', 'Wilson', 'My Way Hotel', 'Crossover', 'Vlastaras', 'SBIE', 'Yayaz', 'Theocar', 'Stegno', 'Account Saints']
 
+// Latest articles from gnc3on3.gr (images downloaded by scripts/fetch-assets.ps1)
 export const news: NewsItem[] = [
-  { id: 'n1', slug: 'pefki-programma', tag: 'Πρόγραμμα', date: '16 Σεπ 2026', title: 'Αναρτήθηκε το πρόγραμμα της Πεύκης', excerpt: '52 ομάδες, 8 κατηγορίες, δύο γήπεδα. Δες πότε παίζει η ομάδα σου.', tint: 'orange' },
-  { id: 'n2', slug: 'pallini-diloseis', tag: 'Δηλώσεις', date: '12 Σεπ 2026', title: 'Άνοιξαν οι δηλώσεις για την Παλλήνη', excerpt: 'Φθινοπωρινό τουρνουά 10–11 Οκτωβρίου στο Κλειστό Παλλήνης, 7 κατηγορίες.', tint: 'blue' },
-  { id: 'n3', slug: 'app', tag: 'Νέο', date: '8 Σεπ 2026', title: 'Το app της GNC στο App Store και Google Play', excerpt: 'Πρόγραμμα, ειδοποιήσεις 15΄ πριν τον αγώνα σου, QR check-in.', tint: 'mono' },
-  { id: 'n4', slug: 'pallini-2026-nikites', tag: 'Αποτελέσματα', date: '15 Ιουν 2026', title: 'Παλλήνη 2026: οι νικητές', excerpt: 'GOONLANDERS στους 18+, PINK ROSES στους 40+, ΘΥΜΙΟΛΑΣ στο U18, COURT KINGS στο U15.', tint: 'teal' },
+  { id: 'n1', slug: 'apotheosi-tou-basket-sto-my-way-gnc-3on3-tis-patras-mia-mega', tag: 'Αποτελέσματα', date: '7 Σεπ 2026', title: 'Αποθέωση του μπάσκετ στο MY WAY GNC 3on3 της Πάτρας – Μια μεγάλη γιορτή αθλητισμού με ρυθμό και θέαμα προς τιμήν του Κώστα Πετρόπουλου!', excerpt: 'Το MY WAY GNC 3on3 στην Πάτρα (4-6 Σεπτεμβρίου) εξελίχθηκε σε κορυφαίο γεγονός streetball με περισσότερες από 180 ομάδες και συναυλία των Alcatrash. Η διοργάνωση, αφιερωμένη στη μνήμη του Κώστα Πετρόπουλου, χαρακτηρίστηκε «πραγματική γιορτή του αθλητισμού» με εκατοντάδες συμμετέχοντες.', tint: 'orange', image: '/img/gnc/gnc-patra-1-scaled.jpg', source: 'https://gnc3on3.gr/apotheosi-tou-basket-sto-my-way-gnc-3on3-tis-patras-mia-megali-giorti-athlitismou-me-rythmo-kai-theama-pros-timin-tou-kosta-petropoulou/' },
+  { id: 'n2', slug: 'me-apolyti-epitychia-oloklirothike-to-gnc-3on3-vonitsa-2026-', tag: 'Αποτελέσματα', date: '30 Αυγ 2026', title: 'Με απόλυτη επιτυχία ολοκληρώθηκε το GNC 3on3 | ΒΟΝΙΤΣΑ 2026: Μια αξέχαστη καλοκαιρινή γιορτή του μπάσκετ!', excerpt: 'Το GNC 3on3 ΒΟΝΙΤΣΑ 2026 πραγματοποιήθηκε στις 20 και 21 Αυγούστου, μετατρέποντας την παραλία σε καλοκαιρινό αθλητικό ραντεβού με εκατοντάδες αθλητές όλων των ηλικιών και δωρεάν συμμετοχή για όλες τις ομάδες. Η εκδήλωση στέφθηκε με απόλυτη οργανωτική και αγωνιστική επιτυχία χάρη στη συμβολή της Περιφέρειας Δυτικής Ελλάδας, του Δήμου Ακτίου-Βόνιτσας και του Αθλητικού Ομίλου Βόνιτσας.', tint: 'blue', image: '/img/gnc/gnc-vonitsa-apologistiko-scaled.jpg', source: 'https://gnc3on3.gr/me-apolyti-epitychia-oloklirothike-to-gnc-3on3-vonitsa-2026-mia-axechasti-kalokairini-giorti-tou-basket/' },
+  { id: 'n3', slug: 'megalo-tournoua-basket-3x3-me-dorean-symmetochi-ston-dimo-ly', tag: 'Δηλώσεις', date: '29 Αυγ 2026', title: 'Μεγάλο Τουρνουά Μπάσκετ 3×3 με Δωρεάν Συμμετοχή στον Δήμο Λυκόβρυσης – Πεύκης (19-20 Σεπτεμβρίου 2026)', excerpt: 'Ο Δήμος Λυκόβρυσης – Πεύκης διοργανώνει δωρεάν τουρνουά μπάσκετ 3x3 στις 19-20 Σεπτεμβρίου 2026 στο 1ο Γενικό Λύκειο Πεύκης, σε συνεργασία με την Περιφέρεια Αττικής και το GNC 3on3. Η διοργάνωση είναι ανοιχτή σε όλες τις ηλικίες και επίπεδα, με εγγραφή μέσω ηλεκτρονικής φόρμας.', tint: 'mono', image: '/img/gnc/gnc-pefki-3x3-1-scaled.jpg', source: 'https://gnc3on3.gr/megalo-tournoua-basket-3x3-me-dorean-symmetochi-ston-dimo-lykovrysis-pefkis-19-20-septemvriou-2026/' },
+  { id: 'n4', slug: 'basket-chamogela-mousiki-kai-lampsi-pagkosmiou-sto-gnc-3on3-', tag: 'Αποτελέσματα', date: '11 Αυγ 2026', title: 'Μπάσκετ, χαμόγελα, μουσική και λάμψη… παγκοσμίου στο GNC 3on3 της Σκάλας!', excerpt: 'Το GNC 3on3 της Σκάλας ολοκληρώθηκε με επιτυχία, με πολλές ομάδες και μια εντυπωσιακή ατμόσφαιρα γεμάτη μπάσκετ και μουσική. Τιμήθηκε ο 18χρονος Δημήτρης Πούλος από τη Σκάλα, πλέον αθλητής του Προμηθέα, για την κατάκτηση του παγκόσμιου σχολικού πρωταθλήματος τον Ιούνιο στη Σερβία.', tint: 'teal', image: '/img/gnc/gnc-3on3-skala-post-scaled.jpg', source: 'https://gnc3on3.gr/basket-chamogela-mousiki-kai-lampsi-pagkosmiou-sto-gnc-3on3-tis-skalas/' },
 ]
+// Rent equipment — as listed on gnc3on3.gr/enoikiaseis
 export const rentals: RentalItem[] = [
-  { id: 'r1', name: 'Φορητό γήπεδο 3on3', blurb: 'Δάπεδο, μπασκέτα, περίφραξη. Στήσιμο και αποξήλωση από την ομάδα μας.', price: 'Ζήτησε προσφορά' },
-  { id: 'r2', name: 'Πακέτο διοργάνωσης', blurb: 'Γήπεδα, γραμματεία, scoreboard, ηχητικά, εκφωνητής. Για δήμους και εταιρείες.', price: 'Ζήτησε προσφορά' },
-  { id: 'r3', name: 'Scoreboard & ηχητικά', blurb: 'Ηλεκτρονικός πίνακας, χρονόμετρο, ηχοσύστημα για εκδηλώσεις.', price: 'Ζήτησε προσφορά' },
-  { id: 'r4', name: 'Μπασκέτες & μπάλες', blurb: 'Φορητές μπασκέτες και μπάλες Νο6 για σχολεία, camps, γιορτές.', price: 'Ζήτησε προσφορά' },
+  { id: 'r1', name: 'Γήπεδο ENLIO SES Elite', blurb: 'Δάπεδο μπάσκετ 3×3 ENLIO — το επίσημο δάπεδο των Ολυμπιακών Αγώνων. FIBA approved courts, στήσιμο και αποξήλωση από την ομάδα μας.', price: 'Ζήτησε προσφορά', image: '/img/gnc/0071.jpg' },
+  { id: 'r2', name: 'Μπασκέτα Schelde SAM 3×3', blurb: 'Η μπασκέτα των Ολυμπιακών Αγώνων και των παγκόσμιων πρωταθλημάτων 3×3.', price: 'Ζήτησε προσφορά', image: '/img/gnc/SCHELDE-240x300.png' },
+  { id: 'r3', name: 'Μπασκέτα Artisport Black 17', blurb: 'Υδραυλικού τύπου, πιστοποιημένη FIBA approved για 3×3.', price: 'Ζήτησε προσφορά', image: '/img/gnc/black-17.jpg' },
+  { id: 'r4', name: 'Κινητή μπασκέτα ολυμπιακού τύπου', blurb: 'Για γήπεδα 5×5 και εκδηλώσεις σε ανοιχτούς χώρους.', price: 'Ζήτησε προσφορά', image: '/img/gnc/Εικόνα4.jpg' },
+  { id: 'r5', name: 'Video wall 12 m²', blurb: 'Waterproof οθόνη LED 4×3 μ. (pitch 3.8) για σκορ, replays και χορηγούς.', price: 'Ζήτησε προσφορά', image: '/img/gnc/ΟΘΟΝΗ-768x513.jpg' },
+  { id: 'r6', name: 'Διαφημιστικές πινακίδες LED 20 μ.', blurb: 'Περιμετρικές LED πινακίδες 20 μέτρων για χορηγούς γύρω από το γήπεδο.', price: 'Ζήτησε προσφορά', image: '/img/gnc/010-768x512.jpg' },
 ]
 
 export const cities: City[] = [
-  { id: 'thessaloniki', name: 'Θεσσαλονίκη', nameEn: 'Thessaloniki', lat: 40.6401, lng: 22.9444 },
-  { id: 'komotini', name: 'Κομοτηνή', nameEn: 'Komotini', lat: 41.1224, lng: 25.4056 },
-  { id: 'drama', name: 'Δράμα', nameEn: 'Drama', lat: 41.153, lng: 24.147 },
-  { id: 'veroia', name: 'Βέροια', nameEn: 'Veria', lat: 40.524, lng: 22.202 },
-  { id: 'larisa', name: 'Λάρισα', nameEn: 'Larissa', lat: 39.639, lng: 22.4191 },
-  { id: 'kalampaka', name: 'Καλαμπάκα', nameEn: 'Kalampaka', lat: 39.705, lng: 21.627 },
-  { id: 'karditsa', name: 'Καρδίτσα', nameEn: 'Karditsa', lat: 39.365, lng: 21.921 },
-  { id: 'igoumenitsa', name: 'Ηγουμενίτσα', nameEn: 'Igoumenitsa', lat: 39.507, lng: 20.266 },
-  { id: 'amfilochia', name: 'Αμφιλοχία', nameEn: 'Amfilochia', lat: 38.86, lng: 21.17 },
-  { id: 'agrinio', name: 'Αγρίνιο', nameEn: 'Agrinio', lat: 38.621, lng: 21.407 },
-  { id: 'patra', name: 'Πάτρα', nameEn: 'Patras', lat: 38.2466, lng: 21.7346 },
-  { id: 'aigio', name: 'Αίγιο', nameEn: 'Aigio', lat: 38.25, lng: 22.081 },
-  { id: 'xylokastro', name: 'Ξυλόκαστρο', nameEn: 'Xylokastro', lat: 38.078, lng: 22.63 },
-  { id: 'pyrgos', name: 'Πύργος', nameEn: 'Pyrgos', lat: 37.675, lng: 21.441 },
-  { id: 'amaliada', name: 'Αμαλιάδα', nameEn: 'Amaliada', lat: 37.8, lng: 21.35 },
-  { id: 'korinthos', name: 'Κόρινθος', nameEn: 'Corinth', lat: 37.939, lng: 22.932 },
-  { id: 'kalamata', name: 'Καλαμάτα', nameEn: 'Kalamata', lat: 37.0389, lng: 22.1142 },
-  { id: 'gytheio', name: 'Γύθειο', nameEn: 'Gytheio', lat: 36.759, lng: 22.566 },
+  { id: 'patra', name: 'Πάτρα', nameEn: 'Patras', lat: 38.2466, lng: 21.7346, image: '/img/gnc/gnc3on3_patra2-min.jpg', years: [2025, 2024, 2023], videos: [{"kind": "instagram", "id": "DFkIbCnMlLx"}, {"kind": "instagram", "id": "C_qkaYgMoeG"}, {"kind": "instagram", "id": "C_vsAbpMd7D"}, {"kind": "instagram", "id": "C_qu6cGsgw_"}, {"kind": "instagram", "id": "C_0SuqcugtB"}, {"kind": "instagram", "id": "C_n7em0MMYZ"}, {"kind": "youtube", "id": "vMBvhlDaIOE"}, {"kind": "instagram", "id": "CwsbKKnsWDq"}] },
+  { id: 'athina', name: 'Αθήνα', nameEn: 'Athens', lat: 37.9838, lng: 23.7275, image: '/img/gnc/IMG_6714.jpg' },
+  { id: 'agrinio', name: 'Αγρίνιο', nameEn: 'Agrinio', lat: 38.621, lng: 21.407, image: '/img/gnc/gnc3on3_agrinio-min.png', years: [2024, 2023], videos: [{"kind": "instagram", "id": "C7ZYWoMs629"}, {"kind": "instagram", "id": "C7YWW7_MgWr"}, {"kind": "instagram", "id": "C7eyDURMUCC"}, {"kind": "youtube", "id": "98WRdRds2Bg"}, {"kind": "instagram", "id": "CtmlgBPMEHE"}] },
+  { id: 'kavala', name: 'Καβάλα', nameEn: 'Kavala', lat: 40.9397, lng: 24.4019, image: '/img/gnc/gnc3on3_kavala-min.jpg' },
+  { id: 'alexandroupoli', name: 'Αλεξανδρούπολη', nameEn: 'Alexandroupoli', lat: 40.8457, lng: 25.874 },
+  { id: 'igoumenitsa', name: 'Ηγουμενίτσα', nameEn: 'Igoumenitsa', lat: 39.507, lng: 20.266, years: [2024], videos: [{"kind": "instagram", "id": "C70yjQgMaIc"}] },
+  { id: 'metamorfosi', name: 'Μεταμόρφωση', nameEn: 'Metamorfosi', lat: 38.065, lng: 23.76 },
+  { id: 'irakleio', name: 'Ηράκλειο', nameEn: 'Heraklion', lat: 35.3387, lng: 25.1442, image: '/img/gnc/gnc3on3_irakleio-min.jpg', years: [2024, 2023], videos: [{"kind": "instagram", "id": "C7y-wW0sZ_U"}, {"kind": "instagram", "id": "C79mhZ_MDJ7"}, {"kind": "instagram", "id": "C7_leMZMxIR"}, {"kind": "instagram", "id": "C8ACH-hMAHZ"}, {"kind": "instagram", "id": "C8AYy3hMu7b"}, {"kind": "instagram", "id": "C8Ahp1dNl0F"}, {"kind": "instagram", "id": "C8CpzJeMJKE"}, {"kind": "instagram", "id": "C7-BZbmM1a2"}, {"kind": "youtube", "id": "WnSf1bIJUyE"}, {"kind": "instagram", "id": "CuXAELAgT0a"}, {"kind": "instagram", "id": "CuZ4Gh-LW1c"}] },
+  { id: 'chania', name: 'Χανιά', nameEn: 'Chania', lat: 35.5138, lng: 24.018, image: '/img/gnc/gnc3on3_chania-min.jpg', years: [2024], videos: [{"kind": "instagram", "id": "C8M8Ljrgo78"}] },
+  { id: 'ierapetra', name: 'Ιεράπετρα', nameEn: 'Ierapetra', lat: 35.01, lng: 25.742 },
+  { id: 'thessaloniki', name: 'Θεσσαλονίκη', nameEn: 'Thessaloniki', lat: 40.6401, lng: 22.9444, image: '/img/gnc/gnc3on3_thessaloniki-min.jpg' },
+  { id: 'penteli', name: 'Πεντέλη', nameEn: 'Penteli', lat: 38.05, lng: 23.86 },
   { id: 'peiraias', name: 'Πειραιάς', nameEn: 'Piraeus', lat: 37.942, lng: 23.647 },
-  { id: 'athina', name: 'Αθήνα', nameEn: 'Athens', lat: 37.9838, lng: 23.7275 },
+  { id: 'paramythia', name: 'Παραμυθιά', nameEn: 'Paramythia', lat: 39.47, lng: 20.51 },
+  { id: 'pyrgos', name: 'Πύργος', nameEn: 'Pyrgos', lat: 37.675, lng: 21.441, years: [2024, 2023], videos: [{"kind": "instagram", "id": "C9nQW7wsnbK"}, {"kind": "instagram", "id": "C9zMP1nMUjv"}, {"kind": "youtube", "id": "4yQ0lbJHM-U"}, {"kind": "instagram", "id": "CvP8XRfNDMA"}] },
+  { id: 'korinthos', name: 'Κόρινθος', nameEn: 'Corinth', lat: 37.939, lng: 22.932, years: [2024], videos: [{"kind": "instagram", "id": "C9BG3pet08R"}, {"kind": "instagram", "id": "C9FxmEbMr_q"}, {"kind": "instagram", "id": "C9M_aQXMKyZ"}, {"kind": "instagram", "id": "C9FAbspMwAF"}] },
+  { id: 'vonitsa', name: 'Βόνιτσα', nameEn: 'Vonitsa', lat: 38.92, lng: 20.885, image: '/img/gnc/gnc-vonitsa-apologistiko-scaled.jpg' },
+  { id: 'skala', name: 'Σκάλα Λακωνίας', nameEn: 'Skala', lat: 36.85, lng: 22.665, image: '/img/gnc/gnc-3on3-skala-post-scaled.jpg', years: [2024], videos: [{"kind": "instagram", "id": "C-rufldMY8Y"}] },
+  { id: 'gastouni', name: 'Γαστούνη', nameEn: 'Gastouni', lat: 37.85, lng: 21.26, years: [2024], videos: [{"kind": "instagram", "id": "C-YX8W8MjLS"}, {"kind": "instagram", "id": "C-fAAeeML6m"}] },
+  { id: 'amfilochia', name: 'Αμφιλοχία', nameEn: 'Amfilochia', lat: 38.86, lng: 21.17, years: [2024], videos: [{"kind": "instagram", "id": "C_559pmMamj"}, {"kind": "instagram", "id": "DAAwxfzsgzK"}] },
+  { id: 'kalampaka', name: 'Καλαμπάκα', nameEn: 'Kalampaka', lat: 39.705, lng: 21.627, years: [2024], videos: [{"kind": "instagram", "id": "C_LAjmyMKsh"}] },
+  { id: 'kourouta', name: 'Κουρούτα', nameEn: 'Kourouta', lat: 37.82, lng: 21.3, years: [2024, 2023], videos: [{"kind": "instagram", "id": "C-LHiSjMlbj"}, {"kind": "instagram", "id": "C-LZX_asaCi"}, {"kind": "instagram", "id": "C-TLr7KM6NB"}, {"kind": "youtube", "id": "VHZd32aumWQ"}, {"kind": "instagram", "id": "CvkkVbesBhr"}] },
+  { id: 'moschato', name: 'Μοσχάτο', nameEn: 'Moschato', lat: 37.955, lng: 23.68 },
+  { id: 'aigio', name: 'Αίγιο', nameEn: 'Aigio', lat: 38.25, lng: 22.081, image: '/img/gnc/gnc3on3_aigio-1-min.jpg', years: [2023], videos: [{"kind": "youtube", "id": "gc3YnsfcNN8"}, {"kind": "instagram", "id": "CwdT9BGMfih"}] },
+  { id: 'akrata', name: 'Ακράτα', nameEn: 'Akrata', lat: 38.15, lng: 22.32, years: [2024], videos: [{"kind": "instagram", "id": "C9VHOn9M-dr"}, {"kind": "instagram", "id": "C9fBcbuMhhj"}] },
+  { id: 'veroia', name: 'Βέροια', nameEn: 'Veria', lat: 40.524, lng: 22.202, years: [2023], videos: [{"kind": "youtube", "id": "wrWhDfYoxAo"}] },
+  { id: 'drama', name: 'Δράμα', nameEn: 'Drama', lat: 41.153, lng: 24.147, years: [2023], videos: [{"kind": "youtube", "id": "-NCoGmzEvQ0"}] },
+  { id: 'dytiki-achaia', name: 'Δυτική Αχαΐα', nameEn: 'West Achaia', lat: 38.15, lng: 21.55, years: [2024], videos: [{"kind": "instagram", "id": "C6T1VLxMpUB"}] },
+  { id: 'kalamata', name: 'Καλαμάτα', nameEn: 'Kalamata', lat: 37.0389, lng: 22.1142, years: [2024, 2023], videos: [{"kind": "instagram", "id": "DAY04h4Meqh"}, {"kind": "instagram", "id": "DAg1HlBNaaw"}, {"kind": "youtube", "id": "MBIpokc17W4"}, {"kind": "instagram", "id": "CxQwJdAsAJi"}] },
+  { id: 'karditsa', name: 'Καρδίτσα', nameEn: 'Karditsa', lat: 39.365, lng: 21.921, years: [2024], videos: [{"kind": "instagram", "id": "C-99K22MXer"}, {"kind": "instagram", "id": "C_aeo0tsQjv"}, {"kind": "instagram", "id": "C_LeIu2MTrs"}] },
+  { id: 'komotini', name: 'Κομοτηνή', nameEn: 'Komotini', lat: 41.1224, lng: 25.4056, image: '/img/gnc/gnc3on3_komotini-1-min.jpg', years: [2023], videos: [{"kind": "youtube", "id": "VOcC1Ix2zQw"}, {"kind": "instagram", "id": "Ct02EOGMmi3"}] },
+  { id: 'larisa', name: 'Λάρισα', nameEn: 'Larissa', lat: 39.639, lng: 22.4191, years: [2024], videos: [{"kind": "instagram", "id": "C61Qx3KMp7K"}, {"kind": "instagram", "id": "C6s0M69MAFL"}, {"kind": "instagram", "id": "C_F7FXdMWHC"}] },
+  { id: 'mykonos', name: 'Μύκονος', nameEn: 'Mykonos', lat: 37.4467, lng: 25.3289, years: [2023], videos: [{"kind": "youtube", "id": "JWqlrnnOPbs"}, {"kind": "instagram", "id": "Cx3F4ussjTt"}, {"kind": "instagram", "id": "Cx3Sq8sMWur"}] },
+  { id: 'paiania', name: 'Παιανία', nameEn: 'Paiania', lat: 37.955, lng: 23.855, years: [2024], videos: [{"kind": "instagram", "id": "C8ZrjU5sBEj"}, {"kind": "instagram", "id": "C8kK5pxspze"}] },
+  { id: 'perama', name: 'Πέραμα', nameEn: 'Perama', lat: 37.965, lng: 23.57, years: [2024], videos: [{"kind": "instagram", "id": "C8UCTnGNoKq"}] },
+  { id: 'rafina', name: 'Ραφήνα', nameEn: 'Rafina', lat: 38.02, lng: 24.01, image: '/img/gnc/gnc3on3_rafina-min.png', years: [2023], videos: [{"kind": "youtube", "id": "EA5vlAm5Lpw"}, {"kind": "instagram", "id": "CwU73UaO0r9"}] },
+  { id: 'rethymno', name: 'Ρέθυμνο', nameEn: 'Rethymno', lat: 35.364, lng: 24.482, image: '/img/gnc/gnc3on3_rethymno-min.png' },
+  { id: 'agios-nikolaos', name: 'Άγιος Νικόλαος', nameEn: 'Agios Nikolaos', lat: 35.19, lng: 25.715, image: '/img/gnc/gnc3on3_agiosnikolaos-min.jpg' },
+  { id: 'pefki', name: 'Λυκόβρυση–Πεύκη', nameEn: 'Lykovrysi–Pefki', lat: 38.062, lng: 23.796, image: '/img/gnc/gnc-pefki-3x3-1-scaled.jpg' },
   { id: 'pallini', name: 'Παλλήνη', nameEn: 'Pallini', lat: 38.005, lng: 23.885 },
-  { id: 'rafina', name: 'Ραφήνα', nameEn: 'Rafina', lat: 38.02, lng: 24.01 },
-  { id: 'mykonos', name: 'Μύκονος', nameEn: 'Mykonos', lat: 37.4467, lng: 25.3289 },
-  { id: 'chania', name: 'Χανιά', nameEn: 'Chania', lat: 35.5138, lng: 24.018 },
-  { id: 'irakleio', name: 'Ηράκλειο', nameEn: 'Heraklion', lat: 35.3387, lng: 25.1442 },
-  { id: 'pefki', name: 'Λυκόβρυση–Πεύκη', nameEn: 'Lykovrysi–Pefki', lat: 38.062, lng: 23.796 },
 ]
 
-export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities }
+export const season2026: SeasonEvent[] = [
+  { id: 's26-1', cityId: 'patra', city: 'Πάτρα', dates: '25/01 - 26/01', venue: 'Πλ. Γεωργίου', month: 'Ιαν', done: true },
+  { id: 's26-2', cityId: 'patra', city: 'Πάτρα', dates: '19/03 - 20/03', venue: 'Πανεπιστήμιο Πατρών', month: 'Μαρ', done: true },
+  { id: 's26-3', cityId: 'athina', city: 'Αθήνα', dates: '12/04 - 13/04', venue: 'Πλ. Κοτζιά', month: 'Απρ', done: true },
+  { id: 's26-4', cityId: 'agrinio', city: 'Αγρίνιο', dates: '25/04 - 26/04', venue: 'Πλ. Δημοκρατίας', month: 'Απρ', done: true },
+  { id: 's26-5', cityId: 'kavala', city: 'Καβάλα', dates: '10/05 - 11/05', venue: 'Πλατεία Ηρωών', month: 'Μάι', done: true },
+  { id: 's26-6', cityId: 'alexandroupoli', city: 'Αλεξανδρούπολη', dates: '13/05 - 14/05', venue: 'ALEXPO', month: 'Μάι', done: true },
+  { id: 's26-7', cityId: 'igoumenitsa', city: 'Ηγουμενίτσα', dates: '31/05 - 01/06', venue: 'Πλατεία Δημαρχείου', month: 'Ιουν', done: true },
+  { id: 's26-8', cityId: 'metamorfosi', city: 'Μεταμόρφωση', dates: '07/06 - 08/06', venue: 'Πλατεία Δημαρχείου', month: 'Ιουν', done: true },
+  { id: 's26-9', cityId: 'irakleio', city: 'Ηράκλειο', dates: '13/06 - 14/06 - 15/06', venue: 'Ενετικό Λιμάνι', month: 'Ιουν', done: true },
+  { id: 's26-10', cityId: 'chania', city: 'Χανιά', dates: '18/06 - 19/06', venue: 'Εγκαταστάσεις Ο.Α.Χ.', month: 'Ιουν', done: true },
+  { id: 's26-11', cityId: 'ierapetra', city: 'Ιεράπετρα', dates: '21/06 - 22/06', venue: 'Παραλιακή Πλατεία', month: 'Ιουν', done: true },
+  { id: 's26-12', cityId: 'thessaloniki', city: 'Θεσσαλονίκη', dates: '27/06', venue: 'Πλατεία Αριστοτέλους', month: 'Ιουν', done: true, label: 'ΘΕΣΣΑΛΟΝΙΚΗ – UNDER ARMOUR 3x3' },
+  { id: 's26-13', cityId: 'penteli', city: 'Πεντέλη', dates: '28/06 - 29/06', venue: 'Πλατεία Ηρώων Πολυτεχνείου', month: 'Ιουν', done: true },
+  { id: 's26-14', cityId: 'patra', city: 'Πάτρα', dates: '01/07', venue: 'Μώλος Αγίου Νικολάου', month: 'Ιουλ', done: true },
+  { id: 's26-15', cityId: 'peiraias', city: 'Πειραιάς', dates: '11/07', venue: 'Δημοτικό Θέατρο', month: 'Ιουλ', done: true, label: 'ΠΕΙΡΑΙΑΣ - UNDER ARMOYR 3x3' },
+  { id: 's26-16', cityId: 'paramythia', city: 'Παραμυθιά', dates: '12/07 - 13/07', venue: 'Σχολείο Βούλγαρη', month: 'Ιουλ', done: true },
+  { id: 's26-17', cityId: 'pyrgos', city: 'Πύργος', dates: '18-19-20/07', venue: 'κεντρική Πλατεία', month: 'Ιουλ', done: true },
+  { id: 's26-18', cityId: 'korinthos', city: 'Κόρινθος', dates: '25-26-27/07', venue: 'Πλατεία Ηρώων Πολυτεχνείου', month: 'Ιουλ', done: true },
+  { id: 's26-19', cityId: 'vonitsa', city: 'Βόνιτσα', dates: '30/07 - 31/07', venue: 'Παραλία Βόνιτσας', month: 'Ιουλ', done: true },
+  { id: 's26-20', cityId: 'skala', city: 'Σκάλα Λακωνίας', dates: '02/08 - 03/08', venue: 'Σχολικό Συγκρότημα Σκάλας', month: 'Αυγ', done: true },
+  { id: 's26-21', cityId: 'gastouni', city: 'Γαστούνη', dates: '08-09-20/08', venue: 'Κεντρική Πλατεία', month: 'Αυγ', done: true },
+  { id: 's26-22', cityId: 'amfilochia', city: 'Αμφιλοχία', dates: '09 - 10/08', venue: 'Πλατεία Αμφιλοχίας', month: 'Αυγ', done: true },
+  { id: 's26-23', cityId: 'kalampaka', city: 'Καλαμπάκα', dates: '23/08 - 24/08', venue: 'Πλατεία Ρήγα Φεραίου', month: 'Αυγ', done: true },
+  { id: 's26-24', cityId: 'kourouta', city: 'Κουρούτα', dates: '26/08 - 27/08', venue: 'Πλατεία Κουρούτας', month: 'Αυγ', done: true },
+  { id: 's26-25', cityId: 'patra', city: 'Πάτρα', dates: '29-30-31/08', venue: 'Πλατεία Γεωργίου', month: 'Αυγ', done: true, label: 'Πατρα Κωστας Πετροπουλος' },
+  { id: 's26-26', cityId: 'moschato', city: 'Μοσχάτο', dates: '20/09 - 21/09', venue: 'Πλατεία Ηρώων Πολυτεχνείου', month: 'Σεπ', done: false },
+]
+
+// Sponsors as listed on gnc3on3.gr (logos: public/img/gnc/sponsors/<slug>.png when available)
+export const sponsorList: Sponsor[] = [
+  { name: 'LOUX', url: 'https://www.loux.gr/' }, { name: 'Σκέντζος', url: 'https://www.skentzos.com/' }, { name: 'Kerasidis Group', url: 'https://kerasidisgroup.gr/' },
+  { name: 'Affidea', url: 'https://affidea.gr/' }, { name: 'Wilson', url: 'https://www.wilson.com/en-us/basketball' }, { name: 'My Way Hotel', url: 'https://www.mywayhotel.gr/' },
+  { name: 'Crossover', url: 'https://crossoverbrand.com/el' }, { name: 'Vlastaras', url: 'https://www.vlastarasate.gr/' }, { name: 'SBIE', url: 'https://sbie.edu.gr/' },
+  { name: 'Yayaz', url: 'https://www.instagram.com/yayaz_the_place_to_be' }, { name: 'Theocar', url: 'https://theocar.com/en/' }, { name: 'Stegno', url: 'https://www.stegno.net' },
+  { name: 'Account Saints', url: 'https://www.accountsaints.gr/' },
+]
+
+export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities, season: season2026, sponsorList }
