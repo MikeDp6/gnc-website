@@ -4,6 +4,7 @@ import * as api from '@/lib/adminApi'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
 import { cn } from '@/lib/cn'
 import { Scheduler } from './Scheduler'
+import { splits } from '@/scheduler/engine'
 
 const TABS = ['Στοιχεία', 'Κατηγορίες', 'Ομάδες', 'Αγώνες & σκορ', 'Πρόγραμμα']
 const STATUS = [['draft', 'Πρόχειρο'], ['registration', 'Δηλώσεις ανοιχτές'], ['upcoming', 'Επερχόμενο'], ['live', 'Σε εξέλιξη'], ['done', 'Ολοκληρώθηκε'], ['archived', 'Αρχείο']]
@@ -84,8 +85,21 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
 function Categories({ tid, say }: { tid: string; say: (m: string) => void }) {
   const [all, setAll] = useState<Awaited<ReturnType<typeof api.listCategories>>>([])
   const [mine, setMine] = useState<Awaited<ReturnType<typeof api.listTournamentCategories>>>([])
+  const [teams, setTeams] = useState<api.TeamRow[]>([])
+  const [sched, setSched] = useState<Record<string, { split?: number }>>({})
   const load = useCallback(() => api.listTournamentCategories(tid).then(setMine).catch(e => say(e.message)), [tid, say])
-  useEffect(() => { api.listCategories().then(setAll).catch(() => {}); load() }, [load])
+  useEffect(() => {
+    api.listCategories().then(setAll).catch(() => {}); load()
+    api.listTeams(tid).then(setTeams).catch(() => {})
+    api.getTournament(tid).then(t => setSched(((t.settings_json as { scheduler?: { cats?: Record<string, { split?: number }> } })?.scheduler?.cats) ?? {})).catch(() => {})
+  }, [tid, load])
+  const count = (cid: string) => teams.filter(t => t.category_id === cid && t.status === 'active').length
+  const groupsOf = (cid: string) => {
+    const n = count(cid); const sp = splits(n); if (!n) return '—'; if (!sp.length) return n < 2 ? 'μόνο 1 ομάδα' : 'χωρίς χωρισμό'
+    const s = sp[sched[cid]?.split ?? 0] ?? sp[0]
+    const desc = s.five ? '1×5' : s.sizes[0] === 2 ? 'τελικός' : `${s.a ? s.a + '×4' : ''}${s.a && s.b ? ' + ' : ''}${s.b ? s.b + '×3' : ''}`
+    return `${s.G} (${desc})`
+  }
   const has = (cid: string) => mine.find(x => x.category_id === cid)
   const toggle = async (cid: string) => {
     try {
@@ -101,11 +115,13 @@ function Categories({ tid, say }: { tid: string; say: (m: string) => void }) {
   return (
     <div className="card overflow-hidden">
       <table className="w-full text-[14px]">
-        <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-4 py-3">Κατηγορία</th><th className="px-4 py-3">Στη διοργάνωση</th><th className="px-4 py-3">Νοκ-άουτ (προεπιλογή)</th><th className="px-4 py-3">Μέγ. ομάδες</th></tr></thead>
+        <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-4 py-3">Κατηγορία</th><th className="px-4 py-3">Στη διοργάνωση</th><th className="px-4 py-3">Ομάδες</th><th className="px-4 py-3">Όμιλοι</th><th className="px-4 py-3">Νοκ-άουτ (προεπιλογή)</th><th className="px-4 py-3">Μέγ. ομάδες</th></tr></thead>
         <tbody>{all.map(c => { const m = has(c.id); return (
           <tr key={c.id} className="border-t border-line">
             <td className="px-4 py-3 font-semibold">{c.label}</td>
             <td className="px-4 py-3"><input type="checkbox" checked={!!m} onChange={() => toggle(c.id)} className="h-4 w-4" /></td>
+            <td className="mono px-4 py-3">{m ? count(c.id) : '—'}</td>
+            <td className={cn('px-4 py-3', m && count(c.id) < 2 && 'text-red')}>{m ? groupsOf(c.id) : '—'}</td>
             <td className="px-4 py-3"><Select disabled={!m} value={m?.qualifiers ?? ''} onChange={e => patch(c.id, { qualifiers: e.target.value ? +e.target.value : null })}><option value="">Χωρίς νοκ-άουτ</option>{[2, 4, 8, 16].map(n => <option key={n} value={n}>{n}</option>)}</Select></td>
             <td className="px-4 py-3"><Input disabled={!m} type="number" min={2} value={m?.max_teams ?? ''} onChange={e => patch(c.id, { max_teams: e.target.value ? +e.target.value : null })} placeholder="—" /></td>
           </tr>) })}</tbody>
