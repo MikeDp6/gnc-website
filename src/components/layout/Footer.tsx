@@ -12,12 +12,6 @@ export function Footer({ newsletter = true }: { newsletter?: boolean }) {
       {items.map(([i, to]) => <Link key={i} to={to} className="mb-[9px] block hover:text-white">{i}</Link>)}
     </div>
   )
-  const col = (title: string, items: string[]) => (
-    <div>
-      <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{title}</b>
-      {items.map(i => <span key={i} className="mb-[9px] block hover:text-white">{i}</span>)}
-    </div>
-  )
   return (
     <footer className="wrap pb-10 pt-[100px]">
       {newsletter && (
