@@ -69,16 +69,16 @@ export function Home() {
         </div>
       </section>
 
-      {/* ---------- NOW ON COURT: carousel ---------- */}
+      {/* ---------- NOW ON COURT: auto-scrolling cards (pause on hover) ---------- */}
       <section className="pt-[110px]">
-        <div className="wrap mb-[30px] flex items-end justify-between gap-4">
+        <div className="wrap mb-[30px]">
           <Heading a={t.sections.now1} b={t.sections.now2} />
-          <CarouselArrows target="now-row" />
         </div>
-        <div id="now-row" className="snap-row wrap pb-2">
-          {nowCards.map(m => <NowCard key={m.id} m={m} city={next.city} venue={next.venue} slug={next.slug} />)}
-          {!nowCards.length && <div className="card p-8 text-dim">Το πρόγραμμα ανακοινώνεται σύντομα.</div>}
-        </div>
+        {nowCards.length
+          ? <Marquee duration={Math.max(30, nowCards.length * 7)} gap={14} className="py-1">
+              {nowCards.map(m => <NowCard key={m.id} m={m} city={next.city} venue={next.venue} slug={next.slug} />)}
+            </Marquee>
+          : <div className="wrap"><div className="card p-8 text-dim">Το πρόγραμμα ανακοινώνεται σύντομα.</div></div>}
         {results.length > 0 && (
           <div className="wrap mt-10">
             <div className="kicker mb-3">{t.sections.results}</div>
@@ -219,15 +219,5 @@ function NowCard({ m, city, venue, slug }: { m: Match; city: string; venue: stri
         <div className="mt-1">{city} · {venue}</div>
       </div>
     </Link>
-  )
-}
-
-function CarouselArrows({ target }: { target: string }) {
-  const go = (dir: -1 | 1) => { const el = document.getElementById(target); if (el) el.scrollBy({ left: dir * 340, behavior: 'smooth' }) }
-  return (
-    <div className="hidden gap-2 md:flex">
-      <button type="button" aria-label="Previous" onClick={() => go(-1)} className="pop flex h-11 w-11 items-center justify-center rounded-full border border-line text-[18px] hover:border-white/40">←</button>
-      <button type="button" aria-label="Next" onClick={() => go(1)} className="pop flex h-11 w-11 items-center justify-center rounded-full border border-line text-[18px] hover:border-white/40">→</button>
-    </div>
   )
 }
