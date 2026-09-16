@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn'
 const tintCls = (t: string) => t === 'orange' ? '[filter:sepia(1)_saturate(2.2)_hue-rotate(-10deg)]' : t === 'blue' ? '[filter:saturate(1.6)] bg-[20%_80%]' : t === 'mono' ? '[filter:grayscale(1)_contrast(1.15)] bg-[80%_60%]' : '[filter:sepia(1)_saturate(1.4)_hue-rotate(160deg)] bg-[40%_90%]'
 
 export function Archive() {
-  const { archive, tournaments } = useData()
+  const { archive, tournaments, cities } = useData()
   const byYear = archive.reduce<Record<string, typeof archive>>((acc, a) => { const y = a.when.slice(-4); (acc[y] ??= []).push(a); return acc }, {})
   return (
     <>
@@ -18,7 +18,7 @@ export function Archive() {
           <div>
             <Heading a="Αρχείο" b="διοργανώσεων" />
             <p className="mt-4 max-w-[520px] text-[16px] text-dim">Κάθε στάση της περιοδείας από το 2018: ομάδες, όμιλοι, brackets, νικητές ανά κατηγορία και φωτογραφίες.</p>
-            <div className="mt-6 flex gap-6"><div><b className="disp block text-[48px] text-orange">25</b><span className="kicker">Πόλεις</span></div><div><b className="disp block text-[48px] text-orange">{tournaments.length}+</b><span className="kicker">Διοργανώσεις</span></div><div><b className="disp block text-[48px] text-orange">2018</b><span className="kicker">Από</span></div></div>
+            <div className="mt-6 flex gap-6"><div><b className="disp block text-[48px] text-orange">{cities.length}</b><span className="kicker">Πόλεις</span></div><div><b className="disp block text-[48px] text-orange">{tournaments.length}+</b><span className="kicker">Διοργανώσεις</span></div><div><b className="disp block text-[48px] text-orange">2018</b><span className="kicker">Από</span></div></div>
           </div>
           <div className="card rounded-band p-4"><GreeceMap className="h-[320px]" /></div>
         </div>

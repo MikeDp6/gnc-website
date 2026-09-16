@@ -13,7 +13,7 @@ import type { Match } from '@/data/types'
 
 export function Home() {
   const { t } = useI18n()
-  const { categoryById, matches, sponsors, stops, tournaments, teamById, news, rentals } = useData()
+  const { categoryById, matches, sponsors, stops, tournaments, teamById, news, rentals, cities } = useData()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
   if (!next) return null
@@ -104,9 +104,9 @@ export function Home() {
       <section className="wrap pt-[110px]">
         <Heading a={t.sections.schedule1} b={t.sections.schedule2} className="mb-[34px]" />
         <Reveal className="card relative overflow-hidden rounded-band">
-          <div className="kicker absolute left-[26px] top-[26px] z-10">25 πόλεις · 2018–2026</div>
-          <div className="h-[520px] p-4 md:h-[760px] md:p-8 lg:pr-[440px]">
-            <GreeceMap className="h-full w-full" />
+          <div className="kicker absolute left-[26px] top-[26px] z-10">{cities.length} πόλεις · 2018–2026 · κλικ σε πόλη για τις διοργανώσεις της</div>
+          <div className="h-[560px] p-3 md:h-[900px] md:p-6 lg:pr-[440px]">
+            <GreeceMap className="h-full w-full" nextCityId={next.cityId} />
           </div>
           <div className="flex flex-col gap-[10px] p-4 lg:absolute lg:right-8 lg:top-1/2 lg:w-[400px] lg:-translate-y-1/2 lg:p-0">
             {stops.map(s => {

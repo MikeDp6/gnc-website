@@ -30,7 +30,7 @@ type MatchRow = { id: string; tournament_id: string; category_id: string; phase:
 type WinnerRow = { tournament_id: string; category_id: string; team_id: string; place: number }
 type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange' }
 type SponsorRow = { name: string }
-type CityRow = { id: string; name: string }
+type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null }
 
 async function q<T>(p: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
   const { data, error } = await p
@@ -47,7 +47,7 @@ export async function fetchBundle(): Promise<Bundle> {
     q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,registration_deadline').order('starts_on')),
     q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').order('day_index')),
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
-    q<CityRow[]>(sb.from('cities').select('id,name')),
+    q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order')),
     q<TickerRow[]>(sb.from('ticker_items').select('tag,text,text_en,tone').eq('active', true).order('sort_order')),
     q<SponsorRow[]>(sb.from('sponsors').select('name').eq('active', true).order('sort_order')),
     q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
@@ -77,7 +77,7 @@ export async function fetchBundle(): Promise<Bundle> {
     const tdays = days.filter(x => x.tournament_id === t.id)
     const tcats = tcs.filter(x => x.tournament_id === t.id).sort((a, b) => a.sort_order - b.sort_order)
     return {
-      id: t.id, slug: t.slug, name: t.name, city: cityName(t.city_id), venue: t.venue ?? '', address: t.address ?? undefined,
+      id: t.id, slug: t.slug, name: t.name, city: cityName(t.city_id), cityId: t.city_id ?? undefined, venue: t.venue ?? '', address: t.address ?? undefined,
       dates: dateRange(t.starts_on, t.ends_on),
       startsAt: `${t.starts_on}T${(tdays[0]?.start_time ?? '17:00').slice(0, 5)}:00+03:00`,
       days: tdays.map(x => `${DAYS[d(x.date).getDay()]} ${d(x.date).getDate()}/${d(x.date).getMonth() + 1}`),
@@ -131,7 +131,8 @@ export async function fetchBundle(): Promise<Bundle> {
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
 
   // news & rentals: content tables come with the CMS step; until then the mock content is shown
-  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news: mockNews, rentals: mockRentals }
+  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news: mockNews, rentals: mockRentals,
+    cities: cities.filter(c => c.lat != null && c.lng != null).map(c => ({ id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng! })) }
 }
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */

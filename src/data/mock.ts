@@ -1,6 +1,6 @@
 // Mock data for development — Pefki 2026 registrations (real team names) + invented results.
 // Replaced by the API layer (src/lib/api.ts) once the backend is wired.
-import type { ArchiveItem, Bundle, Category, Group, Match, NewsItem, Player, RentalItem, Stop, Team, TickerItem, Tournament } from './types'
+import type { ArchiveItem, Bundle, Category, City, Group, Match, NewsItem, Player, RentalItem, Stop, Team, TickerItem, Tournament } from './types'
 
 export const categories: Category[] = [
   { id: 'u11_mixed', key: 'u11', name: 'U11 MIXED', short: 'U11' },
@@ -36,7 +36,7 @@ export const players: Player[] = [
 
 export const tournaments: Tournament[] = [
   {
-    id: 'pefki26', slug: 'pefki-2026', name: 'Λυκόβρυση–Πεύκη 2026', city: 'Πεύκη',
+    id: 'pefki26', slug: 'pefki-2026', name: 'Λυκόβρυση–Πεύκη 2026', city: 'Λυκόβρυση–Πεύκη', cityId: 'pefki',
     venue: 'Δημοτικό Γήπεδο Πεύκης', address: 'Ελ. Βενιζέλου 12, Πεύκη',
     dates: '19–20 Σεπτεμβρίου 2026', startsAt: '2026-09-19T17:00:00+03:00',
     days: ['Σάββατο 19/9', 'Κυριακή 20/9'], courts: 2, status: 'upcoming', teamsCount: 52,
@@ -145,4 +145,33 @@ export const rentals: RentalItem[] = [
   { id: 'r4', name: 'Μπασκέτες & μπάλες', blurb: 'Φορητές μπασκέτες και μπάλες Νο6 για σχολεία, camps, γιορτές.', price: 'Ζήτησε προσφορά' },
 ]
 
-export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals }
+export const cities: City[] = [
+  { id: 'thessaloniki', name: 'Θεσσαλονίκη', nameEn: 'Thessaloniki', lat: 40.6401, lng: 22.9444 },
+  { id: 'komotini', name: 'Κομοτηνή', nameEn: 'Komotini', lat: 41.1224, lng: 25.4056 },
+  { id: 'drama', name: 'Δράμα', nameEn: 'Drama', lat: 41.153, lng: 24.147 },
+  { id: 'veroia', name: 'Βέροια', nameEn: 'Veria', lat: 40.524, lng: 22.202 },
+  { id: 'larisa', name: 'Λάρισα', nameEn: 'Larissa', lat: 39.639, lng: 22.4191 },
+  { id: 'kalampaka', name: 'Καλαμπάκα', nameEn: 'Kalampaka', lat: 39.705, lng: 21.627 },
+  { id: 'karditsa', name: 'Καρδίτσα', nameEn: 'Karditsa', lat: 39.365, lng: 21.921 },
+  { id: 'igoumenitsa', name: 'Ηγουμενίτσα', nameEn: 'Igoumenitsa', lat: 39.507, lng: 20.266 },
+  { id: 'amfilochia', name: 'Αμφιλοχία', nameEn: 'Amfilochia', lat: 38.86, lng: 21.17 },
+  { id: 'agrinio', name: 'Αγρίνιο', nameEn: 'Agrinio', lat: 38.621, lng: 21.407 },
+  { id: 'patra', name: 'Πάτρα', nameEn: 'Patras', lat: 38.2466, lng: 21.7346 },
+  { id: 'aigio', name: 'Αίγιο', nameEn: 'Aigio', lat: 38.25, lng: 22.081 },
+  { id: 'xylokastro', name: 'Ξυλόκαστρο', nameEn: 'Xylokastro', lat: 38.078, lng: 22.63 },
+  { id: 'pyrgos', name: 'Πύργος', nameEn: 'Pyrgos', lat: 37.675, lng: 21.441 },
+  { id: 'amaliada', name: 'Αμαλιάδα', nameEn: 'Amaliada', lat: 37.8, lng: 21.35 },
+  { id: 'korinthos', name: 'Κόρινθος', nameEn: 'Corinth', lat: 37.939, lng: 22.932 },
+  { id: 'kalamata', name: 'Καλαμάτα', nameEn: 'Kalamata', lat: 37.0389, lng: 22.1142 },
+  { id: 'gytheio', name: 'Γύθειο', nameEn: 'Gytheio', lat: 36.759, lng: 22.566 },
+  { id: 'peiraias', name: 'Πειραιάς', nameEn: 'Piraeus', lat: 37.942, lng: 23.647 },
+  { id: 'athina', name: 'Αθήνα', nameEn: 'Athens', lat: 37.9838, lng: 23.7275 },
+  { id: 'pallini', name: 'Παλλήνη', nameEn: 'Pallini', lat: 38.005, lng: 23.885 },
+  { id: 'rafina', name: 'Ραφήνα', nameEn: 'Rafina', lat: 38.02, lng: 24.01 },
+  { id: 'mykonos', name: 'Μύκονος', nameEn: 'Mykonos', lat: 37.4467, lng: 25.3289 },
+  { id: 'chania', name: 'Χανιά', nameEn: 'Chania', lat: 35.5138, lng: 24.018 },
+  { id: 'irakleio', name: 'Ηράκλειο', nameEn: 'Heraklion', lat: 35.3387, lng: 25.1442 },
+  { id: 'pefki', name: 'Λυκόβρυση–Πεύκη', nameEn: 'Lykovrysi–Pefki', lat: 38.062, lng: 23.796 },
+]
+
+export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities }

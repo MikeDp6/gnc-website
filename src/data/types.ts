@@ -70,6 +70,7 @@ export interface Tournament {
   slug: string
   name: string              // "Λυκόβρυση–Πεύκη 2026"
   city: string
+  cityId?: string
   venue: string
   address?: string
   dates: string             // "19–20 Σεπτεμβρίου 2026"
@@ -115,7 +116,10 @@ export interface Bundle {
   sponsors: string[]
   news: NewsItem[]
   rentals: RentalItem[]
+  cities: City[]
 }
+
+export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number }
 
 export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }

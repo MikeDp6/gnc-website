@@ -9,6 +9,7 @@ import { Rentals } from '@/pages/Rentals'
 import { Contact } from '@/pages/Contact'
 import { Archive } from '@/pages/Archive'
 import { Register } from '@/pages/Register'
+import { City } from '@/pages/City'
 import { NotFound } from '@/pages/NotFound'
 import { Suspense, lazy } from 'react'
 
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="news/:slug" element={<NewsArticle />} />
         <Route path="rentals" element={<Rentals />} />
         <Route path="archive" element={<Archive />} />
+        <Route path="cities/:id" element={<City />} />
         <Route path="register" element={<Register />} />
         <Route path="contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
