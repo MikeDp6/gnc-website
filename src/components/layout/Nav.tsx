@@ -15,8 +15,8 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
     { to: '/', label: t.nav.tournaments, end: true },
     { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule },
     { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams },
-    { to: '/news', label: 'News' },
-    { to: '/rentals', label: 'Ενοικιάσεις' },
+    { to: '/news', label: t.nav.news },
+    { to: '/rentals', label: t.nav.rentals },
     { to: '/contact', label: t.nav.contact },
   ]
   const item = (l: typeof links[number]) => (

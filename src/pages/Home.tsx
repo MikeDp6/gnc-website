@@ -43,27 +43,27 @@ export function Home() {
         <div className="grid gap-10 lg:grid-cols-[1fr_1.6fr]">
           <div className="lg:sticky lg:top-[96px] lg:self-start">
             <Heading a={t.sections.matchday1} b={t.sections.matchday2} />
-            <p className="mt-4 max-w-[380px] text-[15px] text-dim">Ό,τι παίζεται τώρα, ό,τι έρχεται και ό,τι μόλις τελείωσε — σε τρεις κάρτες που ενημερώνονται ζωντανά από τη γραμματεία.</p>
+            <p className="mt-4 max-w-[380px] text-[15px] text-dim">{t.hero.matchdayBlurb}</p>
           </div>
           <div className="flex flex-col gap-6">
             <div className="lg:sticky lg:top-[96px]">
               <StackCard tone="orange" label={`● ${t.status.live} · ${live[0] ? `${t.misc.court} ${live[0].court}` : next.venue}`} badge={t.status.optional}
                 big={live[0] ? `${live[0].homeScore ?? 0} – ${live[0].awayScore ?? 0}` : '— : —'}
-                title={live[0] ? `${teamById(live[0].homeId)?.name} vs ${teamById(live[0].awayId)?.name}` : 'Κανένας αγώνας σε εξέλιξη'}
-                meta={live[0] ? `${categoryById(live[0].categoryId).name} · ${live[0].label} · ${next.city}` : `Επόμενος αγώνας ${upcoming[0]?.time ?? ''} · ${next.city}`}
-                cta={{ label: 'Δες live →', to: `/tournaments/${next.slug}` }} right={next.venue} />
+                title={live[0] ? `${teamById(live[0].homeId)?.name} vs ${teamById(live[0].awayId)?.name}` : t.status.noLive}
+                meta={live[0] ? `${categoryById(live[0].categoryId).name} · ${live[0].label} · ${next.city}` : `${t.status.nextMatch} ${upcoming[0]?.time ?? ''} · ${next.city}`}
+                cta={{ label: t.status.seeLive, to: `/tournaments/${next.slug}` }} right={next.venue} />
             </div>
             <div className="lg:sticky lg:top-[120px]">
               <StackCard tone="blue" label={t.status.startsIn}
                 big={<Countdown to={next.startsAt} className="mono tracking-[-.02em]" />}
-                title={next.name} meta={`${next.days[0]}, 17:00 · ${next.teamsCount} ομάδες · ${next.categoryIds.length} κατηγορίες · ${next.venue}`}
-                cta={{ label: 'Πρόγραμμα →', to: `/tournaments/${next.slug}` }} right={`${next.courts} γήπεδα`} />
+                title={next.name} meta={`${next.days[0]} · ${next.teamsCount} ${t.status.teams} · ${next.categoryIds.length} ${t.status.cats} · ${next.venue}`}
+                cta={{ label: t.status.schedule, to: `/tournaments/${next.slug}` }} right={`${next.courts} ${t.status.courts}`} />
             </div>
             <div className="lg:sticky lg:top-[144px]">
               <StackCard tone="slate" label={t.status.done}
-                big={lastDone?.city ?? 'Παλλήνη'} title="Νικητές ανά κατηγορία"
+                big={lastDone?.city ?? 'Παλλήνη'} title={t.status.winners}
                 meta="18+ GOONLANDERS · 40+ PINK ROSES · U18 ΘΥΜΙΟΛΑΣ · U15 COURT KINGS"
-                cta={{ label: 'Αποτελέσματα →', to: '/archive' }} right={lastDone ? `${lastDone.teamsCount} ομάδες` : '66 ομάδες'} />
+                cta={{ label: t.status.results, to: '/archive' }} right={lastDone ? `${lastDone.teamsCount} ${t.status.teams}` : `66 ${t.status.teams}`} />
             </div>
           </div>
         </div>
@@ -78,7 +78,7 @@ export function Home() {
           ? <Marquee duration={Math.max(30, nowCards.length * 7)} gap={14} className="py-1">
               {nowCards.map(m => <NowCard key={m.id} m={m} city={next.city} venue={next.venue} slug={next.slug} />)}
             </Marquee>
-          : <div className="wrap"><div className="card p-8 text-dim">Το πρόγραμμα ανακοινώνεται σύντομα.</div></div>}
+          : <div className="wrap"><div className="card p-8 text-dim">{t.hero.soon}</div></div>}
         {results.length > 0 && (
           <div className="wrap mt-10">
             <div className="kicker mb-3">{t.sections.results}</div>
@@ -104,7 +104,7 @@ export function Home() {
       <section className="wrap pt-[110px]">
         <Heading a={t.sections.schedule1} b={t.sections.schedule2} className="mb-[34px]" />
         <Reveal className="card relative overflow-hidden rounded-band">
-          <div className="kicker absolute left-[26px] top-[26px] z-10">{cities.length} πόλεις · #NEXTSTOPYOURCITY · κλικ σε πόλη</div>
+          <div className="kicker absolute left-[26px] top-[26px] z-10">{cities.length} {t.hero.mapKicker}</div>
           <div className="h-[560px] p-3 md:h-[900px] md:p-6 lg:pr-[440px]">
             <GreeceMap className="h-full w-full" nextCityId={next.cityId} />
           </div>
@@ -119,7 +119,7 @@ export function Home() {
                     <div className="mt-[2px] truncate text-[12px] text-dim">{s.detail}</div>
                   </div>
                   <span className={cn('whitespace-nowrap rounded-lg border border-line px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.12em]', s.status === 'next' && 'border-orange bg-orange text-[#111]', s.status === 'registration' && 'border-blue bg-blue')}>
-                    {s.status === 'next' ? 'Πρόγραμμα' : s.status === 'registration' ? 'Δηλώσεις' : 'Σύντομα'}
+                    {s.status === 'next' ? t.hero.stop.next : s.status === 'registration' ? t.hero.stop.reg : t.hero.stop.soon}
                   </span>
                 </>
               )
@@ -163,7 +163,7 @@ export function Home() {
               <div className="flex flex-1 flex-col px-[18px] pb-5 pt-4">
                 <div className="disp text-[30px]">{r.name}</div>
                 <div className="mt-2 flex-1 text-[13px] text-dim">{r.blurb}</div>
-                <div className="mt-4 flex items-center justify-between"><span className="text-[13px] font-bold">{r.price}</span><Link to="/contact" className="rounded-[8px] bg-orange px-3 py-2 text-[12px] font-bold text-[#111]">Επικοινωνία</Link></div>
+                <div className="mt-4 flex items-center justify-between"><span className="text-[13px] font-bold">{r.price}</span><Link to="/contact" className="rounded-[8px] bg-orange px-3 py-2 text-[12px] font-bold text-[#111]">{t.hero.contactBtn}</Link></div>
               </div>
             </div>
           ))}
