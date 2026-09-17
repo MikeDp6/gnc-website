@@ -4,14 +4,16 @@ import { useAuth } from '@/lib/auth'
 import { useI18n } from '@/i18n'
 import { useMeta } from '@/lib/meta'
 import { useData } from '@/data/store'
-import { claimPlayer, fetchMyPlayer, fetchPlayerHistory, updateMyPlayer, uploadAvatar } from '@/lib/playerApi'
+import { claimPlayer, fetchMyPlayer, fetchMyTeams, fetchPlayerHistory, fetchPlayerRank, updateMyPlayer, uploadAvatar } from '@/lib/playerApi'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { MatchRow } from '@/components/match/MatchRow'
 import { HistoryList } from '@/components/PlayerHistory'
-import type { MyPlayer, PlayerHistoryRow } from '@/data/types'
+import { MyTeamPanel } from '@/components/MyTeamPanel'
+import { RankPanel } from '@/components/RankPanel'
+import type { MyPlayer, MyTeam, PlayerHistoryRow, PlayerRank2 } from '@/data/types'
 
 /** The signed-in player's own page: photo, details, visibility, and their games in the running tournament. */
 export function Me() {
@@ -20,6 +22,8 @@ export function Me() {
   const { matches, teams, tournaments } = useData()
   const [me, setMe] = useState<MyPlayer | null | undefined>(undefined)   // undefined = loading, null = no profile
   const [hist, setHist] = useState<PlayerHistoryRow[]>([])
+  const [myTeams, setMyTeams] = useState<MyTeam[]>([])
+  const [rank, setRank] = useState<PlayerRank2>({ byCategory: [] })
   const [msg, setMsg] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -31,7 +35,10 @@ export function Me() {
       await claimPlayer()
       const p = await fetchMyPlayer()
       setMe(p)
-      if (p) setHist(await fetchPlayerHistory(p.id))
+      if (p) {
+        const [h, teams, r] = await Promise.all([fetchPlayerHistory(p.id), fetchMyTeams().catch(() => []), fetchPlayerRank(p.id).catch(() => ({ byCategory: [] }))])
+        setHist(h); setMyTeams(teams); setRank(r)
+      }
     } catch (e) { setErr((e as Error).message); setMe(null) }
   }, [])
   useEffect(() => { if (session) load() }, [session, load])
@@ -68,8 +75,9 @@ export function Me() {
     </section>
   )
 
-  const myTeams = teams.filter(x => hist.some(h => h.teamId === x.id) || x.playerIds?.includes(me.id))
-  const myMatches = matches.filter(m => myTeams.some(x => x.id === m.homeId || x.id === m.awayId))
+  // the running tournament's teams this player is in, used to find their next game
+  const playing = teams.filter(x => hist.some(h => h.teamId === x.id) || x.playerIds?.includes(me.id) || myTeams.some(mt => mt.team_id === x.id))
+  const myMatches = matches.filter(m => playing.some(x => x.id === m.homeId || x.id === m.awayId))
   const next = myMatches.find(m => m.status === 'live') ?? myMatches.find(m => m.status === 'scheduled')
   const tour = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const totals = hist.reduce((a, h) => ({ t: a.t + 1, w: a.w + h.wins, l: a.l + h.losses, g: a.g + (h.place === 1 ? 1 : 0) }), { t: 0, w: 0, l: 0, g: 0 })
@@ -104,6 +112,13 @@ export function Me() {
         {(msg || err) && <div className={`mt-3 text-[13px] ${err ? 'text-red' : 'text-ok'}`}>{err ?? msg}</div>}
       </section>
 
+      {myTeams.length > 0 && (
+        <section className="wrap pt-[50px]">
+          <Heading a="Η ομάδα" b="μου" size="md" className="mb-5" />
+          <MyTeamPanel teams={myTeams} />
+        </section>
+      )}
+
       {next && (
         <section className="wrap pt-[50px]">
           <Heading a={t.team.next1} b={t.team.next2} size="md" className="mb-5" />
@@ -117,7 +132,9 @@ export function Me() {
           <Heading a={t.player.history1} b={t.player.history2} size="md" className="mb-5" />
           <HistoryList rows={hist} empty={t.account.noHistory} />
         </div>
-        <div className="card h-fit p-6">
+        <div className="flex flex-col gap-5">
+          <RankPanel rank={rank} />
+          <div className="card h-fit p-6">
           <h4 className="kicker mb-4">{t.account.details}</h4>
           <Field label={t.contact.name} value={me.first_name} onSave={v => save({ first: v })} disabled={busy} />
           <Field label={t.account.lastName} value={me.last_name} onSave={v => save({ last: v })} disabled={busy} />
@@ -133,6 +150,7 @@ export function Me() {
           <div className="mt-2 flex flex-wrap items-center gap-4 border-t border-line pt-4">
             {me.public_profile && <Link to={`/players/${me.id}`} className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.account.viewPublic} →</Link>}
             <button type="button" onClick={signOut} className="text-[13px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">{t.account.signOut}</button>
+          </div>
           </div>
         </div>
       </section>

@@ -158,3 +158,18 @@ export interface Photo { id: string; url: string; caption?: string; credit?: str
 
 export interface NewsItem { id: string; slug: string; tag: string; date: string; publishedOn?: string; title: string; excerpt: string; body?: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }
+
+/** A team the signed-in player belongs to, as my_teams() returns it. */
+export interface MyTeamMate { player_id: string; name: string; role: 'captain' | 'player'; joined_at: string | null }
+export interface MyTeamInvite { email: string; joined: boolean }
+export interface MyTeam {
+  team_id: string; name: string; status: string; captain: boolean
+  category: string; category_short: string
+  tournament: string; slug: string; starts_on: string; tournament_status: string; venue: string | null
+  invite_code: string | null
+  roster: MyTeamMate[]
+  invites: MyTeamInvite[] | null
+}
+/** Where a player stands in the all-time table. */
+export interface RankSpot { position: number; total: number; points: number }
+export interface PlayerRank2 { overall?: RankSpot; byCategory: Array<RankSpot & { categoryId: string }> }

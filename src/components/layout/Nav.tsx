@@ -15,7 +15,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { tournaments } = useData()
-  const { session } = useAuth()
+  const { session, isAdmin } = useAuth()
   const { pathname, search } = useLocation()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   useEffect(() => {
@@ -50,14 +50,18 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
       <button type="button" onClick={() => setLang('en')} className={lang === 'en' ? 'text-white' : 'text-dim'}>EN</button>
     </div>
   )
+  // an admin is signed in with the same Supabase session as a player would be, so without this the
+  // icon sent them to a player account that does not exist
+  const accountTo = isAdmin ? '/admin' : session ? '/me' : '/login'
+  const accountLabel = isAdmin ? 'Διαχείριση' : session ? t.account.mine : t.account.signIn
   const register = (
     <div className="flex items-center gap-2">
-      <NavLink to={session ? '/me' : '/login'} title={session ? t.account.mine : t.account.signIn}
+      <NavLink to={accountTo} title={accountLabel}
         className={({ isActive }) => cn('pop grid h-9 w-9 place-items-center rounded-full border text-[14px]', session ? 'border-orange/60 text-orange' : 'border-white/15 text-[#d9d8d3]', isActive && 'border-orange text-orange')}>
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
           <circle cx="12" cy="8" r="3.6" /><path d="M4.8 20c.9-3.7 3.8-5.6 7.2-5.6s6.3 1.9 7.2 5.6" />
         </svg>
-        <span className="sr-only">{session ? t.account.mine : t.account.signIn}</span>
+        <span className="sr-only">{accountLabel}</span>
       </NavLink>
       <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-[18px] py-[9px] text-[12px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
     </div>

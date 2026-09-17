@@ -44,8 +44,9 @@ export const upsertTournamentCategory = (tid: string, c: { category_id: string; 
 export const removeTournamentCategory = (tid: string, cid: string) => run(sb().from('tournament_categories').delete().match({ tournament_id: tid, category_id: cid }))
 
 // ---------- teams ----------
-export interface TeamRow { id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null; invite_code: string | null }
-export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at,invite_code').eq('tournament_id', tid).order('category_id').order('name'))
+export interface TeamRow { id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null }
+/** invite_code is deliberately not selected — it is closed to direct reads since 020. */
+export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at').eq('tournament_id', tid).order('category_id').order('name'))
 export const addTeams = (tid: string, rows: Array<{ category_id: string; name: string; city?: string | null }>) =>
   run(sb().from('teams').upsert(rows.map(r => ({ tournament_id: tid, status: 'active', ...r })), { onConflict: 'tournament_id,category_id,name', ignoreDuplicates: true }))
 export const updateTeam = (id: string, patch: Partial<Pick<TeamRow, 'name' | 'city' | 'status' | 'category_id'>> & { checked_in_at?: string | null }) => run(sb().from('teams').update(patch).eq('id', id))

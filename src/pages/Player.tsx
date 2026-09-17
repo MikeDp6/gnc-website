@@ -4,7 +4,7 @@ import { useData } from '@/data/store'
 import { useAuth } from '@/lib/auth'
 import { useI18n } from '@/i18n'
 import { useMeta } from '@/lib/meta'
-import { fetchPlayerHistory, fetchPlayerPublic } from '@/lib/playerApi'
+import { fetchPlayerHistory, fetchPlayerPublic, fetchPlayerRank } from '@/lib/playerApi'
 import { Band } from '@/components/layout/Band'
 import { Crumb } from '@/components/ui/Crumb'
 import { Heading } from '@/components/ui/Heading'
@@ -12,8 +12,9 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Reveal } from '@/components/ui/Reveal'
 import { MatchRow } from '@/components/match/MatchRow'
 import { HistoryList } from '@/components/PlayerHistory'
+import { RankPanel } from '@/components/RankPanel'
 import { NotFound } from './NotFound'
-import type { PlayerHistoryRow } from '@/data/types'
+import type { PlayerHistoryRow, PlayerRank2 } from '@/data/types'
 
 /** Public player page: photo, record across every tournament, the teams they played for, games today. */
 export function Player() {
@@ -22,12 +23,14 @@ export function Player() {
   const { session } = useAuth()
   const { matches, playerById, teamById, categoryById, tournaments, groups, loading } = useData()
   const [hist, setHist] = useState<PlayerHistoryRow[] | null>(null)
+  const [rank, setRank] = useState<PlayerRank2>({ byCategory: [] })
   const [remote, setRemote] = useState<{ display_name: string; nickname: string | null; city: string | null; since_year: number | null; avatar_url: string | null } | null>(null)
   const bundled = playerById(id)
 
   useEffect(() => {
     let alive = true
     fetchPlayerHistory(id).then(h => alive && setHist(h))
+    fetchPlayerRank(id).then(r => alive && setRank(r)).catch(() => {})
     if (!bundled) fetchPlayerPublic(id).then(p => alive && setRemote(p as never))
     return () => { alive = false }
   }, [id, bundled])
@@ -104,11 +107,15 @@ export function Player() {
               </div>
             </Reveal>
           )}
-          <Reveal className="card p-6" delay={120}>
-            <h4 className="kicker mb-3">{t.rankings.title1}</h4>
-            <p className="text-[13px] text-dim">{t.player.rankHint}</p>
-            <Link to="/rankings" className="mt-3 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.rankings.title1} →</Link>
-          </Reveal>
+          {(rank.overall || rank.byCategory.length)
+            ? <Reveal delay={120}><RankPanel rank={rank} title={t.rankings.title1} /></Reveal>
+            : (
+              <Reveal className="card p-6" delay={120}>
+                <h4 className="kicker mb-3">{t.rankings.title1}</h4>
+                <p className="text-[13px] text-dim">{t.player.rankHint}</p>
+                <Link to="/rankings" className="mt-3 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.rankings.title1} →</Link>
+              </Reveal>
+            )}
           {!session && (
             <Reveal className="card border-dashed p-6" delay={180}>
               <h4 className="kicker mb-3">{t.account.isThisYou}</h4>

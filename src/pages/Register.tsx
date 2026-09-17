@@ -61,7 +61,8 @@ export function Register() {
                 <div className="mt-6 rounded-[14px] border border-orange/60 bg-orange/10 p-5">
                   <div className="kicker mb-2">Σύνδεσμος πρόσκλησης συμπαικτών</div>
                   <div className="mono break-all text-[15px] font-bold">{window.location.origin}/join/{done.code}</div>
-                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="orange" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/join/${done.code}`)}>Αντιγραφή</Button><Button variant="ghost" href={`https://wa.me/?text=${encodeURIComponent(`Μπες στην ομάδα ${team.name} για το ${tour?.name}: ${window.location.origin}/join/${done.code}`)}`}>WhatsApp</Button><Button variant="ghost" href={`viber://forward?text=${encodeURIComponent(`${window.location.origin}/join/${done.code}`)}`}>Viber</Button></div>
+                  <p className="mt-3 text-[12px] text-orange-soft">Ο σύνδεσμος δεν χάνεται: μπες με το ίδιο email στον <b>λογαριασμό σου</b> και θα τον βρίσκεις πάντα εκεί, μαζί με το ποιοι συμπαίκτες μπήκαν.</p>
+                <div className="mt-3 flex flex-wrap gap-2"><Button variant="orange" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/join/${done.code}`)}>Αντιγραφή</Button><Button variant="ghost" href={`https://wa.me/?text=${encodeURIComponent(`Μπες στην ομάδα ${team.name} για το ${tour?.name}: ${window.location.origin}/join/${done.code}`)}`}>WhatsApp</Button><Button variant="ghost" href={`viber://forward?text=${encodeURIComponent(`${window.location.origin}/join/${done.code}`)}`}>Viber</Button></div>
                 </div>
               </div>
             ) : step === 0 ? (

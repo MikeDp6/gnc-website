@@ -1,6 +1,6 @@
 // Player profiles: the public history of any player, and the signed-in player's own record.
 import { supabase } from './supabase'
-import type { PlayerHistoryRow, TeamHistoryRow, MyPlayer } from '@/data/types'
+import type { PlayerHistoryRow, TeamHistoryRow, MyPlayer, MyTeam, PlayerRank2 } from '@/data/types'
 
 const sb = () => { if (!supabase) throw new Error('Δεν έχει ρυθμιστεί το Supabase.') ; return supabase }
 
@@ -69,4 +69,26 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
   const { error } = await sb().storage.from('media').upload(path, file, { upsert: true, contentType: file.type || undefined, cacheControl: '3600' })
   if (error) throw new Error(error.message)
   return sb().storage.from('media').getPublicUrl(path).data.publicUrl
+}
+
+/** The teams the signed-in player belongs to, with the roster and — for the captain — the invite. */
+export async function fetchMyTeams(): Promise<MyTeam[]> {
+  const { data, error } = await sb().rpc('my_teams')
+  if (error) throw new Error(error.message)
+  return (data as MyTeam[]) ?? []
+}
+
+/** Where a player stands in the all-time table, overall and inside each category they played. */
+export async function fetchPlayerRank(playerId: string): Promise<PlayerRank2> {
+  if (!supabase) return { byCategory: [] }
+  const [o, c] = await Promise.all([
+    supabase.from('player_rank_overall').select('position,total,points').eq('player_id', playerId).maybeSingle(),
+    supabase.from('player_rank_by_category').select('category_id,position,total,points').eq('player_id', playerId),
+  ])
+  if (o.error) console.warn('[gnc] player_rank_overall:', o.error.message)
+  if (c.error) console.warn('[gnc] player_rank_by_category:', c.error.message)
+  return {
+    overall: o.data ? { position: o.data.position, total: o.data.total, points: o.data.points } : undefined,
+    byCategory: (c.data ?? []).map(r => ({ categoryId: r.category_id, position: r.position, total: r.total, points: r.points })),
+  }
 }
