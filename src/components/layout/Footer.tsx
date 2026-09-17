@@ -6,6 +6,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Button } from '@/components/ui/Button'
 import { Marquee } from '@/components/ui/Marquee'
 import { Logo } from './Logo'
+import { SponsorLogo } from '@/components/SponsorLogo'
 import { cn } from '@/lib/cn'
 import { subscribe } from '@/lib/publicApi'
 
@@ -62,13 +63,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
       <div className="mb-[14px] flex items-end justify-between"><span className="kicker">{t.sections.sponsors}</span><Link to="/sponsors" className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">{t.sponsors.cta} →</Link></div>
       <div className="glass overflow-hidden rounded-[18px]">
         <Marquee duration={30} className="py-[22px]">
-          {sponsorList.map(s => (
-            <a key={s.name} href={s.url} target="_blank" rel="noreferrer" title={s.name} className="flex items-center">
-              {s.logo
-                ? <img src={s.logo} alt={s.name} loading="lazy" className={cn('w-auto object-contain opacity-80 transition-opacity hover:opacity-100', (s.tier ?? 'partner') === 'main' ? 'h-[58px]' : (s.tier ?? 'partner') === 'official' ? 'h-[48px]' : 'h-[40px]')} />
-                : <span className={cn('disp whitespace-nowrap font-bold tracking-[.04em] text-[#9a9fa3] hover:text-white', (s.tier ?? 'partner') === 'main' ? 'text-[40px]' : 'text-[32px]')}>{s.name}</span>}
-            </a>
-          ))}
+          {sponsorList.map(s => <SponsorLogo key={s.name} s={s} />)}
         </Marquee>
       </div>
     </>

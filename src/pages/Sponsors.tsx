@@ -8,6 +8,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
 import { cn } from '@/lib/cn'
+import { SponsorLogo } from '@/components/SponsorLogo'
 import type { Sponsor, SponsorTier } from '@/data/types'
 
 const TIERS: SponsorTier[] = ['main', 'official', 'partner', 'media']
@@ -24,15 +25,13 @@ export function Sponsors() {
   const { sponsorList, stats, season, tournaments } = useData()
   useMeta(t.sponsors.title1 + ' ' + t.sponsors.title2, t.sponsors.blurb, tournaments[0]?.cover)
   const byTier = (tier: SponsorTier) => sponsorList.filter(s => (s.tier ?? 'partner') === tier)
-  const card = (s: Sponsor, tier: SponsorTier) => {
-    const inner = s.logo
-      ? <img src={s.logo} alt={s.name} className={cn('w-auto max-w-full object-contain opacity-85 transition-opacity group-hover:opacity-100', SIZE[tier].logo)} />
-      : <span className={cn('disp text-center text-[#8b9095] transition-colors group-hover:text-white', SIZE[tier].text)}>{s.name}</span>
-    const cls = cn('card pop group flex flex-col items-center justify-center gap-3 p-6 text-center', tier === 'main' && 'md:p-12')
-    return s.url
-      ? <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className={cls}>{inner}{s.blurb && <span className="text-[12px] text-dim">{s.blurb}</span>}</a>
-      : <div key={s.name} className={cls}>{inner}{s.blurb && <span className="text-[12px] text-dim">{s.blurb}</span>}</div>
-  }
+  const card = (s: Sponsor, tier: SponsorTier) => (
+    <div key={s.name} className={cn('card flex flex-col items-center justify-center gap-3 p-6 text-center', tier === 'main' && 'md:p-10')}>
+      <SponsorLogo s={{ ...s, tier }} />
+      {s.blurb && <span className="text-[12px] text-dim">{s.blurb}</span>}
+    </div>
+  )
+
   const reach = [
     { v: stats.cities, l: t.counters.cities },
     { v: season.length, l: t.counters.tournaments },

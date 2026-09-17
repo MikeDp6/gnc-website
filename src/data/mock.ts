@@ -223,11 +223,12 @@ export const season2026: SeasonEvent[] = [
 
 // Sponsors as listed on gnc3on3.gr (logos: public/img/gnc/sponsors/<slug>.png when available)
 export const sponsorList: Sponsor[] = [
-  { name: 'LOUX', url: 'https://www.loux.gr/', tier: 'main' }, { name: 'Σκέντζος', url: 'https://www.skentzos.com/', tier: 'partner' }, { name: 'Kerasidis Group', url: 'https://kerasidisgroup.gr/', tier: 'partner' },
-  { name: 'Affidea', url: 'https://affidea.gr/', tier: 'official' }, { name: 'Wilson', url: 'https://www.wilson.com/en-us/basketball', tier: 'official' }, { name: 'My Way Hotel', url: 'https://www.mywayhotel.gr/', tier: 'official' },
-  { name: 'Crossover', url: 'https://crossoverbrand.com/el', tier: 'partner' }, { name: 'Vlastaras', url: 'https://www.vlastarasate.gr/', tier: 'partner' }, { name: 'SBIE', url: 'https://sbie.edu.gr/', tier: 'partner' },
-  { name: 'Yayaz', url: 'https://www.instagram.com/yayaz_the_place_to_be', tier: 'partner' }, { name: 'Theocar', url: 'https://theocar.com/en/', tier: 'partner' }, { name: 'Stegno', url: 'https://www.stegno.net', tier: 'partner' },
-  { name: 'Account Saints', url: 'https://www.accountsaints.gr/', tier: 'partner' },
+  { name: 'LOUX', url: 'https://www.loux.gr/', tier: 'main', logo: '/img/gnc/sponsors/loux.png' }, { name: 'Σκέντζος', url: 'https://www.skentzos.com/', tier: 'partner', logo: '/img/gnc/sponsors/skentzos.png' }, { name: 'Kerasidis Group', url: 'https://kerasidisgroup.gr/', tier: 'partner', logo: '/img/gnc/sponsors/kerasidis-group.png' },
+  { name: 'Affidea', url: 'https://affidea.gr/', tier: 'official', logo: '/img/gnc/sponsors/affidea.png' }, { name: 'Wilson', url: 'https://www.wilson.com/en-us/basketball', tier: 'official', logo: '/img/gnc/sponsors/wilson.png' }, { name: 'My Way Hotel', url: 'https://www.mywayhotel.gr/', tier: 'official', logo: '/img/gnc/sponsors/my-way-hotel.png' },
+  { name: 'Crossover', url: 'https://crossoverbrand.com/el', tier: 'partner', logo: '/img/gnc/sponsors/crossover.png' }, { name: 'Vlastaras', url: 'https://www.vlastarasate.gr/', tier: 'partner', logo: '/img/gnc/sponsors/vlastaras.png' }, { name: 'SBIE', url: 'https://sbie.edu.gr/', tier: 'partner', logo: '/img/gnc/sponsors/sbie.png' },
+  { name: 'Yayaz', url: 'https://www.instagram.com/yayaz_the_place_to_be', tier: 'partner', logo: '/img/gnc/sponsors/yayaz.png' }, { name: 'Theocar', url: 'https://theocar.com/en/', tier: 'partner', logo: '/img/gnc/sponsors/theocar.png' }, { name: 'Stegno', url: 'https://www.stegno.net', tier: 'partner', logo: '/img/gnc/sponsors/stegno.png' },
+  { name: 'Account Saints', url: 'https://www.accountsaints.gr/', tier: 'partner', logo: '/img/gnc/sponsors/account-saints.png' },
+  { name: 'Go Alexandroupolis', url: 'https://goalexandroupolis.com', tier: 'partner', logo: '/img/gnc/sponsors/go-alexandroupolis.png' },
 ]
 
 /** Offline fallback counters — everything counted from the data we actually have, nothing invented. */
