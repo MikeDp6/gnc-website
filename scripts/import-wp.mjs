@@ -105,4 +105,9 @@ chunks.forEach((lines, i) => {
   names.push(name)
 })
 writeFileSync(resolve('supabase/import/wp-media.txt'), [...media].join('\n') + '\n')
-console.log(`${rows.length} posts → supabase/import/${names[0]} … ${names[names.length - 1]} (${names.length} files) · ${media.size} media files → supabase/import/wp-media.txt`)
+// same rows as JSON, for scripts/push-news.mjs (the SQL editor rejects pastes this size)
+writeFileSync(resolve('supabase/import/news.json'), JSON.stringify(rows.map(r => ({
+  slug: r.slug, title: r.title, excerpt: r.excerpt || null, body: r.body || null,
+  tag: r.tag, published_on: r.date, image_url: r.image, source_url: r.source || null,
+})), null, 1))
+console.log(`${rows.length} posts → supabase/import/news.json (για το push-news.mjs) + ${names.length} αρχεία SQL · ${media.size} media → supabase/import/wp-media.txt`)
