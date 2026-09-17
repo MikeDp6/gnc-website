@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { useData } from '@/data/store'
@@ -6,13 +7,22 @@ import { Button } from '@/components/ui/Button'
 import { Marquee } from '@/components/ui/Marquee'
 import { Logo } from './Logo'
 import { cn } from '@/lib/cn'
+import { subscribe } from '@/lib/publicApi'
 
 /**
  * Footer. With `finale` (home page) it becomes the BIFA-style last screen: a photo behind everything,
  * partners strip + newsletter + link columns all sitting in glass panels.
  */
 export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { finale?: boolean; photo?: string }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const [mail, setMail] = useState({ v: '', state: '' as '' | 'ok' | 'busy' | 'err', msg: '' })
+  const send = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!mail.v.trim()) return
+    setMail(m => ({ ...m, state: 'busy' }))
+    try { await subscribe(mail.v.trim(), lang); setMail({ v: '', state: 'ok', msg: '' }) }
+    catch (x) { setMail(m => ({ ...m, state: 'err', msg: (x as Error).message })) }
+  }
   const { sponsorList } = useData()
   const lcol = (title: string, items: Array<[string, string]>) => (
     <div>
@@ -30,9 +40,9 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
           <span className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-[9px] text-[12px] font-bold text-white">▶ Google Play</span>
         </div>
       </div>
-      {lcol('Διοργανώσεις', [['Επόμενες', '/'], ['Αρχείο & περιοδεία', '/archive'], ['News', '/news'], ['Ενοικιάσεις', '/rentals']])}
+      {lcol('Διοργανώσεις', [['Επόμενες', '/'], ['Αρχείο & περιοδεία', '/archive'], ['Κατάταξη', '/rankings'], ['News', '/news'], ['Ενοικιάσεις', '/rentals']])}
       {lcol(t.nav.teams, [['Δήλωση συμμετοχής', '/register'], ['Κανονισμοί', '/kanonismoi'], ['Όροι συμμετοχής', '/oroi']])}
-      {lcol('GNC', [['Ποιοι είμαστε', '/about'], ['Γίνε εθελοντής', '/volunteer'], ['Επικοινωνία', '/contact']])}
+      {lcol('GNC', [['Ποιοι είμαστε', '/about'], ['Χορηγοί', '/sponsors'], ['Γίνε εθελοντής', '/volunteer'], ['Επικοινωνία', '/contact']])}
       <div>
         <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{t.misc.follow}</b>
         {[['Instagram', 'https://instagram.com/gnc_3on3'], ['Facebook', 'https://www.facebook.com/GNC-3on3-101368258807208'], ['TikTok', 'https://www.tiktok.com/@gnc_3on3'], ['YouTube', 'https://www.youtube.com/channel/UCdchPP-K0RjIQG9G68nd4hw']].map(([n, u]) => <a key={n} href={u} target="_blank" rel="noreferrer" className="mb-[9px] block hover:text-white">{n}</a>)}
@@ -57,7 +67,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
 
       <div className="wrap relative z-10 pb-10 pt-[70px]">
         {/* partners strip */}
-        <div className="kicker mb-[14px]">{t.sections.sponsors}</div>
+        <div className="mb-[14px] flex items-end justify-between"><span className="kicker">{t.sections.sponsors}</span><Link to="/sponsors" className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">{t.sponsors.cta} →</Link></div>
         <div className="glass overflow-hidden rounded-[18px]">
           <Marquee duration={30} className="py-[22px]">
             {sponsorList.map(s => <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="disp whitespace-nowrap text-[32px] font-bold tracking-[.04em] text-[#9a9fa3] hover:text-white">{s.logo ? <img src={s.logo} alt={s.name} className="h-[44px] w-auto opacity-80 hover:opacity-100" /> : s.name}</a>)}
@@ -70,10 +80,15 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
             <Heading a={t.sections.newsletter1} b={t.sections.newsletter2} />
             <p className="mt-3 max-w-[520px] text-[15px] text-cement">{t.misc.newsletterBlurb}</p>
           </div>
-          <form className="flex gap-[10px]" onSubmit={e => e.preventDefault()}>
-            <input type="email" placeholder={t.misc.email} className="min-w-0 flex-1 rounded-full border border-white/20 bg-black/25 px-[18px] py-4 text-[14px] outline-none placeholder:text-dim focus:border-white/40" />
-            <Button className="rounded-full">{t.misc.subscribe}</Button>
-          </form>
+          <div>
+            {mail.state === 'ok'
+              ? <div className="rounded-full bg-ok/15 px-5 py-4 text-center text-[14px]">{t.misc.subscribed}</div>
+              : <form className="flex gap-[10px]" onSubmit={send}>
+                  <input type="email" required value={mail.v} onChange={e => setMail({ v: e.target.value, state: '', msg: '' })} placeholder={t.misc.email} className="min-w-0 flex-1 rounded-full border border-white/20 bg-black/25 px-[18px] py-4 text-[14px] outline-none placeholder:text-dim focus:border-white/40" />
+                  <Button type="submit" className="rounded-full">{mail.state === 'busy' ? '…' : t.misc.subscribe}</Button>
+                </form>}
+            {mail.state === 'err' && <div className="mt-2 text-[12px] text-red">{mail.msg}</div>}
+          </div>
         </div>
 
         {/* link columns */}

@@ -223,11 +223,14 @@ export const season2026: SeasonEvent[] = [
 
 // Sponsors as listed on gnc3on3.gr (logos: public/img/gnc/sponsors/<slug>.png when available)
 export const sponsorList: Sponsor[] = [
-  { name: 'LOUX', url: 'https://www.loux.gr/' }, { name: 'Σκέντζος', url: 'https://www.skentzos.com/' }, { name: 'Kerasidis Group', url: 'https://kerasidisgroup.gr/' },
-  { name: 'Affidea', url: 'https://affidea.gr/' }, { name: 'Wilson', url: 'https://www.wilson.com/en-us/basketball' }, { name: 'My Way Hotel', url: 'https://www.mywayhotel.gr/' },
-  { name: 'Crossover', url: 'https://crossoverbrand.com/el' }, { name: 'Vlastaras', url: 'https://www.vlastarasate.gr/' }, { name: 'SBIE', url: 'https://sbie.edu.gr/' },
-  { name: 'Yayaz', url: 'https://www.instagram.com/yayaz_the_place_to_be' }, { name: 'Theocar', url: 'https://theocar.com/en/' }, { name: 'Stegno', url: 'https://www.stegno.net' },
-  { name: 'Account Saints', url: 'https://www.accountsaints.gr/' },
+  { name: 'LOUX', url: 'https://www.loux.gr/', tier: 'main' }, { name: 'Σκέντζος', url: 'https://www.skentzos.com/', tier: 'partner' }, { name: 'Kerasidis Group', url: 'https://kerasidisgroup.gr/', tier: 'partner' },
+  { name: 'Affidea', url: 'https://affidea.gr/', tier: 'official' }, { name: 'Wilson', url: 'https://www.wilson.com/en-us/basketball', tier: 'official' }, { name: 'My Way Hotel', url: 'https://www.mywayhotel.gr/', tier: 'official' },
+  { name: 'Crossover', url: 'https://crossoverbrand.com/el', tier: 'partner' }, { name: 'Vlastaras', url: 'https://www.vlastarasate.gr/', tier: 'partner' }, { name: 'SBIE', url: 'https://sbie.edu.gr/', tier: 'partner' },
+  { name: 'Yayaz', url: 'https://www.instagram.com/yayaz_the_place_to_be', tier: 'partner' }, { name: 'Theocar', url: 'https://theocar.com/en/', tier: 'partner' }, { name: 'Stegno', url: 'https://www.stegno.net', tier: 'partner' },
+  { name: 'Account Saints', url: 'https://www.accountsaints.gr/', tier: 'partner' },
 ]
 
-export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities, season: season2026, sponsorList }
+/** Offline fallback counters — everything counted from the data we actually have, nothing invented. */
+export const stats = { cities: cities.length, tournaments: season2026.length, teams: teams.length, players: players.length, matches: matches.filter(m => m.status === 'final').length, sinceYear: 2018 }
+
+export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities, season: season2026, sponsorList, stats, photos: [] }

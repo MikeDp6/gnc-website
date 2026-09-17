@@ -16,7 +16,7 @@ import type { Match } from '@/data/types'
 
 export function Home() {
   const { t } = useI18n()
-  const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities, archive } = useData()
+  const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities, archive, stats } = useData()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
   useMeta(undefined, next ? `${t.hero.kicker}: ${next.name} · ${next.dates}. ${t.footer.tagline}` : undefined, next?.cover)
@@ -131,6 +131,18 @@ export function Home() {
               return tour ? <Link key={s.id} to={`/tournaments/${tour.slug}`} className={cls}>{inner}</Link> : <div key={s.id} className={cls}>{inner}</div>
             })}
           </div>
+        </Reveal>
+      </section>
+
+      {/* ---------- COUNTERS: everything counted from the database ---------- */}
+      <section className="wrap pt-[110px]">
+        <Reveal className="glass grid grid-cols-2 gap-6 rounded-band p-8 md:grid-cols-4 md:p-12">
+          {[[stats.cities, t.counters.cities], [stats.tournaments, t.counters.tournaments], [stats.teams, t.counters.teams], [stats.sinceYear, t.counters.since]].map(([v, l]) => (
+            <div key={String(l)}>
+              <b className="disp block text-[56px] leading-none text-orange md:text-[80px]">{v}</b>
+              <span className="mt-2 block text-[11px] font-bold uppercase tracking-[.14em] text-dim md:text-[12px]">{l}</span>
+            </div>
+          ))}
         </Reveal>
       </section>
 

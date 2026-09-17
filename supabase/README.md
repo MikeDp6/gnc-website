@@ -13,6 +13,8 @@
    - `migrations/006_cities.sql` — οι 40 πραγματικές πόλεις της περιοδείας (κουκκίδες χάρτη)
    - `migrations/007_registration.sql` — RPC `register_team` / `join_team` / `submit_contact` + πίνακας `contact_requests` (φόρμες του site)
    - `migrations/008_cms.sql` — CMS: `news`, `rentals`, `season_events`, φωτο/βίντεο πόλεων, bucket `media` + seed με το υπάρχον περιεχόμενο
+   - `migrations/009_rankings.sql` — views `team_rankings`, `player_rankings`, `site_stats` (κατάταξη όλων των εποχών + μετρητές αρχικής)
+   - `migrations/010_sponsor_tiers.sql` — βαθμίδες χορηγών, `subscribers` + RPC `subscribe` (newsletter), `photos` (γκαλερί ανά διοργάνωση)
 3. Database → Replication → enable για `matches` (live σκορ / μετακινήσεις) και `ticker_items`.
 4. Project Settings → API → URL + anon key → `.env.local` (δες `.env.example`).
 5. Για admin: Authentication → πρόσθεσε χρήστη, μετά `insert into public.admins (user_id, role) values ('<uuid>', 'owner');`
@@ -24,7 +26,8 @@
 - `matches` (phase, day_id, court, slot_time, home/away team ή source `W:<match>` / `G:<group>:<rank>` + label, score, status)
 - `tournament_winners` (αρχείο), `sponsors` (logo_url), `ticker_items`, `cities` (χάρτης + `image_url`, `videos`, `years`), `admins`
 - CMS: `news` (slug, body σε Markdown, published), `rentals` (εξοπλισμός/υπηρεσίες), `season_events` (ημερολόγιο σεζόν — και οι στάσεις που δεν τρέχουν από το σύστημα)
-- Storage: public bucket `media` (φάκελοι `news/`, `rentals/`, `cities/`, `sponsors/`) — ανέβασμα μόνο από admin
+- Storage: public bucket `media` (φάκελοι `news/`, `rentals/`, `cities/`, `sponsors/`, `photos/<tournament>/`) — ανέβασμα μόνο από admin
+- Κατάταξη: `team_rankings` (ένωση ομάδων με βάση το όνομα), `player_rankings` (με βάση το email της δήλωσης) — νίκη 2, ήττα 1, 1η θέση +10, 2η +6, 3η +4
 
 ## Frontend
 `src/lib/api.ts` → `fetchBundle()` διαβάζει τα πάντα για την ενεργή διοργάνωση σε ένα `Bundle`. Χωρίς `.env.local` το site τρέχει με `src/data/mock.ts`. Realtime στα `matches` ξαναφορτώνει το bundle.
@@ -33,7 +36,7 @@
 1. Authentication → Users → «Add user» (email + κωδικός, με «Auto confirm»).
 2. SQL editor: `insert into public.admins (user_id, role) select id, 'owner' from auth.users where email = 'EMAIL';`
 3. Άνοιξε `/admin/login`.
-Ενότητες: Διοργανώσεις · Αιτήματα (φόρμες) · Πόλεις (κουκκίδες + φωτο/βίντεο) · Ημερολόγιο (σεζόν) · News · Ενοικιάσεις · Ticker & χορηγοί.
+Ενότητες: Διοργανώσεις · Αιτήματα (φόρμες) · Πόλεις (κουκκίδες + φωτο/βίντεο) · Ημερολόγιο (σεζόν) · News · Ενοικιάσεις · Φωτογραφίες (γκαλερί ανά διοργάνωση) · Ticker & χορηγοί (με βαθμίδες και λογότυπα).
 Καρτέλες ανά διοργάνωση: Στοιχεία (status, δημόσιο, ημέρες/ώρες/γήπεδα) · Κατηγορίες (format, νοκ-άουτ) · Ομάδες (επικόλληση λίστας, έγκριση, check-in) · Αγώνες & σκορ (live/τελικό — realtime στο site) · Πρόγραμμα (scheduler — επόμενο βήμα).
 
 ## Εισαγωγή από το WordPress (gnc3on3.gr)

@@ -100,6 +100,10 @@ export interface ArchiveItem {
   tint: 'orange' | 'blue' | 'mono' | 'teal'
 }
 
+export interface SiteStats { cities: number; tournaments: number; teams: number; players: number; matches: number; sinceYear: number }
+export interface TeamRank { key: string; name: string; teamId?: string; tournaments: number; played: number; wins: number; losses: number; pointsFor: number; pointsAgainst: number; gold: number; silver: number; bronze: number; points: number }
+export interface PlayerRank { id: string; name: string; city?: string; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }
+
 export interface TickerItem { tag: string; text: string; textEn?: string; tone: 'blue' | 'orange' }
 
 /** Everything the public site needs, loaded once (active tournament + marketing). Same shape from Supabase or mock. */
@@ -119,13 +123,17 @@ export interface Bundle {
   cities: City[]
   season: SeasonEvent[]
   sponsorList: Sponsor[]
+  stats: SiteStats
+  photos: Photo[]
 }
 
 export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }
 export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[] }
 /** One row of the yearly calendar (from gnc3on3.gr/calendar) — lighter than a full Tournament */
 export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string }
-export interface Sponsor { name: string; url?: string; logo?: string }
+export type SponsorTier = 'main' | 'official' | 'partner' | 'media'
+export interface Sponsor { name: string; url?: string; logo?: string; tier: SponsorTier; blurb?: string }
+export interface Photo { id: string; url: string; caption?: string; credit?: string; tournamentId?: string; cityId?: string }
 
 export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; body?: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }

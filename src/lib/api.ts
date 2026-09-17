@@ -1,5 +1,5 @@
 // API layer: Supabase → frontend Bundle. Every query uses the anon key and goes through RLS (public read only).
-import type { ArchiveItem, Bundle, Category, CategoryKey, City, CityVideo, Group, Match, NewsItem, Player, RentalItem, SeasonEvent, Sponsor, Stop, Team, TickerItem, Tournament } from '@/data/types'
+import type { ArchiveItem, Bundle, Category, CategoryKey, City, CityVideo, Group, Match, NewsItem, Photo, Player, PlayerRank, RentalItem, SeasonEvent, SiteStats, Sponsor, Stop, Team, TeamRank, TickerItem, Tournament } from '@/data/types'
 import { news as mockNews, rentals as mockRentals, cities as mockCities, season2026, sponsorList } from '@/data/mock'
 import { supabase } from './supabase'
 
@@ -29,11 +29,13 @@ type StandRow = { group_id: string; team_id: string; played: number; wins: numbe
 type MatchRow = { id: string; tournament_id: string; category_id: string; phase: Match['phase']; label: string; group_id: string | null; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
 type WinnerRow = { tournament_id: string; category_id: string; team_id: string; place: number }
 type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange' }
-type SponsorRow = { name: string; url: string | null; logo_url: string | null }
+type SponsorRow = { name: string; url: string | null; logo_url: string | null; tier?: Sponsor['tier'] | null; blurb?: string | null }
+type PhotoRow = { id: string; url: string; caption: string | null; credit: string | null; tournament_id: string | null; city_id: string | null }
 type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null }
 type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
 type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
 type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean }
+type StatsRow = { cities: number; tournaments: number; teams: number; players: number; matches: number; since_year: number }
 const MONTHS_SHORT = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ']
 /** "7 Σεπ 2026" */
 const shortDate = (iso: string) => { const D = d(iso); return `${D.getDate()} ${MONTHS_SHORT[D.getMonth()]} ${D.getFullYear()}` }
@@ -59,13 +61,15 @@ export async function fetchBundle(): Promise<Bundle> {
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
     orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
     q<TickerRow[]>(sb.from('ticker_items').select('tag,text,text_en,tone').eq('active', true).order('sort_order')),
-    q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url').eq('active', true).order('sort_order')),
+    orElse(q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url,tier,blurb').eq('active', true).order('sort_order')), null).then(r => r ?? q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url').eq('active', true).order('sort_order'))),
     q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
   ])
-  const [newsRows, rentalRows, seasonRows] = await Promise.all([
+  const [newsRows, rentalRows, seasonRows, statsRow, photoRows] = await Promise.all([
     orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null),
     orElse(q<RentalRow[]>(sb.from('rentals').select('id,name,blurb,price,image_url').eq('active', true).order('sort_order')), null),
     orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open').order('starts_on')), null),
+    orElse(q<StatsRow>(sb.from('site_stats').select('*').single()), null),
+    orElse(q<PhotoRow[]>(sb.from('photos').select('id,url,caption,credit,tournament_id,city_id').order('sort_order')), null),
   ])
 
   // active tournament = the first one that is not finished; fall back to the latest
@@ -155,9 +159,31 @@ export async function fetchBundle(): Promise<Bundle> {
     const city = cities.find(c => c.id === e.city_id)
     return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined }
   }) : season2026
-  const sponsorsOut: Sponsor[] = sponsors.length ? sponsors.map(s => ({ name: s.name, url: s.url ?? undefined, logo: s.logo_url ?? undefined })) : sponsorList
+  const sponsorsOut: Sponsor[] = sponsors.length ? sponsors.map(s => ({ name: s.name, url: s.url ?? undefined, logo: s.logo_url ?? undefined, tier: s.tier ?? 'partner', blurb: s.blurb ?? undefined })) : sponsorList
+  const photos: Photo[] = (photoRows ?? []).map(p => ({ id: p.id, url: p.url, caption: p.caption ?? undefined, credit: p.credit ?? undefined, tournamentId: p.tournament_id ?? undefined, cityId: p.city_id ?? undefined }))
 
-  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut }
+  const stats: SiteStats = statsRow
+    ? { cities: statsRow.cities, tournaments: statsRow.tournaments, teams: statsRow.teams, players: statsRow.players, matches: statsRow.matches, sinceYear: statsRow.since_year }
+    : { cities: cityList.length, tournaments: tournaments.length, teams: teamList.length, players: playerList.length, matches: matchList.filter(m => m.status === 'final').length, sinceYear: 2018 }
+
+  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut, stats, photos }
+}
+
+type TeamRankRow = { team_key: string; name: string; team_id: string | null; tournaments: number; played: number; wins: number; losses: number; points_for: number; points_against: number; gold: number; silver: number; bronze: number; points: number }
+type PlayerRankRow = { player_id: string; display_name: string; city: string | null; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }
+
+/** All-time rankings — loaded only by the /rankings page, not with the home bundle. */
+export async function fetchRankings(): Promise<{ teams: TeamRank[]; players: PlayerRank[] }> {
+  const sb = supabase
+  if (!sb) return { teams: [], players: [] }
+  const [teams, players] = await Promise.all([
+    q<TeamRankRow[]>(sb.from('team_rankings').select('*').order('points', { ascending: false }).limit(300)),
+    q<PlayerRankRow[]>(sb.from('player_rankings').select('*').order('points', { ascending: false }).limit(300)),
+  ])
+  return {
+    teams: teams.map(t => ({ key: t.team_key, name: t.name, teamId: t.team_id ?? undefined, tournaments: t.tournaments, played: t.played, wins: t.wins, losses: t.losses, pointsFor: t.points_for, pointsAgainst: t.points_against, gold: t.gold, silver: t.silver, bronze: t.bronze, points: t.points })),
+    players: players.map(p => ({ id: p.player_id, name: p.display_name, city: p.city ?? undefined, tournaments: p.tournaments, teams: p.teams, played: p.played, wins: p.wins, losses: p.losses, gold: p.gold, silver: p.silver, bronze: p.bronze, points: p.points })),
+  }
 }
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */

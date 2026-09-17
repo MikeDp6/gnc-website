@@ -6,6 +6,8 @@ import { Team } from '@/pages/Team'
 import { Player } from '@/pages/Player'
 import { NewsList, NewsArticle } from '@/pages/News'
 import { Rentals } from '@/pages/Rentals'
+import { Rankings } from '@/pages/Rankings'
+import { Sponsors } from '@/pages/Sponsors'
 import { Contact } from '@/pages/Contact'
 import { Archive } from '@/pages/Archive'
 import { Register } from '@/pages/Register'
@@ -27,6 +29,7 @@ const Requests = lazy(() => import('@/admin/pages/Requests').then(m => ({ defaul
 const AdminNews = lazy(() => import('@/admin/pages/News').then(m => ({ default: m.News })))
 const AdminRentals = lazy(() => import('@/admin/pages/Rentals').then(m => ({ default: m.Rentals })))
 const Season = lazy(() => import('@/admin/pages/Season').then(m => ({ default: m.Season })))
+const Photos = lazy(() => import('@/admin/pages/Photos').then(m => ({ default: m.Photos })))
 const fallback = <div className="p-10 text-dim">Φόρτωση…</div>
 
 export default function App() {
@@ -42,6 +45,7 @@ export default function App() {
         <Route path="news" element={<AdminNews />} />
         <Route path="rentals" element={<AdminRentals />} />
         <Route path="season" element={<Season />} />
+        <Route path="photos" element={<Photos />} />
       </Route>
       <Route path="live" element={<Live />} />
       <Route path="live/:slug" element={<Live />} />
@@ -53,6 +57,9 @@ export default function App() {
         <Route path="news" element={<NewsList />} />
         <Route path="news/:slug" element={<NewsArticle />} />
         <Route path="rentals" element={<Rentals />} />
+        <Route path="rankings" element={<Rankings />} />
+        <Route path="sponsors" element={<Sponsors />} />
+        <Route path="chorigoi" element={<Sponsors />} />
         <Route path="archive" element={<Archive />} />
         <Route path="cities/:id" element={<City />} />
         <Route path="register" element={<Register />} />

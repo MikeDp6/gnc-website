@@ -17,3 +17,4 @@ export const joinTeam = (code: string, p: { first: string; last: string; email: 
   rpc<{ team_id: string; team_name: string }>('join_team', { p_code: code, p_first: p.first, p_last: p.last, p_email: p.email, p_phone: p.phone, p_birth_year: p.birthYear ?? null, p_guardian: p.guardian ?? null })
 export const submitContact = (kind: 'contact' | 'quote', f: { name: string; email: string; phone?: string; org?: string; subject?: string; item?: string; eventDate?: string; message?: string }) =>
   rpc<string>('submit_contact', { p_kind: kind, p_name: f.name, p_email: f.email, p_phone: f.phone ?? null, p_org: f.org ?? null, p_subject: f.subject ?? null, p_item: f.item ?? null, p_event_date: f.eventDate || null, p_message: f.message ?? null })
+export const subscribe = (email: string, lang: 'el' | 'en', source = 'footer') => rpc<boolean>('subscribe', { p_email: email, p_lang: lang, p_source: source })

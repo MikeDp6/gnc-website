@@ -11,19 +11,20 @@ import { Heading } from '@/components/ui/Heading'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
+import { Photo } from '@/components/ui/Photo'
 import { MatchRow } from '@/components/match/MatchRow'
 import { StandingsTable } from '@/components/standings/StandingsTable'
 import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { NotFound } from './NotFound'
 import { PrintSchedule } from '@/components/PrintSchedule'
 
-type TabKey = 'schedule' | 'groups' | 'ko' | 'teams' | 'info'
-const TAB_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'teams', 'info']
+type TabKey = 'schedule' | 'groups' | 'ko' | 'teams' | 'photos' | 'info'
+const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'teams', 'photos', 'info']
 
 export function Tournament() {
   const { slug = '' } = useParams()
   const { t } = useI18n()
-  const { categories, categoryById, groups, matches, teams, tournamentBySlug, loading } = useData()
+  const { categories, categoryById, groups, matches, teams, tournamentBySlug, loading, photos } = useData()
   const [params] = useSearchParams()
   const tour = tournamentBySlug(slug)
   const [tab, setTab] = useState<TabKey>(params.get('tab') === 'teams' ? 'teams' : 'schedule')
@@ -40,6 +41,8 @@ export function Tournament() {
   const byTime = list.reduce<Record<string, typeof list>>((acc, m) => { (acc[m.time] ??= []).push(m); return acc }, {})
   // knockout per category (every category that has one)
   const koByCat = cats.map(c => ({ c, ms: all.filter(m => m.categoryId === c.id && m.phase !== 'group') })).filter(x => x.ms.length)
+  const gallery = photos.filter(p => p.tournamentId === tour.id)
+  const TAB_KEYS = ALL_KEYS.filter(k => k !== 'photos' || gallery.length > 0)
   const tabLabels = TAB_KEYS.map(k => t.tour.tabs[k])
   const tabOf = (label: string) => TAB_KEYS[tabLabels.indexOf(label)] ?? 'schedule'
 
@@ -117,6 +120,26 @@ export function Tournament() {
                 </Reveal>
               )
             })}
+          </div>
+        </section>
+      )}
+
+      {tab === 'photos' && (
+        <section className="wrap pt-[70px]">
+          <Heading a={t.tour.tabs.photos} b={String(gallery.length)} size="md" className="mb-[26px]" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {gallery.map((p, i) => (
+              <Reveal key={p.id} delay={(i % 3) * 60}>
+                <a href={p.url} target="_blank" rel="noreferrer" className="card pop relative block h-[240px] overflow-hidden rounded-[16px]">
+                  <Photo src={p.url} className="transition-transform duration-700 hover:scale-[1.04]" position="center" />
+                  {(p.caption || p.credit) && (
+                    <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(10,10,11,.85))] p-3 text-[12px]">
+                      {p.caption}{p.credit && <span className="ml-2 text-mute">© {p.credit}</span>}
+                    </div>
+                  )}
+                </a>
+              </Reveal>
+            ))}
           </div>
         </section>
       )}

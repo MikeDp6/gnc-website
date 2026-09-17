@@ -1,1 +1,226 @@
-{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+{
+  "redirects": [
+    {
+      "source": "/athina-plateia-kotzia-vinteo",
+      "destination": "/cities/athina",
+      "permanent": true
+    },
+    {
+      "source": "/chania-vinteo",
+      "destination": "/cities/chania",
+      "permanent": true
+    },
+    {
+      "source": "/agrinio-vinteo",
+      "destination": "/cities/agrinio",
+      "permanent": true
+    },
+    {
+      "source": "/komotini-vinteo",
+      "destination": "/cities/komotini",
+      "permanent": true
+    },
+    {
+      "source": "/drama-vinteo",
+      "destination": "/cities/drama",
+      "permanent": true
+    },
+    {
+      "source": "/irakleio-vinteo",
+      "destination": "/cities/irakleio",
+      "permanent": true
+    },
+    {
+      "source": "/pyrgos-vinteo",
+      "destination": "/cities/pyrgos",
+      "permanent": true
+    },
+    {
+      "source": "/kourouta-vinteo",
+      "destination": "/cities/kourouta",
+      "permanent": true
+    },
+    {
+      "source": "/veroia-vinteo",
+      "destination": "/cities/veroia",
+      "permanent": true
+    },
+    {
+      "source": "/aigio-vinteo",
+      "destination": "/cities/aigio",
+      "permanent": true
+    },
+    {
+      "source": "/rafina-vinteo",
+      "destination": "/cities/rafina",
+      "permanent": true
+    },
+    {
+      "source": "/patra-vinteo",
+      "destination": "/cities/patra",
+      "permanent": true
+    },
+    {
+      "source": "/kalamata-vinteo",
+      "destination": "/cities/kalamata",
+      "permanent": true
+    },
+    {
+      "source": "/mykonos-vinteo",
+      "destination": "/cities/mykonos",
+      "permanent": true
+    },
+    {
+      "source": "/thessaloniki-vinteo",
+      "destination": "/cities/thessaloniki",
+      "permanent": true
+    },
+    {
+      "source": "/dytiki-achaia-vinteo",
+      "destination": "/cities/dytiki-achaia",
+      "permanent": true
+    },
+    {
+      "source": "/amfilochia-vinteo",
+      "destination": "/cities/amfilochia",
+      "permanent": true
+    },
+    {
+      "source": "/kalampaka-vinteo",
+      "destination": "/cities/kalampaka",
+      "permanent": true
+    },
+    {
+      "source": "/karditsa-vinteo",
+      "destination": "/cities/karditsa",
+      "permanent": true
+    },
+    {
+      "source": "/skala-vinteo",
+      "destination": "/cities/skala",
+      "permanent": true
+    },
+    {
+      "source": "/gastouni-vinteo",
+      "destination": "/cities/gastouni",
+      "permanent": true
+    },
+    {
+      "source": "/akrata-vinteo",
+      "destination": "/cities/akrata",
+      "permanent": true
+    },
+    {
+      "source": "/korinthos-vinteo",
+      "destination": "/cities/korinthos",
+      "permanent": true
+    },
+    {
+      "source": "/perama-vinteo",
+      "destination": "/cities/perama",
+      "permanent": true
+    },
+    {
+      "source": "/paiania-vinteo",
+      "destination": "/cities/paiania",
+      "permanent": true
+    },
+    {
+      "source": "/igoumenitsa-vinteo",
+      "destination": "/cities/igoumenitsa",
+      "permanent": true
+    },
+    {
+      "source": "/larisa-vinteo",
+      "destination": "/cities/larisa",
+      "permanent": true
+    },
+    {
+      "source": "/gine-ethelontis",
+      "destination": "/volunteer",
+      "permanent": true
+    },
+    {
+      "source": "/aboutus",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/enoikiaseis",
+      "destination": "/rentals",
+      "permanent": true
+    },
+    {
+      "source": "/calendar",
+      "destination": "/archive",
+      "permanent": true
+    },
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/category/:slug*",
+      "destination": "/news",
+      "permanent": true
+    },
+    {
+      "source": "/tag/:slug*",
+      "destination": "/news",
+      "permanent": true
+    },
+    {
+      "source": "/feed",
+      "destination": "/news",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=()"
+        }
+      ]
+    }
+  ]
+}
