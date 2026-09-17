@@ -17,6 +17,7 @@
    - `migrations/010_sponsor_tiers.sql` — βαθμίδες χορηγών, `subscribers` + RPC `subscribe` (newsletter), `photos` (γκαλερί ανά διοργάνωση)
    - `migrations/011_grants_service.sql` — grants στο `service_role` (χρειάζεται για τα τοπικά scripts εισαγωγής) και re-grant σε ό,τι προστέθηκε μετά το 004
    - `migrations/012_stats_fix.sql` — σωστοί μετρητές αρχικής: διοργανώσεις = στάσεις της σεζόν, «από το» = 2018
+   - `migrations/013_player_profiles.sql` — προφίλ παικτών: ορατότητα (`public_profile`), `claim_player`/`my_player`/`update_my_player`, views `player_history` & `team_history`, policies για avatars στο Storage
 3. Database → Replication → enable για `matches` (live σκορ / μετακινήσεις) και `ticker_items`.
 4. Project Settings → API → URL + anon key → `.env.local` (δες `.env.example`).
 5. Για admin: Authentication → πρόσθεσε χρήστη, μετά `insert into public.admins (user_id, role) values ('<uuid>', 'owner');`

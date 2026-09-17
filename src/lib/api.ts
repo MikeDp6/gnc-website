@@ -23,7 +23,7 @@ type DayRow = { id: string; tournament_id: string; day_index: number; date: stri
 type TCRow = { tournament_id: string; category_id: string; qualifiers: number | null; sort_order: number }
 type TeamRow = { id: string; tournament_id: string; category_id: string; name: string; city: string | null; captain_id: string | null; status: string; checked_in_at: string | null }
 type TPRow = { team_id: string; player_id: string; role: string }
-type PlayerRow = { id: string; display_name: string; city: string | null; since_year: number | null }
+type PlayerRow = { id: string; display_name: string; nickname?: string | null; city: string | null; since_year: number | null; avatar_url?: string | null }
 type GroupRow = { id: string; tournament_id: string; category_id: string; name: string; sort_order: number; note: string | null }
 type StandRow = { group_id: string; team_id: string; played: number; wins: number; losses: number; points_for: number; points_against: number; points: number }
 type MatchRow = { id: string; tournament_id: string; category_id: string; phase: Match['phase']; label: string; group_id: string | null; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
@@ -84,7 +84,7 @@ export async function fetchBundle(): Promise<Bundle> {
     q<TPRow[]>(sb.from('team_players').select('team_id,player_id,role')),
   ])
   const playerIds = [...new Set(tps.map(x => x.player_id))]
-  const players = playerIds.length ? await q<PlayerRow[]>(sb.from('players_public').select('id,display_name,city,since_year').in('id', playerIds)) : []
+  const players = playerIds.length ? await orElse(q<PlayerRow[]>(sb.from('players_public').select('id,display_name,nickname,city,since_year,avatar_url').in('id', playerIds)), null).then(r => r ?? q<PlayerRow[]>(sb.from('players_public').select('id,display_name,city,since_year').in('id', playerIds))) : []
 
   const cityName = (id: string | null) => cities.find(c => c.id === id)?.name ?? ''
   const dayIndex = new Map(days.map(x => [x.id, x.day_index]))
@@ -110,7 +110,7 @@ export async function fetchBundle(): Promise<Bundle> {
     id: t.id, name: t.name, categoryId: t.category_id, tournamentId: t.tournament_id, city: t.city ?? undefined, captainId: t.captain_id ?? undefined,
     playerIds: tps.filter(x => x.team_id === t.id).map(x => x.player_id),
   }))
-  const playerList: Player[] = players.map(p => ({ id: p.id, name: p.display_name, city: p.city ?? undefined, since: p.since_year ?? undefined, teamId: tps.find(x => x.player_id === p.id)?.team_id }))
+  const playerList: Player[] = players.map(p => ({ id: p.id, name: p.display_name, nickname: p.nickname ?? undefined, city: p.city ?? undefined, since: p.since_year ?? undefined, avatar: p.avatar_url ?? undefined, teamId: tps.find(x => x.player_id === p.id)?.team_id }))
 
   // qualifiers per group = ceil(KO size / groups in category)
   const groupList: Group[] = groups.map(g => {

@@ -14,6 +14,8 @@ import { Register } from '@/pages/Register'
 import { City } from '@/pages/City'
 import { Rules, About, Volunteer, Terms } from '@/pages/Static'
 import { Join } from '@/pages/Join'
+import { Login as PlayerLogin } from '@/pages/Login'
+import { Me } from '@/pages/Me'
 import { NotFound } from '@/pages/NotFound'
 import { Live } from '@/pages/Live'
 import { Suspense, lazy } from 'react'
@@ -63,6 +65,8 @@ export default function App() {
         <Route path="archive" element={<Archive />} />
         <Route path="cities/:id" element={<City />} />
         <Route path="register" element={<Register />} />
+        <Route path="login" element={<PlayerLogin />} />
+        <Route path="me" element={<Me />} />
         <Route path="join/:code" element={<Join />} />
         <Route path="contact" element={<Contact />} />
         <Route path="kanonismoi" element={<Rules />} />

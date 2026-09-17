@@ -17,12 +17,32 @@ export interface Team {
   playerIds?: string[]
 }
 
+export interface PlayerHistoryRow {
+  tournamentId: string; slug: string; tournament: string; startsOn: string; status: string
+  teamId: string; team: string; captain: boolean
+  category: string; categoryShort: string; colorKey: string
+  played: number; wins: number; losses: number; place?: number
+}
+export interface TeamHistoryRow {
+  tournamentId: string; slug: string; tournament: string; startsOn: string; teamId: string
+  category: string; colorKey: string; played: number; wins: number; losses: number; place?: number
+}
+/** The signed-in player's own row — includes contact details, never leaves their own session. */
+export interface MyPlayer {
+  id: string; first_name: string; last_name: string; display_name: string; nickname: string | null
+  email: string | null; phone: string | null; city: string | null; birth_year: number | null
+  since_year: number | null; avatar_url: string | null; public_profile: boolean
+  guardian_name: string | null; created_at: string
+}
+
 export interface Player {
   id: string
   name: string
+  nickname?: string
   city?: string
   since?: number
   teamId?: string
+  avatar?: string
 }
 
 export type MatchStatus = 'scheduled' | 'live' | 'final'

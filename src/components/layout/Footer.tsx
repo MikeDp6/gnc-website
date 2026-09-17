@@ -41,7 +41,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
         </div>
       </div>
       {lcol('Διοργανώσεις', [['Επόμενες', '/'], ['Αρχείο & περιοδεία', '/archive'], ['Κατάταξη', '/rankings'], ['News', '/news'], ['Ενοικιάσεις', '/rentals']])}
-      {lcol(t.nav.teams, [['Δήλωση συμμετοχής', '/register'], ['Κανονισμοί', '/kanonismoi'], ['Όροι συμμετοχής', '/oroi']])}
+      {lcol(t.nav.teams, [['Δήλωση συμμετοχής', '/register'], ['Ο λογαριασμός μου', '/me'], ['Κανονισμοί', '/kanonismoi'], ['Όροι συμμετοχής', '/oroi']])}
       {lcol('GNC', [['Ποιοι είμαστε', '/about'], ['Χορηγοί', '/sponsors'], ['Γίνε εθελοντής', '/volunteer'], ['Επικοινωνία', '/contact']])}
       <div>
         <b className="mb-[14px] block text-[12px] uppercase tracking-[.14em] text-white">{t.misc.follow}</b>

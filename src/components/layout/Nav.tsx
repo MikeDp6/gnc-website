@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { Logo } from './Logo'
 import { useData } from '@/data/store'
+import { useAuth } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 
 /**
@@ -14,6 +15,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { tournaments } = useData()
+  const { session } = useAuth()
   const { pathname } = useLocation()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   useEffect(() => {
@@ -44,7 +46,15 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
       <button type="button" onClick={() => setLang('en')} className={lang === 'en' ? 'text-white' : 'text-dim'}>EN</button>
     </div>
   )
-  const register = <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-5 py-[11px] text-[13px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
+  const register = (
+    <div className="flex items-center gap-2">
+      <NavLink to={session ? '/me' : '/login'} title={session ? t.account.mine : t.account.signIn}
+        className={({ isActive }) => cn('pop grid h-10 w-10 place-items-center rounded-full border border-white/15 text-[15px]', isActive && 'border-orange text-orange')}>
+        <span aria-hidden>{session ? '★' : '☺'}</span><span className="sr-only">{session ? t.account.mine : t.account.signIn}</span>
+      </NavLink>
+      <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-5 py-[11px] text-[13px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
+    </div>
+  )
   const big = overlay && !scrolled
   return (
     <header className={cn('z-30', overlay ? 'fixed left-0 right-0 transition-[top] duration-300' : 'sticky top-0 py-3')} style={overlay ? { top: scrolled ? 10 : 50 } : undefined}>
