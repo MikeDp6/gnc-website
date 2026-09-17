@@ -40,7 +40,7 @@ export const tournaments: Tournament[] = [
     venue: 'Δημοτικό Γήπεδο Πεύκης', address: 'Ελ. Βενιζέλου 12, Πεύκη',
     dates: '19–20 Σεπτεμβρίου 2026', startsAt: '2026-09-19T17:00:00+03:00',
     days: ['Σάββατο 19/9', 'Κυριακή 20/9'], courts: 2, status: 'upcoming', teamsCount: 52,
-    categoryIds: categories.map(c => c.id), cover: '/img/gnc/gnc-pefki-3x3-1-scaled.jpg',
+    categoryIds: categories.map(c => c.id), cover: '/img/gnc/gnc3on3_patra2-min.jpg',
   },
 ]
 

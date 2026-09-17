@@ -11,6 +11,7 @@ import { Marquee } from '@/components/ui/Marquee'
 import { GreeceMap } from '@/components/GreeceMap'
 import { NewsCarousel } from '@/components/NewsCarousel'
 import { Photo } from '@/components/ui/Photo'
+import { RentalImage } from '@/components/RentalImage'
 import { useMeta } from '@/lib/meta'
 import type { Match } from '@/data/types'
 
@@ -165,7 +166,7 @@ export function Home() {
           {rentals.slice(0, 4).map(r => (
             <div key={r.id} className="card pop flex flex-col overflow-hidden rounded-[18px]">
               <div className="relative h-[170px]">
-                {r.image ? <Photo src={r.image} position="center" /> : <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>}
+                <RentalImage src={r.image} />
                 <span className="glass absolute left-3 top-3 rounded-full px-3 py-[6px] text-[11px] font-extrabold uppercase tracking-[.1em] text-white">{r.price}</span>
               </div>
               <div className="flex flex-1 flex-col px-[18px] pb-5 pt-4">

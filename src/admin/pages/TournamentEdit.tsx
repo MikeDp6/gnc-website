@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import * as api from '@/lib/adminApi'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
+import { ImageField } from '../upload'
 import { cn } from '@/lib/cn'
 import { Scheduler } from './Scheduler'
 import { splits } from '@/scheduler/engine'
@@ -61,7 +62,7 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
         <Field label="Έως"><Input type="date" value={f.ends_on} onChange={e => setF({ ...f, ends_on: e.target.value })} /></Field>
         <Field label="Κατάσταση"><Select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}>{STATUS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
         <Field label="Προθεσμία δηλώσεων"><Input type="datetime-local" value={(f.registration_deadline ?? '').slice(0, 16)} onChange={e => setF({ ...f, registration_deadline: e.target.value || null })} /></Field>
-        <Field label="Εικόνα εξωφύλλου (URL)" className="md:col-span-2"><Input value={f.cover_url ?? ''} onChange={e => setF({ ...f, cover_url: e.target.value })} placeholder="/img/hero-dark.jpg" /></Field>
+        <ImageField value={f.cover_url} onChange={v => setF({ ...f, cover_url: v })} folder="covers" label="Εικόνα εξωφύλλου — φωτογραφία γηπέδου, όχι αφίσα (μπαίνει πίσω από τον τίτλο)" className="md:col-span-2" />
         <label className="flex items-center gap-3 text-[14px] md:col-span-2"><input type="checkbox" checked={f.is_public} onChange={e => setF({ ...f, is_public: e.target.checked })} className="h-4 w-4" /> Δημόσιο — φαίνεται στο site και στο app</label>
         <div className="md:col-span-2"><Btn onClick={save}>Αποθήκευση</Btn></div>
       </div>

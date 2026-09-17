@@ -3,7 +3,7 @@ import { useData } from '@/data/store'
 import { useI18n } from '@/i18n'
 import { useMeta } from '@/lib/meta'
 import { Reveal } from '@/components/ui/Reveal'
-import { Photo } from '@/components/ui/Photo'
+import { RentalImage } from '@/components/RentalImage'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
@@ -32,7 +32,7 @@ export function Rentals() {
             <Reveal key={r.id} delay={(i % 4) * 60}>
               <button type="button" onClick={() => { setItem(r.name); document.getElementById('quote')?.scrollIntoView({ behavior: 'smooth' }) }} className="card pop flex h-full w-full flex-col overflow-hidden rounded-[18px] text-left">
                 <div className="relative h-[190px]">
-                  {r.image ? <Photo src={r.image} position="center" /> : <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>}
+                  <RentalImage src={r.image} />
                   <span className="glass absolute left-3 top-3 rounded-full px-3 py-[6px] text-[11px] font-extrabold uppercase tracking-[.1em] text-white">{r.price}</span>
                 </div>
                 <div className="flex flex-1 flex-col px-[18px] pb-5 pt-4">
