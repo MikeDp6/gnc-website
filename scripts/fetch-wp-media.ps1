@@ -1,9 +1,12 @@
+# Windows PowerShell 5.1 reads files as ANSI by default, which mangles the Greek filenames in the list.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 # Downloads the media files listed by scripts/import-wp.mjs (supabase/import/wp-media.txt) into public/img/wp/.
 # Run from the repo root in PowerShell after import-wp.mjs:  .\scripts\fetch-wp-media.ps1
 $list = Join-Path $PSScriptRoot "..\supabase\import\wp-media.txt"
 $dst = Join-Path $PSScriptRoot "..\public\img\wp"
 New-Item -ItemType Directory -Force -Path $dst | Out-Null
-$urls = Get-Content $list | Where-Object { $_.Trim() -ne "" }
+$urls = Get-Content $list -Encoding UTF8 | Where-Object { $_.Trim() -ne "" }
 $i = 0
 foreach ($u in $urls) {
   $i++
