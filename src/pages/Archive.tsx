@@ -21,7 +21,7 @@ export function Archive() {
       <section className="wrap pt-6">
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
           <div>
-            <Heading a="Η περιοδεία" b="& το αρχείο" />
+            <Heading a="Η περιοδεία" b="& το αρχείο" as="h1" />
             <p className="mt-4 max-w-[520px] text-[16px] text-dim">Κάθε καλοκαίρι, σε κάθε γωνιά της χώρας, δωρεάν. Από την Αθήνα και τη Θεσσαλονίκη έως την Κρήτη και την Πάτρα — η κορυφαία διοργάνωση street basketball της Ελλάδας.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               {[[cities.length, 'Πόλεις'], [season.length, 'Διοργανώσεις 2026'], ['2018', 'Από']].map(([v, l]) => (
@@ -50,7 +50,7 @@ export function Archive() {
           {withVideo.map((c, i) => (
             <Reveal key={c.id} delay={(i % 4) * 50}>
               <Link to={`/cities/${c.id}`} className="card pop relative block h-[220px] overflow-hidden rounded-[18px]">
-                <Photo src={c.image} className="transition-transform duration-700 hover:scale-[1.04]" />
+                <Photo src={c.image} alt={`GNC 3on3 ${cname(c)}`} className="transition-transform duration-700 hover:scale-[1.04]" />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_30%,rgba(10,10,11,.9)_100%)]" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <div className="disp text-[30px] text-white">{cname(c)}</div>
@@ -69,7 +69,7 @@ export function Archive() {
                 const tour = tournaments.find(x => x.id === a.id)
                 const inner = (
                   <>
-                    <div className="relative h-[150px]"><Photo src={tour?.cover} /><div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0),rgba(10,10,11,.7))]" /></div>
+                    <div className="relative h-[150px]"><Photo src={tour?.cover} alt={`${a.title} — ${a.city}`} /><div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0),rgba(10,10,11,.7))]" /></div>
                     <div className="px-[18px] py-5"><div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.city}</b><span>{a.when}</span></div><div className="disp text-[32px] leading-[.95]">{a.title}</div><div className="mt-[10px] text-[13px] text-dim">{a.blurb}</div></div>
                   </>
                 )

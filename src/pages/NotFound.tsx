@@ -25,7 +25,7 @@ export function NotFound() {
 
   return (
     <div className="wrap py-[120px] text-center">
-      <div className="disp text-[120px] leading-none text-orange md:text-[180px]">404</div>
+      <h1 className="disp text-[120px] leading-none text-orange md:text-[180px]">404</h1>
       <p className="mt-4 text-[16px] text-dim">{t.notFound.text}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button to="/">{t.notFound.home}</Button>

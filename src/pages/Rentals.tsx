@@ -25,7 +25,7 @@ export function Rentals() {
     <>
       <Crumb items={[{ label: 'Ενοικιάσεις & διοργάνωση' }]} />
       <section className="wrap pt-6">
-        <Heading a={t.sections.shop1} b={t.sections.shop2} />
+        <Heading a={t.sections.shop1} b={t.sections.shop2} as="h1" />
         <p className="mt-4 max-w-[640px] text-[16px] text-dim">Η GNC στήνει τουρνουά 3on3 από το 2018 σε 25 πόλεις. Ό,τι χρησιμοποιούμε στα δικά μας τουρνουά — γήπεδα, γραμματεία, scoreboard, ηχητικά — το διαθέτουμε σε δήμους, εταιρείες, σχολεία και συλλόγους, με ή χωρίς τη δική μας ομάδα.</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {rentals.map((r, i) => (

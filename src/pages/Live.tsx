@@ -41,7 +41,7 @@ export function Live() {
   return (
     <div className="flex h-[100svh] flex-col bg-bg text-ink">
       <header className="flex items-center justify-between px-8 py-4">
-        <div className="flex items-center gap-5"><Logo height={56} /><div><div className="disp text-[34px] leading-none">{tour.name}</div><div className="text-[12px] font-bold uppercase tracking-[.16em] text-dim">{tour.venue} · {tour.days[today - 1]}</div></div></div>
+        <div className="flex items-center gap-5"><Logo height={56} /><div><h1 className="disp text-[34px] leading-none">{tour.name}</h1><div className="text-[12px] font-bold uppercase tracking-[.16em] text-dim">{tour.venue} · {tour.days[today - 1]}</div></div></div>
         <div className="mono text-[44px] font-extrabold tabular-nums">{hhmm}</div>
       </header>
       <main className={cn('grid flex-1 gap-4 px-8 pb-4', cols)}>

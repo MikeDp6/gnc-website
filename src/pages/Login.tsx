@@ -25,7 +25,7 @@ export function Login() {
     <section className="wrap grid gap-10 pt-10 lg:grid-cols-2">
       <div>
         <Crumb items={[{ label: t.account.signIn }]} />
-        <Heading a={t.account.title1} b={t.account.title2} className="mt-4" />
+        <Heading a={t.account.title1} b={t.account.title2} className="mt-4" as="h1" />
         <p className="mt-5 max-w-[520px] text-[16px] text-dim">{t.account.blurb}</p>
         <ul className="mt-6 space-y-3 text-[14px] text-dim">
           {t.account.perks.map(p => <li key={p} className="flex gap-3 border-t border-line pt-3"><span className="text-orange">→</span>{p}</li>)}

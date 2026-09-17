@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { Heading } from '@/components/ui/Heading'
+import { useMeta } from '@/lib/meta'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, Steps, TextInput } from '@/components/ui/Form'
@@ -14,6 +15,7 @@ const MINOR = ['u11', 'u13', 'u15', 'u18']
 
 /** Team registration — UI only for now; the submit will create teams(status='pending') + players + invite links. */
 export function Register() {
+  useMeta('Δήλωσε ομάδα', 'Δήλωσε την ομάδα σου σε διοργάνωση GNC 3on3. Δωρεάν συμμετοχή, κατηγορίες από U11 έως 35+.')
   const { tournaments, categories, categoryById } = useData()
   const open = tournaments.filter(t => t.status === 'registration' || t.status === 'upcoming')
   const [step, setStep] = useState(0)
@@ -42,7 +44,7 @@ export function Register() {
     <>
       <Crumb items={[{ label: 'Δήλωση ομάδας' }]} />
       <section className="wrap pt-6">
-        <Heading a="Δήλωσε" b="ομάδα" />
+        <Heading a="Δήλωσε" b="ομάδα" as="h1" />
         <p className="mt-4 max-w-[600px] text-[15px] text-dim">Τρία λεπτά από το κινητό. Δηλώνεις ομάδα και κατηγορία, δίνεις τα στοιχεία σου ως αρχηγός, και στέλνεις σύνδεσμο πρόσκλησης στους συμπαίκτες σου — ο καθένας συμπληρώνει μόνο τα δικά του.</p>
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <form onSubmit={submit} className="card rounded-band p-6 md:p-8">

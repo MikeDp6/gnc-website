@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 /* ---------- Fonts (self-hosted, full Greek) ---------- */
-@font-face { font-family: 'Sofia Sans Extra Condensed'; src: url('/fonts/SofiaSansExtraCondensed.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: 'Inter'; src: url('/fonts/Inter.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono.ttf') format('truetype'); font-weight: 100 800; font-display: swap; }
+/* Subset to Greek + Latin and packed as woff2: 1.4 MB of TTF became 250 KB, same variable weights. */
+@font-face { font-family: 'Sofia Sans Extra Condensed'; src: url('/fonts/SofiaSansExtraCondensed.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('/fonts/Inter.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono.woff2') format('woff2'); font-weight: 100 800; font-display: swap; }
 
 /* ---------- Design tokens (single source of truth: site + app) ---------- */
 @theme {

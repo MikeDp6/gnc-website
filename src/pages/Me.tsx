@@ -55,7 +55,7 @@ export function Me() {
   if (!me) return (
     <section className="wrap pt-10">
       <Crumb items={[{ label: t.account.mine }]} />
-      <Heading a={t.account.title1} b={t.account.title2} className="mt-4" />
+      <Heading a={t.account.title1} b={t.account.title2} className="mt-4" as="h1" />
       <div className="card mt-8 max-w-[640px] p-7">
         <div className="disp text-[32px]">{t.account.noProfile}</div>
         <p className="mt-3 text-[15px] text-dim">{t.account.noProfileHelp}</p>

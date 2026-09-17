@@ -14,7 +14,7 @@ export function Contact() {
   const { t } = useI18n()
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  useMeta(t.contact.title1, 'gnc3on3@gmail.com · Πάτρα · Αθήνα')
+  useMeta(t.contact.title1, 'Επικοινώνησε με τη GNC 3on3 για δηλώσεις ομάδων, χορηγίες, ενοικίαση εξοπλισμού ή για να φέρουμε τουρνουά στην πόλη σου. gnc3on3@gmail.com')
   const submit = async (e: FormEvent) => {
     e.preventDefault(); const f = new FormData(e.currentTarget as HTMLFormElement)
     try { await submitContact('contact', { name: String(f.get('name')), email: String(f.get('email')), subject: String(f.get('subject')), message: String(f.get('message')) }); setSent(true) } catch (x) { setErr((x as Error).message) }
@@ -24,7 +24,7 @@ export function Contact() {
       <Crumb items={[{ label: t.contact.title1 }]} />
       <section className="wrap grid gap-10 pt-6 lg:grid-cols-[1fr_1.2fr]">
         <div>
-          <Heading a={t.contact.title1} />
+          <Heading a={t.contact.title1} as="h1" />
           <div className="mt-8 space-y-5 text-[15px]">
             {[[t.contact.email, <a key="m" href="mailto:gnc3on3@gmail.com" className="hover:text-orange">gnc3on3@gmail.com</a>], [t.contact.hq, 'Πάτρα · Αθήνα'], [t.contact.hours, t.contact.hoursV]].map(([k, v]) => (
               <div key={String(k)} className="border-t border-line pt-4"><div className="kicker mb-1">{k}</div><div className="font-semibold">{v}</div></div>

@@ -19,7 +19,7 @@ export function NewsList() {
     <>
       <Crumb items={[{ label: 'News' }]} />
       <section className="wrap pt-6">
-        <Heading a={t.sections.news1} b={t.sections.news2} className="mb-[34px]" />
+        <Heading a={t.sections.news1} b={t.sections.news2} className="mb-[34px]" as="h1" />
         {first && (
           <Link to={`/news/${first.slug}`} className="card pop relative mb-6 block min-h-[420px] overflow-hidden rounded-band md:min-h-[560px]">
             <Photo src={first.image} className="hero-in" position="center 30%" />

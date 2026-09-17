@@ -33,7 +33,7 @@ export function PhotoGrid({ photos, initial = 12 }: { photos: Photo[]; initial?:
     <>
       <div className="columns-2 gap-3 md:columns-3 [&>*]:mb-3">
         {photos.slice(0, shown).map((p, i) => (
-          <button key={p.id} type="button" onClick={() => setOpen(i)}
+          <button key={p.id} type="button" onClick={() => setOpen(i)} aria-label={p.caption || `Φωτογραφία ${i + 1}`}
             className="pop block w-full overflow-hidden rounded-[14px] border border-line">
             <img src={p.url} alt={p.caption ?? ''} loading="lazy"
               className="block w-full transition-transform duration-500 hover:scale-[1.03]" />
