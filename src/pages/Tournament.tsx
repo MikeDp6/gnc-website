@@ -3,19 +3,22 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { useI18n } from '@/i18n'
+import { useMeta } from '@/lib/meta'
 import { Band } from '@/components/layout/Band'
 import { SubTabs } from '@/components/layout/SubTabs'
 import { Crumb } from '@/components/ui/Crumb'
 import { Heading } from '@/components/ui/Heading'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
+import { Reveal } from '@/components/ui/Reveal'
 import { MatchRow } from '@/components/match/MatchRow'
 import { StandingsTable } from '@/components/standings/StandingsTable'
 import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { NotFound } from './NotFound'
 import { PrintSchedule } from '@/components/PrintSchedule'
 
-const TABS = ['Πρόγραμμα', 'Όμιλοι', 'Νοκ-άουτ', 'Ομάδες', 'Πληροφορίες']
+type TabKey = 'schedule' | 'groups' | 'ko' | 'teams' | 'info'
+const TAB_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'teams', 'info']
 
 export function Tournament() {
   const { slug = '' } = useParams()
@@ -23,89 +26,109 @@ export function Tournament() {
   const { categories, categoryById, groups, matches, teams, tournamentBySlug, loading } = useData()
   const [params] = useSearchParams()
   const tour = tournamentBySlug(slug)
-  const [tab, setTab] = useState(params.get('tab') === 'teams' ? 'Ομάδες' : TABS[0])
+  const [tab, setTab] = useState<TabKey>(params.get('tab') === 'teams' ? 'teams' : 'schedule')
   const [day, setDay] = useState<1 | 2>(1)
   const [cat, setCat] = useState<string>('all')
   const list = useMemo(() => matches.filter(m => m.tournamentId === tour?.id && m.day === day && (cat === 'all' || m.categoryId === cat)), [matches, tour, day, cat])
-  if (!tour) return loading ? <div className="wrap py-[120px] text-dim">Φόρτωση…</div> : <NotFound />
+  useMeta(tour?.name, tour ? `${tour.dates} · ${tour.venue}. ${t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}` : undefined, tour?.cover)
+  if (!tour) return loading ? <div className="wrap py-[120px] text-dim">{t.loading}</div> : <NotFound />
   const cats = categories.filter(c => tour.categoryIds.includes(c.id))
-  const koCat = matches.find(m => m.tournamentId === tour.id && m.phase !== 'group')?.categoryId
+  const all = matches.filter(m => m.tournamentId === tour.id)
+  const liveNow = all.filter(m => m.status === 'live').length
 
   // group rows by start time so the schedule reads like the paper programme
   const byTime = list.reduce<Record<string, typeof list>>((acc, m) => { (acc[m.time] ??= []).push(m); return acc }, {})
-  const ko = matches.filter(m => m.tournamentId === tour.id && m.categoryId === koCat && m.phase !== 'group')
+  // knockout per category (every category that has one)
+  const koByCat = cats.map(c => ({ c, ms: all.filter(m => m.categoryId === c.id && m.phase !== 'group') })).filter(x => x.ms.length)
+  const tabLabels = TAB_KEYS.map(k => t.tour.tabs[k])
+  const tabOf = (label: string) => TAB_KEYS[tabLabels.indexOf(label)] ?? 'schedule'
 
   return (
     <>
       <Crumb items={[{ label: t.nav.tournaments, to: '/' }, { label: tour.name }]} />
-      <Band kicker={`${tour.dates} · ${tour.venue}`} title={tour.name.split('–')[0]} title2={tour.name.split('–')[1]}
-        sub={`${tour.days.join(' και ')}, ${tour.courts} γήπεδα. Όμιλοι και νοκ-άουτ σε ${tour.categoryIds.length} κατηγορίες.`}
-        stats={[{ v: tour.teamsCount, l: 'Ομάδες' }, { v: tour.categoryIds.length, l: 'Κατηγορίες' }, { v: matches.filter(m => m.tournamentId === tour.id).length, l: 'Αγώνες' }, { v: tour.courts, l: 'Γήπεδα' }]} />
-      <SubTabs tabs={TABS} active={tab} onChange={setTab} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
+      <Band kicker={<>{liveNow > 0 && <span className="mr-3 inline-flex items-center gap-2 rounded-full bg-orange px-3 py-1 text-[11px] text-[#111]"><i className="live-dot h-2 w-2 rounded-full bg-[#111]" />LIVE · {liveNow}</span>}{tour.dates} · {tour.venue}</>}
+        title={tour.name.split('–')[0]} title2={tour.name.split('–')[1]} cover={tour.cover}
+        sub={t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}
+        actions={tour.status === 'registration' ? <Button variant="orange" to="/register">{t.hero.cta1} →</Button> : undefined}
+        stats={[{ v: tour.teamsCount, l: t.status.teams }, { v: tour.categoryIds.length, l: t.status.cats }, { v: all.length, l: t.team.matches }, { v: tour.courts, l: t.status.courts }]} />
+      <SubTabs tabs={tabLabels} active={t.tour.tabs[tab]} onChange={l => setTab(tabOf(l))} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
       <PrintSchedule tour={tour} />
 
-      {tab === 'Πρόγραμμα' && (
-        <section className="wrap pt-[70px]">
-          <div className="mb-[26px] flex flex-wrap items-end justify-between gap-4">
-            <Heading a={t.nav.schedule} b={(tour.days[day - 1] ?? '').split(' ')[0]} size="md" />
-            <div className="flex flex-wrap gap-2">
+      {tab === 'schedule' && (
+        <section className="wrap pt-[50px]">
+          {/* filters stay in view while you scroll the day (glass bar under the nav) */}
+          <div className="glass z-20 mb-[22px] flex flex-col gap-3 rounded-[20px] px-4 py-3 md:sticky md:top-[86px] md:flex-row md:flex-wrap md:items-center md:justify-between md:rounded-full md:px-5">
+            <Heading a={t.nav.schedule} b={(tour.days[day - 1] ?? '').split(' ')[0]} size="sm" />
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
               {tour.days.map((dn, i) => <Chip key={dn} active={day === i + 1} onClick={() => setDay((i + 1) as 1 | 2)}>{dn}</Chip>)}
-              <span className="w-2" />
+              <span className="w-2 shrink-0" />
               <Chip active={cat === 'all'} onClick={() => setCat('all')}>{t.misc.all}</Chip>
               {cats.map(c => <Chip key={c.id} active={cat === c.id} color={catColor[c.key]} onClick={() => setCat(c.id)}>{c.short}</Chip>)}
             </div>
           </div>
           {Object.entries(byTime).map(([time, ms]) => (
-            <div key={time}>
-              <div className="disp mb-3 mt-[26px] flex items-baseline gap-[14px] text-[32px]">{time}<span className="font-sans text-[12px] font-bold uppercase tracking-[.12em] text-dim">{ms[0].phase === 'group' ? 'Φάση ομίλων' : 'Νοκ-άουτ'}</span></div>
+            <Reveal key={time}>
+              <div className="disp mb-3 mt-[26px] flex items-baseline gap-[14px] text-[32px]">{time}<span className="font-sans text-[12px] font-bold uppercase tracking-[.12em] text-dim">{ms[0].phase === 'group' ? t.tour.groupPhase : t.tour.koPhase}</span></div>
               {ms.map(m => <MatchRow key={m.id} m={m} />)}
-            </div>
+            </Reveal>
           ))}
-          {!list.length && <div className="card p-8 text-[14px] text-dim">Δεν υπάρχουν αγώνες με αυτά τα φίλτρα.</div>}
+          {!list.length && <div className="card p-8 text-[14px] text-dim">{t.tour.noMatches}</div>}
         </section>
       )}
 
-      {tab === 'Όμιλοι' && (
+      {tab === 'groups' && (
         <section className="wrap pt-[70px]">
-          <Heading a="Όμιλοι" b="ανά κατηγορία" size="md" className="mb-[26px]" />
-          <div className="grid gap-5 lg:grid-cols-2">
-            {groups.map(g => <StandingsTable key={g.id} g={g} subtitle={`${categoryById(g.categoryId).name} · ${tour.city}`} />)}
+          <div className="mb-[26px] flex flex-wrap items-end justify-between gap-4">
+            <Heading a={t.tour.tabs.groups} b={t.tour.groupsBy} size="md" />
+            <div className="flex flex-wrap gap-2">
+              <Chip active={cat === 'all'} onClick={() => setCat('all')}>{t.misc.all}</Chip>
+              {cats.map(c => <Chip key={c.id} active={cat === c.id} color={catColor[c.key]} onClick={() => setCat(c.id)}>{c.short}</Chip>)}
+            </div>
           </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            {groups.filter(g => cat === 'all' || g.categoryId === cat).map((g, i) => <Reveal key={g.id} delay={(i % 2) * 80}><StandingsTable g={g} subtitle={`${categoryById(g.categoryId).name} · ${tour.city}`} /></Reveal>)}
+          </div>
+          {!groups.length && <div className="card p-8 text-[14px] text-dim">{t.hero.soon}</div>}
         </section>
       )}
 
-      {tab === 'Νοκ-άουτ' && (
+      {tab === 'ko' && (
         <section className="wrap pt-[70px]">
-          {ko.length ? <><Heading a={t.sections.ko} b={categoryById(ko[0].categoryId).name} size="md" className="mb-[26px]" /><BracketGrid matches={ko} /></> : <div className="card p-8 text-[14px] text-dim">Τα νοκ-άουτ ανακοινώνονται μετά τους ομίλους.</div>}
+          {koByCat.length ? koByCat.map(({ c, ms }, i) => (
+            <Reveal key={c.id} className={i > 0 ? 'mt-14' : ''}>
+              <div className="mb-[22px] flex items-center gap-3"><i className="h-3 w-3 rounded-full" style={{ background: catColor[c.key] }} /><Heading a={t.sections.ko} b={c.name} size="md" /></div>
+              <BracketGrid matches={ms} />
+            </Reveal>
+          )) : <div className="card p-8 text-[14px] text-dim">{t.tour.koSoon}</div>}
         </section>
       )}
 
-      {tab === 'Ομάδες' && (
+      {tab === 'teams' && (
         <section className="wrap pt-[70px]">
-          <Heading a="Ομάδες" b={`${teams.filter(x => x.tournamentId === tour.id).length || tour.teamsCount}`} size="md" className="mb-[26px]" />
+          <Heading a={t.tour.tabs.teams} b={`${teams.filter(x => x.tournamentId === tour.id).length || tour.teamsCount}`} size="md" className="mb-[26px]" />
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {cats.map(c => {
-              const list = teams.filter(x => x.categoryId === c.id)
+            {cats.map((c, i) => {
+              const list = teams.filter(x => x.categoryId === c.id && (!x.tournamentId || x.tournamentId === tour.id))
               return (
-                <div key={c.id} className="card p-5">
-                  <div className="mb-3 flex items-center justify-between"><b className="disp text-[28px]">{c.name}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.length} ομάδες</span></div>
+                <Reveal key={c.id} delay={(i % 3) * 70} className="card p-5">
+                  <div className="mb-3 flex items-center justify-between"><b className="disp text-[28px]" style={{ color: catColor[c.key] }}>{c.name}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.length} {t.tour.teamsN}</span></div>
                   {list.map(x => <Link key={x.id} to={`/teams/${x.id}`} className="flex items-center gap-3 border-t border-line py-[10px] text-[14px] font-semibold hover:text-orange"><i className="h-2 w-2 rounded-full" style={{ background: catColor[c.key] }} />{x.name}</Link>)}
-                  {!list.length && <div className="text-[13px] text-dim">Καμία δήλωση ακόμη.</div>}
-                </div>
+                  {!list.length && <div className="text-[13px] text-dim">{t.tour.noTeams}</div>}
+                </Reveal>
               )
             })}
           </div>
         </section>
       )}
 
-      {tab === 'Πληροφορίες' && (
+      {tab === 'info' && (
         <section className="wrap grid gap-5 pt-[70px] lg:grid-cols-[2fr_1fr]">
           <div className="card p-6">
-            <h4 className="kicker mb-[14px]">Πληροφορίες</h4>
-            {[['Γήπεδο', tour.venue], ['Διεύθυνση', tour.address ?? '—'], ['Ώρες', 'Σάβ–Κυρ 17:00–23:30'], ['Αγώνας', '10΄ ή πρώτος στους 21'], ['Check-in', 'QR ομάδας στην είσοδο']].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-t border-line py-[11px] text-[14px]"><span className="text-dim">{k}</span><b className="font-semibold">{v}</b></div>
+            <h4 className="kicker mb-[14px]">{t.tour.info}</h4>
+            {[[t.tour.venue, tour.venue], [t.tour.address, tour.address ?? '—'], [t.tour.hours, tour.days.join(' · ')], [t.tour.game, '10΄ ή πρώτος στους 21'], [t.tour.checkin, 'QR ομάδας στην είσοδο']].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 border-t border-line py-[11px] text-[14px]"><span className="text-dim">{k}</span><b className="text-right font-semibold">{v}</b></div>
             ))}
-            <div className="mt-[18px]"><Button className="w-full">Οδηγίες στον χάρτη →</Button></div>
+            <div className="mt-[18px] flex flex-col gap-2"><Button className="w-full" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tour.address ?? `${tour.venue} ${tour.city}`)}`}>{t.tour.directions}</Button><Button variant="ghost" className="w-full" to={`/live/${tour.slug}`}>📺 {t.live.title} · TV</Button></div>
           </div>
         </section>
       )}

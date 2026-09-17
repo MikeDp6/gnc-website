@@ -13,6 +13,7 @@ import { City } from '@/pages/City'
 import { Rules, About, Volunteer, Terms } from '@/pages/Static'
 import { Join } from '@/pages/Join'
 import { NotFound } from '@/pages/NotFound'
+import { Live } from '@/pages/Live'
 import { Suspense, lazy } from 'react'
 
 // admin is code-split: visitors never download it
@@ -36,6 +37,8 @@ export default function App() {
         <Route path="cities" element={<Cities />} />
         <Route path="requests" element={<Requests />} />
       </Route>
+      <Route path="live" element={<Live />} />
+      <Route path="live/:slug" element={<Live />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="tournaments/:slug" element={<Tournament />} />

@@ -43,11 +43,14 @@
 }
 
 /* ---------- Base ---------- */
-html { background: var(--color-bg); color: var(--color-ink); -webkit-font-smoothing: antialiased; color-scheme: dark; }
-select option { background: #141416; color: var(--color-ink); }
-body { font-family: var(--font-sans); margin: 0; }
-* { box-sizing: border-box; }
-a { color: inherit; text-decoration: none; }
+/* in @layer base so that utilities (text-*, etc.) always win over these defaults */
+@layer base {
+  html { background: var(--color-bg); color: var(--color-ink); -webkit-font-smoothing: antialiased; color-scheme: dark; }
+  select option { background: #141416; color: var(--color-ink); }
+  body { font-family: var(--font-sans); margin: 0; }
+  * { box-sizing: border-box; }
+  a { color: inherit; text-decoration: none; }
+}
 
 /* ---------- Utilities used across the site ---------- */
 @utility disp {
@@ -86,6 +89,8 @@ a { color: inherit; text-decoration: none; }
 /* horizontal snap carousel without visible scrollbar */
 @utility snap-row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; &::-webkit-scrollbar { display: none; } & > * { scroll-snap-align: start; flex: none; } }
 
+@utility no-scrollbar { scrollbar-width: none; &::-webkit-scrollbar { display: none; } & > * { flex: none; } }
+
 /* marquee: the track holds the content twice; translate by half */
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @utility marquee-track {
@@ -106,7 +111,26 @@ a { color: inherit; text-decoration: none; }
   &:hover { transform: translateY(-2px); }
 }
 
+/* live indicator */
+@keyframes live-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,135,0,.55); } 70% { box-shadow: 0 0 0 7px rgba(255,135,0,0); } }
+@utility live-dot { animation: live-pulse 1.6s ease-out infinite; }
+
+/* bracket connectors: the incoming bracket (vertical + stub from the left) and the outgoing stub to the right */
+@utility bracket-in {
+  &::before { content: ''; position: absolute; left: -20px; top: 25%; height: 50%; width: 1px; background: rgba(255,255,255,.22); }
+  &::after { content: ''; position: absolute; left: -20px; top: 50%; width: 20px; height: 1px; background: rgba(255,255,255,.22); }
+}
+@utility bracket-out { &::after { content: ''; position: absolute; right: -20px; top: 50%; width: 20px; height: 1px; background: rgba(255,255,255,.22); } }
+
+/* loading skeleton */
+@keyframes shimmer { from { background-position: -600px 0; } to { background-position: 600px 0; } }
+@utility skel {
+  border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 100%);
+  background-size: 1200px 100%; animation: shimmer 1.6s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .live-dot, .skel { animation: none; }
   .marquee-track { animation: none; }
   .hero-in, .rise-in { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }

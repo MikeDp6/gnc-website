@@ -2,12 +2,14 @@ import { useParams, Link } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { useI18n } from '@/i18n'
+import { useMeta } from '@/lib/meta'
 import { Band } from '@/components/layout/Band'
 import { Crumb } from '@/components/ui/Crumb'
 import { Heading } from '@/components/ui/Heading'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
-import { Timeline } from '@/components/ui/Timeline'
+import { Reveal } from '@/components/ui/Reveal'
+import { Timeline, type TimelineItem } from '@/components/ui/Timeline'
 import { MatchRow } from '@/components/match/MatchRow'
 import { StandingsTable } from '@/components/standings/StandingsTable'
 import { NotFound } from './NotFound'
@@ -17,83 +19,94 @@ export function Team() {
   const { t } = useI18n()
   const { categoryById, groups, matches, playerById, teamById, tournaments, loading } = useData()
   const team = teamById(id)
-  if (!team) return loading ? <div className="wrap py-[120px] text-dim">Φόρτωση…</div> : <NotFound />
-  const cat = categoryById(team.categoryId)
-  const tour = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
+  const tour = tournaments.find(x => x.id === team?.tournamentId) ?? tournaments.find(x => x.status !== 'done') ?? tournaments[0]
+  const cat = team ? categoryById(team.categoryId) : undefined
+  useMeta(team?.name, team && cat ? `${cat.name} · ${tour?.name ?? ''}` : undefined, tour?.cover)
+  if (!team || !cat || !tour) return loading ? <div className="wrap py-[120px] text-dim">{t.loading}</div> : <NotFound />
   const my = matches.filter(m => m.homeId === team.id || m.awayId === team.id)
-  const next = my.find(m => m.status === 'scheduled')
+  const next = my.find(m => m.status === 'live') ?? my.find(m => m.status === 'scheduled')
+  const played = my.filter(m => m.status === 'final')
+  const wins = played.filter(m => (m.homeId === team.id ? (m.homeScore ?? 0) > (m.awayScore ?? 0) : (m.awayScore ?? 0) > (m.homeScore ?? 0))).length
   const group = groups.find(g => g.rows.some(r => r.teamId === team.id))
   const row = group?.rows.find(r => r.teamId === team.id)
   const pos = group ? group.rows.findIndex(r => r.teamId === team.id) + 1 : undefined
   const captain = playerById(team.captainId)
+  const roster = (team.playerIds ?? []).map(pid => playerById(pid)).filter((p): p is NonNullable<typeof p> => !!p)
   const [a, ...rest] = team.name.split(' ')
+  const koMatch = my.find(m => m.phase !== 'group')
+  const history: TimelineItem[] = [{
+    year: String(new Date(tour.startsAt).getFullYear()), month: tour.dates.split(' ').slice(-2, -1)[0]?.slice(0, 3).toUpperCase(),
+    title: `${tour.name} · ${cat.name}`,
+    sub: row ? `${pos}η ${group!.name} · ${row.wins}–${row.losses}${row.qualifies ? ` · ${t.team.qualified}` : ''}` : `${played.length} ${t.team.matches.toLowerCase()}`,
+    result: tour.status === 'done' ? (koMatch?.phase === 'final' && koMatch.status === 'final' ? koMatch.label : t.status.done) : t.team.inProgress, tone: tour.status === 'done' ? 'plain' : 'live',
+  }]
 
   return (
     <>
       <Crumb items={[{ label: t.nav.teams }, { label: tour.name, to: `/tournaments/${tour.slug}` }, { label: cat.name }, { label: team.name }]} />
-      <Band kicker={<><i className="mr-2 inline-block h-[10px] w-[10px] rounded-full align-[-1px]" style={{ background: catColor[cat.key] }} />{cat.name} · {group?.name} · {tour.name}</>}
-        title={a} title2={rest.join(' ') || undefined}
-        sub={`${team.city ?? ''}${captain ? ` · Αρχηγός: ${captain.name}` : ''} · 3η συμμετοχή σε τουρνουά GNC`}
-        stats={row ? [{ v: `${row.wins}–${row.losses}`, l: 'Νίκες–Ήττες' }, { v: `${pos}η`, l: group!.name }, { v: `${row.pointsFor - row.pointsAgainst > 0 ? '+' : ''}${row.pointsFor - row.pointsAgainst}`, l: 'Διαφορά' }, { v: team.playerIds?.length ?? 4, l: 'Παίκτες' }] : undefined} />
+      <Band kicker={<><i className="mr-2 inline-block h-[10px] w-[10px] rounded-full align-[-1px]" style={{ background: catColor[cat.key] }} />{cat.name}{group ? ` · ${group.name}` : ''} · {tour.name}</>}
+        title={a} title2={rest.join(' ') || undefined} cover={tour.cover}
+        sub={[team.city, captain ? `${t.team.captain}: ${captain.name}` : null].filter(Boolean).join(' · ') || undefined}
+        stats={row ? [{ v: `${row.wins}–${row.losses}`, l: t.team.wl }, { v: `${pos}η`, l: group!.name }, { v: `${row.pointsFor - row.pointsAgainst > 0 ? '+' : ''}${row.pointsFor - row.pointsAgainst}`, l: t.team.diff }, { v: roster.length || '—', l: t.team.players }]
+          : [{ v: `${wins}–${played.length - wins}`, l: t.team.wl }, { v: my.length, l: t.team.matches }, { v: roster.length || '—', l: t.team.players }]} />
 
       <section className="wrap pt-[70px]">
-        <div className="mb-[26px] flex items-end justify-between"><Heading a="Επόμενος" b="αγώνας" size="md" /><a className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">Όλοι οι αγώνες →</a></div>
+        <div className="mb-[26px] flex items-end justify-between"><Heading a={t.team.next1} b={t.team.next2} size="md" /><Link to={`/tournaments/${tour.slug}`} className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.team.allMatches} →</Link></div>
         <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
           {next ? (
-            <div className="flex min-h-[220px] flex-col justify-between rounded-[20px] bg-blue p-[26px] text-white">
+            <Reveal className={`flex min-h-[220px] flex-col justify-between rounded-[20px] p-[26px] text-white ${next.status === 'live' ? 'bg-orange text-[#111]' : 'bg-blue'}`}>
               <div>
-                <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">{next.label} · {next.day === 1 ? 'Σάββατο' : 'Κυριακή'} {next.time} · {t.misc.court} {next.court}</div>
+                <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">{next.status === 'live' ? '● LIVE · ' : ''}{next.label} · {next.day === 1 ? tour.days[0] : tour.days[1]} {next.time} · {t.misc.court} {next.court}</div>
                 <div className="disp my-2 text-[44px] md:text-[64px]">{teamById(next.homeId)?.name ?? next.homeLabel} <span className="opacity-60">vs</span> {teamById(next.awayId)?.name ?? next.awayLabel}</div>
-                <div className="text-[14px] opacity-90">Ειδοποίηση 15΄ πριν σε όλους τους παίκτες της ομάδας.</div>
+                {next.status === 'live' ? <div className="mono text-[40px] font-extrabold">{next.homeScore ?? 0} – {next.awayScore ?? 0}</div> : <div className="text-[14px] opacity-90">{t.team.notify}</div>}
               </div>
-              <div className="mt-[22px] flex flex-wrap gap-[10px]"><Button variant="white">Προσθήκη στο ημερολόγιο</Button><Button variant="ghost" className="border-white/40" to={`/tournaments/${tour.slug}`}>Δες το bracket</Button></div>
-            </div>
-          ) : <div className="card p-8 text-dim">Δεν υπάρχει προγραμματισμένος αγώνας.</div>}
-          <div className="card p-6">
-            <h4 className="kicker mb-[14px]">Η ομάδα</h4>
-            {[['Κατηγορία', cat.name], ['Πόλη', team.city ?? '—'], ['Συμμετοχές GNC', '3 (2024–2026)'], ['Καλύτερη θέση', 'Νικητής · Πεύκη 2025']].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-t border-line py-[11px] text-[14px]"><span className="text-dim">{k}</span><b className="font-semibold">{v}</b></div>
+              <div className="mt-[22px] flex flex-wrap gap-[10px]"><Button variant="white" to={`/tournaments/${tour.slug}`}>{t.team.bracket}</Button></div>
+            </Reveal>
+          ) : <div className="card p-8 text-dim">{t.team.noNext}</div>}
+          <Reveal className="card p-6" delay={80}>
+            <h4 className="kicker mb-[14px]">{t.team.theTeam}</h4>
+            {[[t.team.category, cat.name], [t.team.city, team.city ?? '—'], [t.team.group, group?.name ?? '—'], [t.team.captain, captain?.name ?? '—'], [t.team.matches, `${played.length} / ${my.length}`]].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 border-t border-line py-[11px] text-[14px]"><span className="text-dim">{k}</span><b className="text-right font-semibold">{v}</b></div>
             ))}
-            <div className="flex justify-between border-t border-line py-[11px] text-[14px]"><span className="text-dim">Check-in</span><b className="font-semibold text-ok">✓ Έγινε 16:42</b></div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      <section className="wrap pt-[70px]">
-        <Heading a="Αγώνες" b={tour.city} size="md" className="mb-[26px]" />
-        {my.map(m => <MatchRow key={m.id} m={m} mine showCategory={false} />)}
-      </section>
+      {my.length > 0 && (
+        <section className="wrap pt-[70px]">
+          <Heading a={t.team.matches} b={tour.city} size="md" className="mb-[26px]" />
+          {my.map(m => <MatchRow key={m.id} m={m} mine showCategory={false} />)}
+        </section>
+      )}
 
       <section className="wrap grid gap-5 pt-[70px] lg:grid-cols-2">
-        {group && <StandingsTable g={{ ...group, note: 'Μπλε = προκρίνονται · Πορτοκαλί = η ομάδα σου' }} meId={team.id} subtitle={`${cat.name} · ${tour.city}`} />}
+        {group && <Reveal><StandingsTable g={{ ...group, note: t.team.legend }} meId={team.id} subtitle={`${cat.name} · ${tour.city}`} /></Reveal>}
         <div>
-          <div className="mb-[14px] flex items-end justify-between"><Heading a="Ρόστερ" size="sm" /><a className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">Αλλαγή ρόστερ έως Παρ 18/9 →</a></div>
-          <div className="grid gap-[14px] sm:grid-cols-2">
-            {(team.playerIds ?? []).map(pid => {
-              const p = playerById(pid)!
-              const isCap = pid === team.captainId
-              return (
-                <Link to={`/players/${p.id}`} key={pid} className="card pop flex items-center gap-4 p-5">
-                  <Avatar name={p.name} tone={isCap ? 'orange' : 'blue'} />
-                  <div>
-                    <div className="text-[17px] font-bold">{p.name}{isCap && <span className="ml-2 rounded-[5px] bg-orange px-[7px] py-[3px] align-[2px] text-[10px] font-extrabold tracking-[.12em] text-[#111]">ΑΡΧΗΓΟΣ</span>}</div>
-                    <div className="mt-1 text-[12px] font-bold uppercase tracking-[.06em] text-dim">{isCap ? '7 συμμετοχές · 2 τίτλοι' : 'Παίκτης'}</div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <div className="mb-[14px] flex items-end justify-between"><Heading a={t.team.roster} size="sm" /></div>
+          {roster.length ? (
+            <div className="grid gap-[14px] sm:grid-cols-2">
+              {roster.map((p, i) => {
+                const isCap = p.id === team.captainId
+                return (
+                  <Reveal key={p.id} delay={i * 60}>
+                    <Link to={`/players/${p.id}`} className="card pop flex items-center gap-4 p-5">
+                      <Avatar name={p.name} tone={isCap ? 'orange' : 'blue'} />
+                      <div>
+                        <div className="text-[17px] font-bold">{p.name}{isCap && <span className="ml-2 rounded-[5px] bg-orange px-[7px] py-[3px] align-[2px] text-[10px] font-extrabold tracking-[.12em] text-[#111]">{t.team.captain.toUpperCase()}</span>}</div>
+                        <div className="mt-1 text-[12px] font-bold uppercase tracking-[.06em] text-dim">{isCap ? t.team.captain : t.team.player}{p.city ? ` · ${p.city}` : ''}</div>
+                      </div>
+                    </Link>
+                  </Reveal>
+                )
+              })}
+            </div>
+          ) : <div className="card p-6 text-[14px] text-dim">{t.team.noRoster}</div>}
         </div>
       </section>
 
       <section className="wrap pt-[70px]">
-        <Heading a="Ιστορικό" b="ομάδας" size="md" className="mb-[26px]" />
-        <Timeline items={[
-          { year: '2026', month: 'ΣΕΠ', title: 'Λυκόβρυση–Πεύκη 2026 · 35+ MEN', sub: '1η Ομίλου Α · 3–0 · προκρίθηκε στα νοκ-άουτ', result: 'Σε εξέλιξη', tone: 'live' },
-          { year: '2026', month: 'ΙΟΥΝ', title: 'Παλλήνη 2026 · 40+ MEN', sub: '2ος Ομίλου Β · ήττα στον ημιτελικό από PINK ROSES 17–19', result: 'Ημιτελικός', tone: 'sf' },
-          { year: '2025', month: 'ΣΕΠ', title: 'Πεύκη 2025 · 35+ MEN', sub: 'Νίκη στον τελικό 21–15 vs RAFINA WARRIORS', result: 'Νικητής', tone: 'gold' },
-          { year: '2024', month: 'ΜΑΪ', title: 'Καλαμάτα 2024 · 35+ MEN', sub: '3ος Ομίλου Α', result: 'Όμιλοι' },
-        ]} />
+        <Heading a={t.team.history1} b={t.team.history2} size="md" className="mb-[26px]" />
+        <Timeline items={history} />
       </section>
     </>
   )

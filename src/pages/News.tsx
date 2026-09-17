@@ -1,41 +1,48 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '@/data/store'
+import { useI18n } from '@/i18n'
+import { useMeta } from '@/lib/meta'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
-import { cn } from '@/lib/cn'
+import { Reveal } from '@/components/ui/Reveal'
+import { Photo } from '@/components/ui/Photo'
 import { NotFound } from './NotFound'
-
-const tintCls = (t: string) => t === 'orange' ? '[filter:sepia(1)_saturate(2.2)_hue-rotate(-10deg)]' : t === 'blue' ? '[filter:saturate(1.6)] bg-[20%_80%]' : t === 'mono' ? '[filter:grayscale(1)_contrast(1.15)] bg-[80%_60%]' : '[filter:sepia(1)_saturate(1.4)_hue-rotate(160deg)] bg-[40%_90%]'
 
 export function NewsList() {
   const { news } = useData()
+  const { t } = useI18n()
   const [first, ...rest] = news
+  useMeta('News', 'Νέα, αποτελέσματα και ανακοινώσεις από τα τουρνουά GNC 3on3.')
   return (
     <>
       <Crumb items={[{ label: 'News' }]} />
       <section className="wrap pt-6">
-        <Heading a="Latest" b="news" className="mb-[34px]" />
+        <Heading a={t.sections.news1} b={t.sections.news2} className="mb-[34px]" />
         {first && (
-          <Link to={`/news/${first.slug}`} className="card pop mb-6 grid overflow-hidden rounded-band md:grid-cols-[1.3fr_1fr]">
-            <div className={cn('h-[260px] bg-cover bg-[center_30%] md:h-[420px]', !first.image && tintCls(first.tint))} style={{ backgroundImage: `url(${first.image ?? '/img/hero-dark.jpg'})` }} />
-            <div className="flex flex-col justify-center p-8 md:p-12">
+          <Link to={`/news/${first.slug}`} className="card pop relative mb-6 block min-h-[420px] overflow-hidden rounded-band md:min-h-[560px]">
+            <Photo src={first.image} className="hero-in" position="center 30%" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_30%,rgba(10,10,11,.85)_100%)]" />
+            <div className="glass absolute bottom-4 left-4 right-4 rounded-[18px] p-5 md:bottom-6 md:left-6 md:right-6 md:max-w-[820px] md:p-8">
               <div className="mb-3 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{first.tag}</b><span>{first.date}</span></div>
-              <div className="disp text-[48px] md:text-[64px]">{first.title}</div>
-              <p className="mt-4 text-[15px] text-dim">{first.excerpt}</p>
-              <span className="mt-6 text-[13px] font-bold uppercase tracking-[.08em] text-orange">Διάβασε →</span>
+              <div className="disp line-clamp-3 text-[38px] leading-[.92] text-white md:text-[56px]">{first.title}</div>
+              <p className="mt-3 line-clamp-2 text-[15px] text-cement">{first.excerpt}</p>
+              <span className="mt-4 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.news.read}</span>
             </div>
           </Link>
         )}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rest.map(a => (
-            <Link to={`/news/${a.slug}`} key={a.id} className="card pop overflow-hidden rounded-[18px]">
-              <div className={cn('h-[220px] bg-cover bg-[center_30%]', !a.image && tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
-              <div className="px-[18px] pb-5 pt-4">
-                <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-                <div className="disp text-[32px]">{a.title}</div>
-                <div className="mt-[10px] text-[13px] text-dim">{a.excerpt}</div>
-              </div>
-            </Link>
+          {rest.map((a, i) => (
+            <Reveal key={a.id} delay={(i % 3) * 70}>
+              <Link to={`/news/${a.slug}`} className="card pop block overflow-hidden rounded-[18px]">
+                <div className="relative h-[220px]"><Photo src={a.image} position="center 30%" /></div>
+                <div className="px-[18px] pb-5 pt-4">
+                  <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
+                  <div className="disp line-clamp-3 text-[30px] leading-[.95]">{a.title}</div>
+                  <div className="mt-[10px] line-clamp-3 text-[13px] text-dim">{a.excerpt}</div>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -46,27 +53,47 @@ export function NewsList() {
 export function NewsArticle() {
   const { slug = '' } = useParams()
   const { news } = useData()
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
   const a = news.find(x => x.slug === slug)
+  useMeta(a?.title, a?.excerpt, a?.image)
   if (!a) return <NotFound />
   const more = news.filter(x => x.id !== a.id).slice(0, 3)
+  const url = typeof window !== 'undefined' ? window.location.href : ''
+  const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* ignore */ } }
   return (
     <>
       <Crumb items={[{ label: 'News', to: '/news' }, { label: a.title }]} />
       <section className="wrap pt-6">
-        <div className={cn('h-[300px] overflow-hidden rounded-band bg-cover bg-[center_30%] md:h-[560px]', !a.image && tintCls(a.tint))} style={{ backgroundImage: `url(${a.image ?? '/img/hero-dark.jpg'})` }} />
+        <div className="relative min-h-[320px] overflow-hidden rounded-band md:min-h-[560px]">
+          <Photo src={a.image} className="hero-in" position="center 30%" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.1)_30%,rgba(10,10,11,.9)_100%)]" />
+          <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 md:right-12">
+            <div className="rise-in mb-4 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim" style={{ animationDelay: '.4s' }}><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
+            <h1 className="rise-in disp max-w-[1000px] text-[40px] text-white md:text-[76px]" style={{ animationDelay: '.5s' }}>{a.title}</h1>
+          </div>
+        </div>
         <div className="mx-auto max-w-[760px] py-12">
-          <div className="mb-4 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-          <h1 className="disp text-[48px] md:text-[80px]">{a.title}</h1>
-          <p className="mt-6 text-[19px] leading-relaxed text-[#d9d8d3]">{a.excerpt}</p>
-          {a.source && <a href={a.source} target="_blank" rel="noreferrer" className="mt-6 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">Διάβασε ολόκληρο το άρθρο στο gnc3on3.gr ↗</a>}
-          <p className="mt-6 text-[13px] text-mute">Το πλήρες κείμενο θα μεταφερθεί εδώ με το CMS του admin panel.</p>
-          <div className="mt-10 flex gap-3 border-t border-line pt-6 text-[13px] font-bold uppercase tracking-[.08em] text-dim"><span>Κοινοποίηση:</span><span className="text-white">Facebook</span><span className="text-white">Instagram</span><span className="text-white">Αντιγραφή συνδέσμου</span></div>
+          <p className="text-[19px] leading-relaxed text-[#d9d8d3] md:text-[21px]">{a.excerpt}</p>
+          {a.source && <a href={a.source} target="_blank" rel="noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full border border-orange px-5 py-3 text-[13px] font-bold uppercase tracking-[.08em] text-orange hover:bg-orange hover:text-[#111]">{t.news.full}</a>}
+          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-line pt-6 text-[12px] font-bold uppercase tracking-[.08em] text-dim">
+            <span>{t.news.share}</span>
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer" className="rounded-full border border-line px-4 py-2 text-white hover:border-white/40">Facebook</a>
+            <a href={`https://wa.me/?text=${encodeURIComponent(`${a.title} ${url}`)}`} target="_blank" rel="noreferrer" className="rounded-full border border-line px-4 py-2 text-white hover:border-white/40">WhatsApp</a>
+            <a href={`viber://forward?text=${encodeURIComponent(`${a.title} ${url}`)}`} className="rounded-full border border-line px-4 py-2 text-white hover:border-white/40">Viber</a>
+            <button type="button" onClick={copy} className="rounded-full border border-line px-4 py-2 text-white hover:border-white/40">{copied ? t.news.copied : t.news.copy}</button>
+          </div>
         </div>
         {more.length > 0 && (
           <>
-            <div className="kicker mb-4">Περισσότερα</div>
+            <div className="kicker mb-4">{t.news.more}</div>
             <div className="grid gap-4 md:grid-cols-3">
-              {more.map(x => <Link key={x.id} to={`/news/${x.slug}`} className="card pop p-5"><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[.1em] text-orange">{x.tag}</div><div className="disp text-[28px]">{x.title}</div></Link>)}
+              {more.map(x => (
+                <Link key={x.id} to={`/news/${x.slug}`} className="card pop grid grid-cols-[110px_1fr] overflow-hidden rounded-[16px]">
+                  <div className="relative"><Photo src={x.image} /></div>
+                  <div className="p-4"><div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.1em] text-orange">{x.tag}</div><div className="disp line-clamp-3 text-[24px] leading-[.95]">{x.title}</div></div>
+                </Link>
+              ))}
             </div>
           </>
         )}

@@ -10,13 +10,16 @@ import { Countdown } from '@/components/ui/Countdown'
 import { Marquee } from '@/components/ui/Marquee'
 import { GreeceMap } from '@/components/GreeceMap'
 import { NewsCarousel } from '@/components/NewsCarousel'
+import { Photo } from '@/components/ui/Photo'
+import { useMeta } from '@/lib/meta'
 import type { Match } from '@/data/types'
 
 export function Home() {
   const { t } = useI18n()
-  const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities } = useData()
+  const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities, archive } = useData()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
+  useMeta(undefined, next ? `${t.hero.kicker}: ${next.name} · ${next.dates}. ${t.footer.tagline}` : undefined, next?.cover)
   if (!next) return null
   const live = matches.filter(m => m.status === 'live')
   const upcoming = matches.filter(m => m.status === 'scheduled').slice(0, 8)
@@ -27,7 +30,7 @@ export function Home() {
     <>
       {/* ---------- HERO: full screen, intro blur+scale, nav/ticker overlaid ---------- */}
       <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
-        <img src={next.cover} alt="" className="hero-in absolute inset-0 h-full w-full object-cover object-[center_40%]" />
+        <Photo src={next.cover} className="hero-in" position="center 40%" eager />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.15)_35%,rgba(10,10,11,.35)_65%,rgba(10,10,11,.98)_100%)]" />
         <div className="wrap absolute bottom-[56px] left-0 right-0 z-10">
           <div className="rise-in mb-3 text-[13px] font-bold uppercase tracking-[.18em] text-orange-soft" style={{ animationDelay: '.5s' }}>{t.hero.kicker} · {next.name} · {next.dates}</div>
@@ -62,8 +65,8 @@ export function Home() {
             </div>
             <div className="lg:sticky lg:top-[144px]">
               <StackCard tone="slate" label={t.status.done}
-                big={lastDone?.city ?? 'Παλλήνη'} title={t.status.winners}
-                meta="18+ GOONLANDERS · 40+ PINK ROSES · U18 ΘΥΜΙΟΛΑΣ · U15 COURT KINGS"
+                big={archive[0]?.city ?? lastDone?.city ?? t.sections.archive1} title={archive[0] ? t.status.winners : `${t.sections.archive1} ${t.sections.archive2}`}
+                meta={archive[0]?.blurb ?? t.footer.tagline}
                 cta={{ label: t.status.results, to: '/archive' }} right={lastDone ? `${lastDone.teamsCount} ${t.status.teams}` : `66 ${t.status.teams}`} />
             </div>
           </div>
@@ -173,14 +176,14 @@ function StackCard({ tone, label, badge, big, title, meta, cta, right }: { tone:
       {badge && <span className="absolute right-4 top-4 rounded-[5px] bg-white px-2 py-1 text-[10px] font-extrabold tracking-[.14em] text-[#111]">{badge}</span>}
       <div>
         <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">{label}</div>
-        <div className="disp my-3 text-[72px] md:text-[104px]">{big}</div>
+        <div className="disp my-3 break-words text-[52px] sm:text-[72px] md:text-[104px]">{big}</div>
         <div className="text-[22px] font-bold uppercase tracking-[.02em] md:text-[26px]">{title}</div>
         <div className="mt-2 text-[14px] opacity-85">{meta}</div>
       </div>
       <div className="mt-8 flex items-center justify-between gap-4">
         {/* BIFA-style entry button: white pill with a round arrow */}
         <Link to={cta.to} className="pop inline-flex items-center gap-3 rounded-full bg-white py-[6px] pl-5 pr-[6px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111] shadow-[0_6px_20px_rgba(0,0,0,.25)]">
-          {cta.label}<span className="grid h-8 w-8 place-items-center rounded-full bg-[#111] text-[16px] text-white" aria-hidden>→</span>
+          {cta.label.replace(/\s*→$/, '')}<span className="grid h-8 w-8 place-items-center rounded-full bg-[#111] text-[16px] text-white" aria-hidden>→</span>
         </Link>
         <span className="text-[12px] font-bold uppercase tracking-[.1em]">{right}</span>
       </div>
