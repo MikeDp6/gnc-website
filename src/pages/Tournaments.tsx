@@ -99,8 +99,8 @@ export function Tournaments() {
               <span className="h-px flex-1 bg-line" />
               <span className="text-[12px] text-mute">{list.length}</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {list.map((r, i) => <Card key={r.key} r={r} delay={(i % 3) * 60} loading={t.loading} />)}
+            <div className="flex flex-col gap-3">
+              {list.map((r, i) => <Card key={r.key} r={r} delay={Math.min(i, 4) * 50} loading={t.loading} />)}
             </div>
           </div>
         ))}
@@ -125,39 +125,45 @@ function Card({ r, delay }: { r: Row; delay: number; loading: string }) {
   const s = STATE[r.kind]
   const inner = (
     <>
-      <div className="relative h-[132px] overflow-hidden">
-        <Photo src={r.cover} alt={r.name} sizes="(min-width:1280px) 380px, (min-width:768px) 46vw, 92vw" className={cn('transition-transform duration-700', r.to && 'group-hover:scale-[1.05]')} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.15),rgba(10,10,11,.88))]" />
-        <span className={cn('absolute left-3 top-3 rounded-full border px-[10px] py-1 text-[10px] font-extrabold uppercase tracking-[.12em]', s.badge ?? s.cls)}>
-          {r.kind === 'live' && <i className="live-dot mr-[6px] inline-block h-[6px] w-[6px] rounded-full bg-[#111] align-middle" />}{s.label}
-        </span>
+      {/* photo on the left, a strip on a phone */}
+      <div className="relative h-[96px] w-full shrink-0 overflow-hidden sm:h-auto sm:w-[180px] md:w-[230px]">
+        <Photo src={r.cover} alt={r.name} sizes="(min-width:768px) 230px, 100vw"
+          className={cn('transition-transform duration-700', r.to && 'group-hover:scale-[1.05]')} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.1),rgba(10,10,11,.75))] sm:bg-[linear-gradient(90deg,rgba(10,10,11,.15),rgba(10,10,11,.8))]" />
       </div>
-      <div className="flex flex-1 flex-col px-5 py-4">
-        <div className="text-[11px] font-extrabold uppercase tracking-[.12em] text-orange">{r.city}</div>
-        <div className="mt-1 text-[18px] font-bold leading-tight">{r.name}</div>
-        <div className="mt-[6px] text-[13px] text-dim">{r.dates}{r.venue ? ` · ${r.venue}` : ''}</div>
-        {(r.teams || r.cats) && (
-          <div className="mt-2 flex gap-4 text-[12px] text-mute">
-            {!!r.teams && <span>{r.teams} ομάδες</span>}
-            {!!r.cats && <span>{r.cats} κατηγορίες</span>}
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:gap-6 md:py-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-[11px] font-extrabold uppercase tracking-[.12em] text-orange">{r.city}</span>
+            <span className={cn('rounded-full border px-[10px] py-[3px] text-[10px] font-extrabold uppercase tracking-[.12em]', s.badge ?? s.cls)}>
+              {r.kind === 'live' && <i className="live-dot mr-[6px] inline-block h-[6px] w-[6px] rounded-full bg-[#111] align-middle" />}{s.label}
+            </span>
           </div>
-        )}
-        {r.kind === 'registration' && r.startsAt && (
-          <div className="mono mt-3 text-[13px] text-blue"><Countdown to={r.startsAt} /></div>
-        )}
-        <div className={cn('mt-4 flex items-center gap-2 pt-3 text-[12px] font-bold uppercase tracking-[.08em]',
-          r.to ? 'border-t border-line text-orange' : 'border-t border-line text-mute')}>
-          {s.cta}{r.to && <span aria-hidden>→</span>}
+          <div className="mt-[6px] truncate text-[19px] font-bold leading-tight md:text-[21px]">{r.name}</div>
+          <div className="mt-[6px] text-[13px] text-dim">{r.dates}{r.venue ? ` · ${r.venue}` : ''}</div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1 text-[12px] text-mute md:justify-end">
+          {!!r.teams && <span><b className="mono text-[15px] text-white">{r.teams}</b> ομάδες</span>}
+          {!!r.cats && <span><b className="mono text-[15px] text-white">{r.cats}</b> κατηγορίες</span>}
+          {r.kind === 'registration' && r.startsAt && <span className="mono text-[13px] text-blue"><Countdown to={r.startsAt} /></span>}
+        </div>
+
+        <div className={cn('flex shrink-0 items-center gap-2 border-t border-line pt-3 text-[12px] font-bold uppercase tracking-[.08em] md:w-[230px] md:justify-end md:border-l md:border-t-0 md:pl-6 md:pt-0',
+          r.to ? 'text-orange' : 'text-mute')}>
+          <span className="md:text-right">{s.cta}</span>
+          {r.to && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-orange text-[15px] transition-colors group-hover:bg-orange group-hover:text-[#111]" aria-hidden>→</span>}
         </div>
       </div>
     </>
   )
-  const base = 'card flex flex-col overflow-hidden rounded-[18px]'
+  const base = 'card flex w-full flex-col overflow-hidden rounded-[18px] sm:flex-row sm:items-stretch'
   return (
     <Reveal delay={delay}>
       {r.to
         ? <Link to={r.to} className={cn(base, 'pop group', r.kind === 'live' && 'border-orange/60', r.kind === 'registration' && 'border-blue/60')}>{inner}</Link>
-        : <div className={cn(base, 'opacity-75')} aria-disabled>{inner}</div>}
+        : <div className={cn(base, 'opacity-70')} aria-disabled>{inner}</div>}
     </Reveal>
   )
 }
