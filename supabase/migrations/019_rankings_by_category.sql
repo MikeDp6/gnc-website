@@ -3,7 +3,11 @@
 -- should compare is (ομάδα, κατηγορία), not the name on its own. The views now carry the category and
 -- group by it; the site adds the rows up itself for the «Όλες» view.
 
-create or replace view public.team_rankings as
+-- the column list changes, and Postgres will not let a replace reorder columns, so both views go first
+drop view if exists public.player_rankings;
+drop view if exists public.team_rankings;
+
+create view public.team_rankings as
 with agg as (
   select team_key,
          category_id,
@@ -38,7 +42,7 @@ select a.team_key, a.category_id, a.name, a.tournaments, a.played, a.wins, a.los
 from agg a
 left join medals m on m.team_key = a.team_key and m.category_id is not distinct from a.category_id;
 
-create or replace view public.player_rankings as
+create view public.player_rankings as
 with mine as (
   select tp.player_id, r.*
   from public.team_players tp
