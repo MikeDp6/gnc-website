@@ -24,6 +24,9 @@ const TournamentEdit = lazy(() => import('@/admin/pages/TournamentEdit').then(m 
 const Marketing = lazy(() => import('@/admin/pages/Marketing').then(m => ({ default: m.Marketing })))
 const Cities = lazy(() => import('@/admin/pages/Cities').then(m => ({ default: m.Cities })))
 const Requests = lazy(() => import('@/admin/pages/Requests').then(m => ({ default: m.Requests })))
+const AdminNews = lazy(() => import('@/admin/pages/News').then(m => ({ default: m.News })))
+const AdminRentals = lazy(() => import('@/admin/pages/Rentals').then(m => ({ default: m.Rentals })))
+const Season = lazy(() => import('@/admin/pages/Season').then(m => ({ default: m.Season })))
 const fallback = <div className="p-10 text-dim">Φόρτωση…</div>
 
 export default function App() {
@@ -36,6 +39,9 @@ export default function App() {
         <Route path="ticker" element={<Marketing />} />
         <Route path="cities" element={<Cities />} />
         <Route path="requests" element={<Requests />} />
+        <Route path="news" element={<AdminNews />} />
+        <Route path="rentals" element={<AdminRentals />} />
+        <Route path="season" element={<Season />} />
       </Route>
       <Route path="live" element={<Live />} />
       <Route path="live/:slug" element={<Live />} />

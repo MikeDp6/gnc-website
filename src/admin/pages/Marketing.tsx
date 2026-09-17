@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
+import { Btn, Input, PageTitle, Select, Toast } from '../ui'
+import { ImageField } from '../upload'
 
 type Tick = { id: string; tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange'; active: boolean; sort_order: number }
 type Sp = { id: string; name: string; url: string | null; logo_url: string | null; active: boolean; sort_order: number }
@@ -46,15 +47,20 @@ export function Marketing() {
         <div className="card p-5">
           <div className="kicker mb-3">Χορηγοί</div>
           {sps.map(s => (
-            <div key={s.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-center gap-2 border-t border-line py-2 text-[13px]">
-              <Input value={s.name} onChange={e => up('sponsors', s.id, { name: e.target.value })} className="py-1" />
-              <Input value={s.logo_url ?? ''} placeholder="URL λογότυπου" onChange={e => up('sponsors', s.id, { logo_url: e.target.value || null })} className="py-1" />
-              <input type="checkbox" checked={s.active} onChange={e => up('sponsors', s.id, { active: e.target.checked })} title="Ενεργός" />
-              <button onClick={() => del('sponsors', s.id)} className="text-mute hover:text-red">✕</button>
+            <div key={s.id} className="grid gap-3 border-t border-line py-3 text-[13px] md:grid-cols-[1fr_1fr]">
+              <div className="grid gap-2">
+                <div className="flex items-center gap-2">
+                  <Input value={s.name} onChange={e => up('sponsors', s.id, { name: e.target.value })} className="py-1 font-bold" />
+                  <input type="checkbox" checked={s.active} onChange={e => up('sponsors', s.id, { active: e.target.checked })} title="Ενεργός" />
+                  <button onClick={() => del('sponsors', s.id)} className="text-mute hover:text-red">✕</button>
+                </div>
+                <Input value={s.url ?? ''} placeholder="https://… (site χορηγού)" onChange={e => up('sponsors', s.id, { url: e.target.value || null })} className="py-1 text-[12px]" />
+              </div>
+              <ImageField value={s.logo_url} onChange={v => up('sponsors', s.id, { logo_url: v })} folder="sponsors" label="" aspect="aspect-[3/1]" />
             </div>
           ))}
           <div className="mt-4 flex gap-2 border-t border-line pt-4"><Input placeholder="Όνομα χορηγού" value={ns} onChange={e => setNs(e.target.value)} className="py-1" /><Btn onClick={addSp} className="py-1">+</Btn></div>
-          <Field label="" className="mt-3 text-[12px] text-mute">Τα λογότυπα ανεβαίνουν στο Supabase Storage (bucket «sponsors») — προς το παρόν βάλε URL.</Field>
+          <div className="mt-3 text-[12px] text-mute">Λογότυπο: PNG με διαφάνεια, λευκό ή ανοιχτόχρωμο (εμφανίζεται πάνω σε σκούρο φόντο), ~400×130 px. Χωρίς λογότυπο εμφανίζεται το όνομα.</div>
         </div>
       </div>
       <Toast msg={toast} />

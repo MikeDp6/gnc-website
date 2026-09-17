@@ -7,6 +7,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Reveal } from '@/components/ui/Reveal'
 import { Photo } from '@/components/ui/Photo'
+import { Markdown } from '@/components/ui/Markdown'
 import { NotFound } from './NotFound'
 
 export function NewsList() {
@@ -75,6 +76,7 @@ export function NewsArticle() {
         </div>
         <div className="mx-auto max-w-[760px] py-12">
           <p className="text-[19px] leading-relaxed text-[#d9d8d3] md:text-[21px]">{a.excerpt}</p>
+          {a.body && <div className="mt-8 text-[16px] leading-[1.75] text-[#d9d8d3] [&_h2]:disp [&_h2]:mt-10 [&_h2]:text-[36px] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-[20px] [&_h3]:font-bold [&_h3]:text-white [&_a]:text-orange [&_p]:my-4"><Markdown text={a.body} /></div>}
           {a.source && <a href={a.source} target="_blank" rel="noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full border border-orange px-5 py-3 text-[13px] font-bold uppercase tracking-[.08em] text-orange hover:bg-orange hover:text-[#111]">{t.news.full}</a>}
           <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-line pt-6 text-[12px] font-bold uppercase tracking-[.08em] text-dim">
             <span>{t.news.share}</span>

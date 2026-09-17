@@ -127,5 +127,5 @@ export interface City { id: string; name: string; nameEn?: string; lat: number; 
 export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string }
 export interface Sponsor { name: string; url?: string; logo?: string }
 
-export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
+export interface NewsItem { id: string; slug: string; tag: string; date: string; title: string; excerpt: string; body?: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }

@@ -1,5 +1,5 @@
 // API layer: Supabase → frontend Bundle. Every query uses the anon key and goes through RLS (public read only).
-import type { ArchiveItem, Bundle, Category, CategoryKey, Group, Match, Player, Stop, Team, TickerItem, Tournament } from '@/data/types'
+import type { ArchiveItem, Bundle, Category, CategoryKey, City, CityVideo, Group, Match, NewsItem, Player, RentalItem, SeasonEvent, Sponsor, Stop, Team, TickerItem, Tournament } from '@/data/types'
 import { news as mockNews, rentals as mockRentals, cities as mockCities, season2026, sponsorList } from '@/data/mock'
 import { supabase } from './supabase'
 
@@ -29,8 +29,18 @@ type StandRow = { group_id: string; team_id: string; played: number; wins: numbe
 type MatchRow = { id: string; tournament_id: string; category_id: string; phase: Match['phase']; label: string; group_id: string | null; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
 type WinnerRow = { tournament_id: string; category_id: string; team_id: string; place: number }
 type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange' }
-type SponsorRow = { name: string }
-type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null }
+type SponsorRow = { name: string; url: string | null; logo_url: string | null }
+type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null }
+type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
+type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
+type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean }
+const MONTHS_SHORT = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ']
+/** "7 Σεπ 2026" */
+const shortDate = (iso: string) => { const D = d(iso); return `${D.getDate()} ${MONTHS_SHORT[D.getMonth()]} ${D.getFullYear()}` }
+/** "25/01 - 26/01" (the calendar format used on gnc3on3.gr) */
+const ddmm = (iso: string) => { const D = d(iso); return `${String(D.getDate()).padStart(2, '0')}/${String(D.getMonth() + 1).padStart(2, '0')}` }
+/** content tables arrive with migration 008; until it runs, fall back to the built-in content instead of failing the whole bundle */
+const orElse = <T,>(p: Promise<T>, fallback: T) => p.catch(err => { console.warn('[gnc] content table missing, using built-in content:', err?.message); return fallback })
 
 async function q<T>(p: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
   const { data, error } = await p
@@ -47,10 +57,15 @@ export async function fetchBundle(): Promise<Bundle> {
     q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,registration_deadline').order('starts_on')),
     q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').order('day_index')),
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
-    q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order')),
+    orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
     q<TickerRow[]>(sb.from('ticker_items').select('tag,text,text_en,tone').eq('active', true).order('sort_order')),
-    q<SponsorRow[]>(sb.from('sponsors').select('name').eq('active', true).order('sort_order')),
+    q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url').eq('active', true).order('sort_order')),
     q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
+  ])
+  const [newsRows, rentalRows, seasonRows] = await Promise.all([
+    orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null),
+    orElse(q<RentalRow[]>(sb.from('rentals').select('id,name,blurb,price,image_url').eq('active', true).order('sort_order')), null),
+    orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open').order('starts_on')), null),
   ])
 
   // active tournament = the first one that is not finished; fall back to the latest
@@ -130,11 +145,19 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
 
-  // news & rentals: content tables come with the CMS step; until then the mock content is shown
-  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news: mockNews, rentals: mockRentals,
-    // city media (photos, videos, years) lives in the mock until the CMS step; coordinates/names come from the DB
-    cities: cities.filter(c => c.lat != null && c.lng != null).map(c => { const m = mockCities.find(x => x.id === c.id); return { id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng!, image: m?.image, years: m?.years, videos: m?.videos } }),
-    season: season2026, sponsorList }
+  const news: NewsItem[] = newsRows ? newsRows.map((n, i) => ({ id: n.id, slug: n.slug, tag: n.tag, date: shortDate(n.published_on), title: n.title, excerpt: n.excerpt ?? '', body: n.body ?? undefined, tint: tints[i % 4], image: n.image_url ?? undefined, source: n.source_url ?? undefined })) : mockNews
+  const rentals: RentalItem[] = rentalRows ? rentalRows.map(r => ({ id: r.id, name: r.name, blurb: r.blurb ?? '', price: r.price, image: r.image_url ?? undefined })) : mockRentals
+  const cityList: City[] = cities.filter(c => c.lat != null && c.lng != null).map(c => {
+    const m = mockCities.find(x => x.id === c.id)   // media fallback until 008 has run
+    return { id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng!, image: c.image_url ?? m?.image, years: c.years?.length ? c.years : m?.years, videos: c.videos?.length ? c.videos : m?.videos }
+  })
+  const season: SeasonEvent[] = seasonRows ? seasonRows.map(e => {
+    const city = cities.find(c => c.id === e.city_id)
+    return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined }
+  }) : season2026
+  const sponsorsOut: Sponsor[] = sponsors.length ? sponsors.map(s => ({ name: s.name, url: s.url ?? undefined, logo: s.logo_url ?? undefined })) : sponsorList
+
+  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut }
 }
 
 /** Realtime: call `onChange` whenever a match row changes. Returns an unsubscribe. No-op without Supabase. */
