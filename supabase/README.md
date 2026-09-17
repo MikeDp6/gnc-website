@@ -15,6 +15,7 @@
    - `migrations/008_cms.sql` — CMS: `news`, `rentals`, `season_events`, φωτο/βίντεο πόλεων, bucket `media` + seed με το υπάρχον περιεχόμενο
    - `migrations/009_rankings.sql` — views `team_rankings`, `player_rankings`, `site_stats` (κατάταξη όλων των εποχών + μετρητές αρχικής)
    - `migrations/010_sponsor_tiers.sql` — βαθμίδες χορηγών, `subscribers` + RPC `subscribe` (newsletter), `photos` (γκαλερί ανά διοργάνωση)
+   - `migrations/011_grants_service.sql` — grants στο `service_role` (χρειάζεται για τα τοπικά scripts εισαγωγής) και re-grant σε ό,τι προστέθηκε μετά το 004
 3. Database → Replication → enable για `matches` (live σκορ / μετακινήσεις) και `ticker_items`.
 4. Project Settings → API → URL + anon key → `.env.local` (δες `.env.example`).
 5. Για admin: Authentication → πρόσθεσε χρήστη, μετά `insert into public.admins (user_id, role) values ('<uuid>', 'owner');`

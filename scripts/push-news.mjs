@@ -7,6 +7,9 @@
 //   2) node scripts/import-wp.mjs import/<export>.xml     (writes supabase/import/news.json)
 //   3) node scripts/push-news.mjs
 //
+// Needs migration 011_grants_service.sql: with «Automatically expose new tables» OFF, even service_role
+// has no privileges on a freshly created table.
+//
 // Re-running is safe: rows are matched on slug and updated in place.
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -38,13 +41,6 @@ const rows = JSON.parse(readFileSync(jsonFile, 'utf8'))
 
 const sb = createClient(url, key, { auth: { persistSession: false } })
 
-// the four articles seeded by migration 008 carry a shortened slug — drop them once the real ones arrive
-const { error: delErr, count } = await sb.from('news').delete({ count: 'exact' })
-  .in('source_url', rows.map(r => r.source_url).filter(Boolean))
-  .not('slug', 'in', `(${rows.map(r => `"${r.slug}"`).join(',')})`)
-if (delErr) console.warn('(προσοχή) καθαρισμός διπλοεγγραφών:', delErr.message)
-else if (count) console.log(`καθαρίστηκαν ${count} διπλές εγγραφές`)
-
 const BATCH = 25
 let done = 0
 for (let i = 0; i < rows.length; i += BATCH) {
@@ -54,5 +50,21 @@ for (let i = 0; i < rows.length; i += BATCH) {
   done += slice.length
   process.stdout.write(`\r${done}/${rows.length} άρθρα…`)
 }
+
+// migration 008 seeded four of these articles under a shortened slug — drop those leftovers now that the
+// real ones are in. Done client-side: the same filter as a URL query would be far too long.
+const slugs = new Set(rows.map(r => r.slug))
+const sources = new Set(rows.map(r => r.source_url).filter(Boolean))
+const { data: all, error: readErr } = await sb.from('news').select('id,slug,source_url')
+if (readErr) console.warn('(προσοχή) έλεγχος διπλοεγγραφών:', readErr.message)
+else {
+  const stale = (all ?? []).filter(r => r.source_url && sources.has(r.source_url) && !slugs.has(r.slug)).map(r => r.id)
+  if (stale.length) {
+    const { error } = await sb.from('news').delete().in('id', stale)
+    if (error) console.warn('(προσοχή) καθαρισμός:', error.message)
+    else console.log(`καθαρίστηκαν ${stale.length} διπλές εγγραφές`)
+  }
+}
+
 const { count: total } = await sb.from('news').select('id', { count: 'exact', head: true })
-console.log(`\n✓ ολοκληρώθηκε — ${total} άρθρα στη βάση`)
+console.log(`✓ ολοκληρώθηκε — ${total} άρθρα στη βάση`)
