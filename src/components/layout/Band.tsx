@@ -20,7 +20,7 @@ export function Band({ kicker, title, title2, sub, stats, cover, left, actions, 
             {left && <div className="rise-in" style={{ animationDelay: '.35s' }}>{left}</div>}
             <div>
               <div className="rise-in mb-3 text-[12px] font-bold uppercase tracking-[.18em] text-orange-soft md:text-[13px]" style={{ animationDelay: '.4s' }}>{kicker}</div>
-              <h1 className="rise-in disp text-[56px] text-white md:text-[104px]" style={{ animationDelay: '.5s' }}>{title}{title2 && <><br /><span className="text-orange">{title2}</span></>}</h1>
+              <h1 className="rise-in disp text-[42px] text-white sm:text-[56px] md:text-[104px]" style={{ animationDelay: '.5s' }}>{title}{title2 && <><br /><span className="text-orange">{title2}</span></>}</h1>
               {sub && <div className="rise-in mt-[14px] max-w-[640px] text-[15px] text-[#d9d8d3] md:text-[16px]" style={{ animationDelay: '.65s' }}>{sub}</div>}
               {actions && <div className="rise-in mt-6 flex flex-wrap gap-3" style={{ animationDelay: '.75s' }}>{actions}</div>}
             </div>

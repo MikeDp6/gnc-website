@@ -1,24 +1,30 @@
 import { Route, Routes } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { Home } from '@/pages/Home'
-import { Tournament } from '@/pages/Tournament'
-import { Team } from '@/pages/Team'
-import { Player } from '@/pages/Player'
-import { NewsList, NewsArticle } from '@/pages/News'
-import { Rentals } from '@/pages/Rentals'
-import { Rankings } from '@/pages/Rankings'
-import { Sponsors } from '@/pages/Sponsors'
-import { Contact } from '@/pages/Contact'
-import { Archive } from '@/pages/Archive'
-import { Register } from '@/pages/Register'
-import { City } from '@/pages/City'
-import { Rules, About, Volunteer, Terms } from '@/pages/Static'
-import { Join } from '@/pages/Join'
-import { Login as PlayerLogin } from '@/pages/Login'
-import { Me } from '@/pages/Me'
-import { NotFound } from '@/pages/NotFound'
-import { Live } from '@/pages/Live'
 import { Suspense, lazy } from 'react'
+
+// only the home page ships in the first download; every other page is fetched when it is opened
+const Tournament = lazy(() => import('@/pages/Tournament').then(m => ({ default: m.Tournament })))
+const Team = lazy(() => import('@/pages/Team').then(m => ({ default: m.Team })))
+const Player = lazy(() => import('@/pages/Player').then(m => ({ default: m.Player })))
+const NewsList = lazy(() => import('@/pages/News').then(m => ({ default: m.NewsList })))
+const NewsArticle = lazy(() => import('@/pages/News').then(m => ({ default: m.NewsArticle })))
+const Rentals = lazy(() => import('@/pages/Rentals').then(m => ({ default: m.Rentals })))
+const Rankings = lazy(() => import('@/pages/Rankings').then(m => ({ default: m.Rankings })))
+const Sponsors = lazy(() => import('@/pages/Sponsors').then(m => ({ default: m.Sponsors })))
+const Contact = lazy(() => import('@/pages/Contact').then(m => ({ default: m.Contact })))
+const Archive = lazy(() => import('@/pages/Archive').then(m => ({ default: m.Archive })))
+const Register = lazy(() => import('@/pages/Register').then(m => ({ default: m.Register })))
+const City = lazy(() => import('@/pages/City').then(m => ({ default: m.City })))
+const Rules = lazy(() => import('@/pages/Static').then(m => ({ default: m.Rules })))
+const About = lazy(() => import('@/pages/Static').then(m => ({ default: m.About })))
+const Volunteer = lazy(() => import('@/pages/Static').then(m => ({ default: m.Volunteer })))
+const Terms = lazy(() => import('@/pages/Static').then(m => ({ default: m.Terms })))
+const Join = lazy(() => import('@/pages/Join').then(m => ({ default: m.Join })))
+const PlayerLogin = lazy(() => import('@/pages/Login').then(m => ({ default: m.Login })))
+const Me = lazy(() => import('@/pages/Me').then(m => ({ default: m.Me })))
+const NotFound = lazy(() => import('@/pages/NotFound').then(m => ({ default: m.NotFound })))
+const Live = lazy(() => import('@/pages/Live').then(m => ({ default: m.Live })))
 
 // admin is code-split: visitors never download it
 const AdminLayout = lazy(() => import('@/admin/AdminLayout').then(m => ({ default: m.AdminLayout })))
@@ -49,8 +55,8 @@ export default function App() {
         <Route path="season" element={<Season />} />
         <Route path="photos" element={<Photos />} />
       </Route>
-      <Route path="live" element={<Live />} />
-      <Route path="live/:slug" element={<Live />} />
+      <Route path="live" element={<Suspense fallback={fallback}><Live /></Suspense>} />
+      <Route path="live/:slug" element={<Suspense fallback={fallback}><Live /></Suspense>} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="tournaments/:slug" element={<Tournament />} />

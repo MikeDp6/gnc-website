@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
 import { Countdown } from '@/components/ui/Countdown'
 import { Marquee } from '@/components/ui/Marquee'
-import { GreeceMap } from '@/components/GreeceMap'
+import { GreeceMapLazy as GreeceMap } from '@/components/GreeceMapLazy'
 import { NewsCarousel } from '@/components/NewsCarousel'
 import { Photo } from '@/components/ui/Photo'
 import { RentalImage } from '@/components/RentalImage'
@@ -91,11 +91,11 @@ export function Home() {
               {results.map(m => {
                 const c = categoryById(m.categoryId); const hw = (m.homeScore ?? 0) > (m.awayScore ?? 0)
                 return (
-                  <div key={m.id} className="card flex items-center gap-3 px-4 py-3 text-[14px]">
+                  <div key={m.id} className="card flex min-w-0 items-center gap-3 px-4 py-3 text-[14px]">
                     <i className="h-[10px] w-[10px] shrink-0 rounded-sm" style={{ background: catColor[c.key] }} />
-                    <span className={cn('flex-1 truncate text-right font-semibold', !hw && 'text-dim')}>{teamById(m.homeId)?.name}</span>
+                    <span className={cn('min-w-0 flex-1 truncate text-right font-semibold', !hw && 'text-dim')}>{teamById(m.homeId)?.name}</span>
                     <b className="mono whitespace-nowrap text-[18px]">{m.homeScore} – {m.awayScore}</b>
-                    <span className={cn('flex-1 truncate font-semibold', hw && 'text-dim')}>{teamById(m.awayId)?.name}</span>
+                    <span className={cn('min-w-0 flex-1 truncate font-semibold', hw && 'text-dim')}>{teamById(m.awayId)?.name}</span>
                     <span className="hidden text-[11px] font-bold uppercase tracking-[.1em] text-dim lg:block">{c.short} · {m.label}</span>
                   </div>
                 )
@@ -188,15 +188,15 @@ export function Home() {
 function StackCard({ tone, label, badge, big, title, meta, cta, right }: { tone: 'orange' | 'blue' | 'slate'; label: string; badge?: string; big: React.ReactNode; title: string; meta: string; cta: { label: string; to: string }; right: string }) {
   const bg = { orange: 'bg-orange text-[#111]', blue: 'bg-blue text-white', slate: 'bg-slate text-white' }[tone]
   return (
-    <div className={cn('relative flex min-h-[380px] flex-col justify-between rounded-[24px] p-8 shadow-[0_-12px_40px_rgba(0,0,0,.45)] md:min-h-[440px] md:p-10', bg)}>
+    <div className={cn('relative flex min-h-[380px] flex-col justify-between rounded-[24px] p-6 shadow-[0_-12px_40px_rgba(0,0,0,.45)] sm:p-8 md:min-h-[440px] md:p-10', bg)}>
       {badge && <span className="absolute right-4 top-4 rounded-[5px] bg-white px-2 py-1 text-[10px] font-extrabold tracking-[.14em] text-[#111]">{badge}</span>}
       <div>
         <div className="text-[12px] font-extrabold uppercase tracking-[.16em] opacity-85">{label}</div>
-        <div className="disp my-3 break-words text-[52px] sm:text-[72px] md:text-[104px]">{big}</div>
+        <div className="disp my-3 break-words text-[40px] sm:text-[72px] md:text-[104px]">{big}</div>
         <div className="text-[22px] font-bold uppercase tracking-[.02em] md:text-[26px]">{title}</div>
         <div className="mt-2 text-[14px] opacity-85">{meta}</div>
       </div>
-      <div className="mt-8 flex items-center justify-between gap-4">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
         {/* BIFA-style entry button: white pill with a round arrow */}
         <Link to={cta.to} className="pop inline-flex items-center gap-3 rounded-full bg-white py-[6px] pl-5 pr-[6px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111] shadow-[0_6px_20px_rgba(0,0,0,.25)]">
           {cta.label.replace(/\s*→$/, '')}<span className="grid h-8 w-8 place-items-center rounded-full bg-[#111] text-[16px] text-white" aria-hidden>→</span>

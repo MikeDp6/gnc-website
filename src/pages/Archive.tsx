@@ -6,7 +6,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Reveal } from '@/components/ui/Reveal'
 import { Photo } from '@/components/ui/Photo'
-import { GreeceMap } from '@/components/GreeceMap'
+import { GreeceMapLazy as GreeceMap } from '@/components/GreeceMapLazy'
 import { cn } from '@/lib/cn'
 
 export function Archive() {
@@ -23,7 +23,7 @@ export function Archive() {
           <div>
             <Heading a="Η περιοδεία" b="& το αρχείο" />
             <p className="mt-4 max-w-[520px] text-[16px] text-dim">Κάθε καλοκαίρι, σε κάθε γωνιά της χώρας, δωρεάν. Από την Αθήνα και τη Θεσσαλονίκη έως την Κρήτη και την Πάτρα — η κορυφαία διοργάνωση street basketball της Ελλάδας.</p>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               {[[cities.length, 'Πόλεις'], [season.length, 'Διοργανώσεις 2026'], ['2018', 'Από']].map(([v, l]) => (
                 <div key={l} className="glass min-w-[110px] rounded-[16px] px-[18px] py-[14px]"><b className="disp block text-[44px] leading-none text-orange">{v}</b><span className="mt-1 block text-[11px] font-bold uppercase tracking-[.12em] text-dim">{l}</span></div>
               ))}

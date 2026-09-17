@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useData } from '@/data/store'
 import { Ticker } from './Ticker'
 import { Nav } from './Nav'
@@ -17,7 +17,8 @@ export function Layout() {
     <div className="relative min-h-screen bg-bg text-ink">
       <Ticker overlay={home && !booting} />
       <Nav overlay={home && !booting} />
-      <main>{booting ? <PageSkeleton /> : <Outlet />}</main>
+      {/* every page but the home page is a separate chunk, so the skeleton covers the fetch too */}
+      <main>{booting ? <PageSkeleton /> : <Suspense fallback={<PageSkeleton />}><Outlet /></Suspense>}</main>
       {!booting && <Footer finale={home} />}
     </div>
   )

@@ -86,7 +86,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
             <Heading a={t.sections.newsletter1} b={t.sections.newsletter2} />
             <p className="mt-3 max-w-[520px] text-[15px] text-cement">{t.misc.newsletterBlurb}</p>
           </div>
-          <div>
+          <div className="min-w-0">
             {mail.state === 'ok'
               ? <div className="rounded-full bg-ok/15 px-5 py-4 text-center text-[14px]">{t.misc.subscribed}</div>
               : <form className="flex gap-[10px]" onSubmit={send}>
