@@ -5,11 +5,13 @@ import { Ticker } from './Ticker'
 import { Nav } from './Nav'
 import { Footer } from './Footer'
 import { PageSkeleton } from './Skeleton'
+import { scrollToTop, useSmoothScroll } from '@/lib/smoothScroll'
 
 export function Layout() {
   const { pathname } = useLocation()
   const { loading, source } = useData()
-  useEffect(() => { window.scrollTo({ top: 0 }) }, [pathname])
+  useSmoothScroll()
+  useEffect(() => { scrollToTop() }, [pathname])
   const home = pathname === '/'
   // first load from Supabase: show the skeleton instead of flashing the built-in sample data
   const booting = loading && source === 'mock'

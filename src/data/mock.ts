@@ -144,7 +144,7 @@ export const rentals: RentalItem[] = [
   { id: 'r1', name: 'Γήπεδο ENLIO SES Elite', blurb: 'Δάπεδο μπάσκετ 3×3 ENLIO — το επίσημο δάπεδο των Ολυμπιακών Αγώνων. FIBA approved courts, στήσιμο και αποξήλωση από την ομάδα μας.', price: 'Ζήτησε προσφορά', image: '/img/gnc/0071.jpg' },
   { id: 'r2', name: 'Μπασκέτα Schelde SAM 3×3', blurb: 'Η μπασκέτα των Ολυμπιακών Αγώνων και των παγκόσμιων πρωταθλημάτων 3×3.', price: 'Ζήτησε προσφορά', image: '/img/gnc/SCHELDE-240x300.png' },
   { id: 'r3', name: 'Μπασκέτα Artisport Black 17', blurb: 'Υδραυλικού τύπου, πιστοποιημένη FIBA approved για 3×3.', price: 'Ζήτησε προσφορά', image: '/img/gnc/black-17.jpg' },
-  { id: 'r4', name: 'Κινητή μπασκέτα ολυμπιακού τύπου', blurb: 'Για γήπεδα 5×5 και εκδηλώσεις σε ανοιχτούς χώρους.', price: 'Ζήτησε προσφορά', image: '/img/gnc/Εικόνα4.jpg' },
+  { id: 'r4', name: 'Κινητή μπασκέτα ολυμπιακού τύπου', blurb: 'Για γήπεδα 5×5 και εκδηλώσεις σε ανοιχτούς χώρους.', price: 'Ζήτησε προσφορά', image: '/img/gnc/basketball-olympic.png' },
   { id: 'r5', name: 'Video wall 12 m²', blurb: 'Waterproof οθόνη LED 4×3 μ. (pitch 3.8) για σκορ, replays και χορηγούς.', price: 'Ζήτησε προσφορά', image: '/img/gnc/ΟΘΟΝΗ-768x513.jpg' },
   { id: 'r6', name: 'Διαφημιστικές πινακίδες LED 20 μ.', blurb: 'Περιμετρικές LED πινακίδες 20 μέτρων για χορηγούς γύρω από το γήπεδο.', price: 'Ζήτησε προσφορά', image: '/img/gnc/010-768x512.jpg' },
 ]

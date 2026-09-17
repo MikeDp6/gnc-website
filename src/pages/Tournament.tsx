@@ -25,9 +25,16 @@ export function Tournament() {
   const { slug = '' } = useParams()
   const { t } = useI18n()
   const { categories, categoryById, groups, matches, teams, tournamentBySlug, loading, photos } = useData()
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const tour = tournamentBySlug(slug)
-  const [tab, setTab] = useState<TabKey>(params.get('tab') === 'teams' ? 'teams' : 'schedule')
+  // the tab lives in the address, so the menu can link straight to Ομάδες and the highlight follows
+  const asked = params.get('tab') as TabKey | null
+  const tab: TabKey = asked && ALL_KEYS.includes(asked) ? asked : 'schedule'
+  const setTab = (k: TabKey) => setParams(prev => {
+    const n = new URLSearchParams(prev)
+    if (k === 'schedule') n.delete('tab'); else n.set('tab', k)
+    return n
+  }, { replace: true })
   const [day, setDay] = useState<1 | 2>(1)
   const [cat, setCat] = useState<string>('all')
   const list = useMemo(() => matches.filter(m => m.tournamentId === tour?.id && m.day === day && (cat === 'all' || m.categoryId === cat)), [matches, tour, day, cat])

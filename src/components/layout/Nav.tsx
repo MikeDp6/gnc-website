@@ -16,7 +16,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const [scrolled, setScrolled] = useState(false)
   const { tournaments } = useData()
   const { session } = useAuth()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 60)
@@ -24,18 +24,22 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
     return () => window.removeEventListener('scroll', f)
   }, [])
   useEffect(() => { setOpen(false) }, [pathname])
+  // Πρόγραμμα and Ομάδες are the same page with a different tab, so the highlight has to look at
+  // the tab in the address, not only at the path — otherwise both light up at once.
+  const onTour = pathname.startsWith('/tournaments/')
+  const teamsTab = new URLSearchParams(search).get('tab') === 'teams'
   const links = [
     { to: '/', label: t.nav.tournaments, end: true },
-    { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule },
-    { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams },
+    { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule, active: onTour && !teamsTab },
+    { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams, active: onTour && teamsTab },
     { to: '/rankings', label: t.nav.rankings },
     { to: '/news', label: t.nav.news },
     { to: '/rentals', label: t.nav.rentals },
     { to: '/contact', label: t.nav.contact },
-  ]
-  const item = (l: typeof links[number]) => (
+  ] as Array<{ to: string; label: string; end?: boolean; active?: boolean }>
+  const item = (l: { to: string; label: string; end?: boolean; active?: boolean }) => (
     <NavLink key={l.to} to={l.to} end={l.end}
-      className={({ isActive }) => cn('rounded-full px-[12px] py-[7px] text-[12px] font-semibold uppercase tracking-[.06em] text-[#d9d8d3] transition-colors hover:bg-white/8 hover:text-white', isActive && 'bg-white/12 text-white')}>
+      className={({ isActive }) => cn('rounded-full px-[12px] py-[7px] text-[12px] font-semibold uppercase tracking-[.06em] text-[#d9d8d3] transition-colors hover:bg-white/8 hover:text-white', (l.active ?? isActive) && 'bg-white/12 text-white')}>
       {l.label}
     </NavLink>
   )
@@ -49,8 +53,11 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const register = (
     <div className="flex items-center gap-2">
       <NavLink to={session ? '/me' : '/login'} title={session ? t.account.mine : t.account.signIn}
-        className={({ isActive }) => cn('pop grid h-9 w-9 place-items-center rounded-full border border-white/15 text-[14px]', isActive && 'border-orange text-orange')}>
-        <span aria-hidden>{session ? '★' : '☺'}</span><span className="sr-only">{session ? t.account.mine : t.account.signIn}</span>
+        className={({ isActive }) => cn('pop grid h-9 w-9 place-items-center rounded-full border text-[14px]', session ? 'border-orange/60 text-orange' : 'border-white/15 text-[#d9d8d3]', isActive && 'border-orange text-orange')}>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+          <circle cx="12" cy="8" r="3.6" /><path d="M4.8 20c.9-3.7 3.8-5.6 7.2-5.6s6.3 1.9 7.2 5.6" />
+        </svg>
+        <span className="sr-only">{session ? t.account.mine : t.account.signIn}</span>
       </NavLink>
       <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-[18px] py-[9px] text-[12px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
     </div>

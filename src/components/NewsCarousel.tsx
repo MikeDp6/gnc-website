@@ -41,7 +41,7 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
               <div className="bg-cover bg-center" style={{ backgroundImage: `url(${a.image ?? FALLBACK})` }} />
               <div className="flex flex-col justify-center px-4 py-4">
                 <div className="mb-[6px] flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-                <div className="disp text-[24px] leading-[.95] md:text-[26px]">{a.title}</div>
+                <div className="disp line-clamp-3 text-[24px] leading-[.95] md:text-[26px]">{a.title}</div>
               </div>
             </Link>
           ))}

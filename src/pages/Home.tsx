@@ -10,6 +10,7 @@ import { Countdown } from '@/components/ui/Countdown'
 import { Marquee } from '@/components/ui/Marquee'
 import { GreeceMapLazy as GreeceMap } from '@/components/GreeceMapLazy'
 import { NewsCarousel } from '@/components/NewsCarousel'
+import { MediaCarousel } from '@/components/MediaCarousel'
 import { Photo } from '@/components/ui/Photo'
 import { RentalImage } from '@/components/RentalImage'
 import { useMeta } from '@/lib/meta'
@@ -32,16 +33,20 @@ export function Home() {
       {/* ---------- HERO: full screen, intro blur+scale, nav/ticker overlaid ---------- */}
       <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
         <Photo src={next.cover} className="hero-in" position="center 40%" eager />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.15)_35%,rgba(10,10,11,.35)_65%,rgba(10,10,11,.98)_100%)]" />
-        <div className="wrap absolute bottom-[64px] left-0 right-0 z-10">
-          <div className="rise-in mb-3 text-[11px] font-bold uppercase tracking-[.18em] text-orange-soft md:text-[12px]" style={{ animationDelay: '.5s' }}>{t.hero.kicker} · {next.name} · {next.dates}</div>
-          <h1 className="rise-in disp text-[46px] text-white sm:text-[58px] md:text-[80px] xl:text-[104px]" style={{ animationDelay: '.65s' }}>{t.hero.title1}<br /><span className="text-orange">{t.hero.title2}</span></h1>
-          <div className="rise-in mt-6 flex flex-wrap gap-3" style={{ animationDelay: '.85s' }}>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.12)_35%,rgba(10,10,11,.30)_70%,rgba(10,10,11,.70)_100%)]" />
+        {/* the name of the thing, at BIFA's size; the media strip below overlaps the lower edge */}
+        <div className="wrap absolute bottom-[184px] left-0 right-0 z-10 md:bottom-[214px]">
+          <h1 className="rise-in disp text-[30px] leading-[.95] text-white sm:text-[38px] md:text-[46px] xl:text-[58px]" style={{ animationDelay: '.5s' }}>
+            Greek National Challenge<br /><span className="text-orange">3on3</span>
+          </h1>
+          <div className="rise-in mt-5 flex flex-wrap gap-3" style={{ animationDelay: '.7s' }}>
             <Button variant="orange" to="/register">{t.hero.cta1}</Button>
             <Button variant="ghost" className="border-white/30" to={`/tournaments/${next.slug}`}>{t.hero.cta2}</Button>
           </div>
         </div>
       </section>
+
+      <MediaCarousel />
 
       {/* ---------- THE COURT AWAITS: big cards that stack as you scroll ---------- */}
       <section className="wrap pt-[110px]">
@@ -75,7 +80,7 @@ export function Home() {
       </section>
 
       {/* ---------- NOW ON COURT: auto-scrolling cards (pause on hover) ---------- */}
-      <section className="pt-[110px]">
+      <section className="bg-bg2 py-[110px]">
         <div className="wrap mb-[30px]">
           <Heading a={t.sections.now1} b={t.sections.now2} />
         </div>
@@ -148,7 +153,7 @@ export function Home() {
       </section>
 
       {/* ---------- LATEST NEWS ---------- */}
-      <section className="pt-[110px]">
+      <section className="bg-bg2 py-[110px]">
         <div className="wrap mb-[34px] flex items-end justify-between">
           <Heading a={t.sections.news1} b={t.sections.news2} />
           <Link to="/news" className="text-[14px] font-bold uppercase tracking-[.08em] text-orange">{t.sections.viewNews} →</Link>
@@ -212,16 +217,16 @@ function NowCard({ m, city, venue, slug }: { m: Match; city: string; venue: stri
   const c = categoryById(m.categoryId)
   const live = m.status === 'live'
   return (
-    <Link to={`/tournaments/${slug}`} className={cn('card pop w-[320px] rounded-[18px] p-5', live && 'border-orange/60')}>
+    <Link to={`/tournaments/${slug}`} className={cn('card pop flex h-[200px] w-[320px] flex-col rounded-[18px] p-5', live && 'border-orange/60')}>
       <div className="mb-3 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-[.12em]">
         <span className={live ? 'text-orange' : 'text-dim'}>{live ? '● Live' : `${m.day === 1 ? 'Σάβ' : 'Κυρ'} ${m.time}`}</span>
         <span className="text-dim">Γήπεδο {m.court}</span>
       </div>
       <div className="flex items-center justify-between py-1 text-[16px] font-semibold"><span className="truncate pr-3">{teamById(m.homeId)?.name ?? m.homeLabel}</span><b className="mono text-[22px]">{live ? m.homeScore ?? 0 : ''}</b></div>
       <div className="flex items-center justify-between py-1 text-[16px] font-semibold"><span className="truncate pr-3">{teamById(m.awayId)?.name ?? m.awayLabel}</span><b className="mono text-[22px]">{live ? m.awayScore ?? 0 : ''}</b></div>
-      <div className="mt-4 border-t border-line pt-3 text-[12px] text-dim">
-        <div className="flex items-center gap-2 font-bold uppercase tracking-[.08em]"><i className="h-2 w-2 rounded-full" style={{ background: catColor[c.key] }} />{c.name} · {m.phase === 'group' ? `Φάση ομίλων · ${m.label}` : m.label}</div>
-        <div className="mt-1">{city} · {venue}</div>
+      <div className="mt-auto border-t border-line pt-3 text-[12px] text-dim">
+        <div className="flex items-center gap-2 truncate font-bold uppercase tracking-[.08em]"><i className="h-2 w-2 shrink-0 rounded-full" style={{ background: catColor[c.key] }} /><span className="truncate">{c.name} · {m.phase === 'group' ? `Φάση ομίλων · ${m.label}` : m.label}</span></div>
+        <div className="mt-1 truncate">{city} · {venue}</div>
       </div>
     </Link>
   )

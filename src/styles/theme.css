@@ -8,6 +8,7 @@
 /* ---------- Design tokens (single source of truth: site + app) ---------- */
 @theme {
   --color-bg: #0A0A0B;
+  --color-bg2: #0B1024;          /* the deep blue band that alternates with the black */
   --color-ink: #F5F4F1;
   --color-dim: #9A9FA3;
   --color-mute: #5A5F62;

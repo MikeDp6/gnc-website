@@ -62,7 +62,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
     <>
       <div className="mb-[14px] flex items-end justify-between"><span className="kicker">{t.sections.sponsors}</span><Link to="/sponsors" className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">{t.sponsors.cta} →</Link></div>
       <div className="glass overflow-hidden rounded-[18px]">
-        <Marquee duration={30} className="py-[22px]">
+        <Marquee duration={75} className="py-[22px]">
           {sponsorList.map(s => <SponsorLogo key={s.name} s={s} />)}
         </Marquee>
       </div>
@@ -80,25 +80,25 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
       <div className="wrap relative z-10 pb-10 pt-[70px]">
         {partners}
 
-        {/* newsletter */}
-        <div className="glass mt-6 grid items-center gap-8 rounded-band p-7 md:grid-cols-[1.2fr_1fr] md:p-12">
-          <div>
-            <Heading a={t.sections.newsletter1} b={t.sections.newsletter2} />
-            <p className="mt-3 max-w-[520px] text-[15px] text-cement">{t.misc.newsletterBlurb}</p>
+        {/* newsletter and the link columns share one panel, the way the BIFA last screen does */}
+        <div className="glass mt-6 rounded-band p-7 md:p-12">
+          <div className="grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
+            <div>
+              <Heading a={t.sections.newsletter1} b={t.sections.newsletter2} />
+              <p className="mt-3 max-w-[520px] text-[15px] text-cement">{t.misc.newsletterBlurb}</p>
+            </div>
+            <div className="min-w-0">
+              {mail.state === 'ok'
+                ? <div className="rounded-full bg-ok/15 px-5 py-4 text-center text-[14px]">{t.misc.subscribed}</div>
+                : <form className="flex gap-[10px]" onSubmit={send}>
+                    <input type="email" required value={mail.v} onChange={e => setMail({ v: e.target.value, state: '', msg: '' })} placeholder={t.misc.email} className="min-w-0 flex-1 rounded-full border border-white/20 bg-black/25 px-[18px] py-4 text-[14px] outline-none placeholder:text-dim focus:border-white/40" />
+                    <Button type="submit" className="rounded-full">{mail.state === 'busy' ? '…' : t.misc.subscribe}</Button>
+                  </form>}
+              {mail.state === 'err' && <div className="mt-2 text-[12px] text-red">{mail.msg}</div>}
+            </div>
           </div>
-          <div className="min-w-0">
-            {mail.state === 'ok'
-              ? <div className="rounded-full bg-ok/15 px-5 py-4 text-center text-[14px]">{t.misc.subscribed}</div>
-              : <form className="flex gap-[10px]" onSubmit={send}>
-                  <input type="email" required value={mail.v} onChange={e => setMail({ v: e.target.value, state: '', msg: '' })} placeholder={t.misc.email} className="min-w-0 flex-1 rounded-full border border-white/20 bg-black/25 px-[18px] py-4 text-[14px] outline-none placeholder:text-dim focus:border-white/40" />
-                  <Button type="submit" className="rounded-full">{mail.state === 'busy' ? '…' : t.misc.subscribe}</Button>
-                </form>}
-            {mail.state === 'err' && <div className="mt-2 text-[12px] text-red">{mail.msg}</div>}
-          </div>
+          <div className="mt-10 border-t border-white/12 pt-10">{columns}</div>
         </div>
-
-        {/* link columns */}
-        <div className="glass mt-6 rounded-band p-7 md:p-10">{columns}</div>
         {legal}
       </div>
     </footer>
