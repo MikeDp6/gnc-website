@@ -22,6 +22,10 @@ export function useSmoothScroll() {
   }, [])
 }
 
+/** Hold the page still while a full-screen viewer is open, then let it move again. */
+export function pauseScroll() { lenis?.stop() }
+export function resumeScroll() { lenis?.start() }
+
 /** Jump to the top on a route change, without the eased travel. */
 export function scrollToTop() {
   if (lenis) lenis.scrollTo(0, { immediate: true })

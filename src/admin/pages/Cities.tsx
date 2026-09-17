@@ -4,7 +4,14 @@ import { Btn, Field, Input, PageTitle, Toast, inputCls, slugify } from '../ui'
 import { ImageField } from '../upload'
 
 type Video = { kind: 'youtube' | 'instagram'; id: string }
-type CityRow = { id: string; name: string; name_en: string | null; region: string | null; lat: number | null; lng: number | null; sort_order: number; image_url: string | null; videos: Video[]; years: number[] }
+type Partner = { name: string; role?: string; url?: string }
+/** One partner per line: Όνομα | Ρόλος | σύνδεσμος (τα δύο τελευταία προαιρετικά). */
+const parsePartners = (text: string): Partner[] => text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+  const [name, role, url] = l.split('|').map(x => x.trim())
+  return { name, ...(role ? { role } : {}), ...(url ? { url } : {}) }
+}).filter(p => p.name)
+const partnerLine = (p: Partner) => [p.name, p.role, p.url].filter(Boolean).join(' | ')
+type CityRow = { id: string; name: string; name_en: string | null; region: string | null; lat: number | null; lng: number | null; sort_order: number; image_url: string | null; videos: Video[]; years: number[]; partners: Partner[] }
 /** Accepts pasted YouTube / Instagram links (one per line) and keeps only the ids. */
 const parseVideos = (text: string): Video[] => text.split(/\s+/).map(u => u.trim()).filter(Boolean).flatMap<Video>(u => {
   const yt = u.match(/(?:youtu\.be\/|v=|\/shorts\/|\/embed\/)([\w-]{6,})/); if (yt) return [{ kind: 'youtube' as const, id: yt[1] }]
@@ -62,6 +69,13 @@ export function Cities() {
                   <ImageField value={c.image_url} onChange={v => up(c.id, { image_url: v })} folder="cities" label="Φωτογραφία πόλης (hero)" />
                   <Field label="Βίντεο — YouTube / Instagram links, ένα ανά γραμμή"><textarea defaultValue={(c.videos ?? []).map(videoUrl).join('\n')} onBlur={e => up(c.id, { videos: parseVideos(e.target.value) })} rows={5} className={inputCls + ' text-[12px]'} /></Field>
                   <Field label="Χρονιές (π.χ. 2023, 2024)"><Input defaultValue={(c.years ?? []).join(', ')} onBlur={e => up(c.id, { years: e.target.value.split(/[,\s]+/).map(Number).filter(n => n > 2000) })} className="py-1" /></Field>
+                </div>
+                <div className="mt-4">
+                  <Field label="Μαζί στη διοργάνωση — ένας ανά γραμμή:  Όνομα | Ρόλος | σύνδεσμος">
+                    <textarea defaultValue={(c.partners ?? []).map(partnerLine).join('\n')} onBlur={e => up(c.id, { partners: parsePartners(e.target.value) })} rows={4}
+                      placeholder={'Δήμος Αγρινίου | Διοργάνωση | https://agrinio.gov.gr\nΑ.Ο. Αγρινίου | Συνδιοργάνωση'}
+                      className={inputCls + ' text-[12px]'} />
+                  </Field>
                 </div>
               </td></tr>
             )}

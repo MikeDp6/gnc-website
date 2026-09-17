@@ -1,5 +1,5 @@
 // API layer: Supabase → frontend Bundle. Every query uses the anon key and goes through RLS (public read only).
-import type { ArchiveItem, Bundle, Category, CategoryKey, City, CityVideo, Group, Match, NewsItem, Photo, Player, PlayerRank, RentalItem, SeasonEvent, SiteStats, Sponsor, Stop, Team, TeamRank, TickerItem, Tournament } from '@/data/types'
+import type { ArchiveItem, Bundle, Category, CategoryKey, City, CityPartner, CityVideo, Group, Match, NewsItem, Photo, Player, PlayerRank, RentalItem, SeasonEvent, SiteStats, Sponsor, Stop, Team, TeamRank, TickerItem, Tournament } from '@/data/types'
 import { news as mockNews, rentals as mockRentals, cities as mockCities, season2026, sponsorList } from '@/data/mock'
 import { supabase } from './supabase'
 
@@ -31,7 +31,7 @@ type WinnerRow = { tournament_id: string; category_id: string; team_id: string; 
 type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange' }
 type SponsorRow = { name: string; url: string | null; logo_url: string | null; tier?: Sponsor['tier'] | null; blurb?: string | null }
 type PhotoRow = { id: string; url: string; caption: string | null; credit: string | null; tournament_id: string | null; city_id: string | null }
-type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null }
+type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null; partners?: CityPartner[] | null }
 type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
 type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
 type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean }
@@ -59,7 +59,7 @@ export async function fetchBundle(): Promise<Bundle> {
     q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,registration_deadline').order('starts_on')),
     q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').order('day_index')),
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
-    orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
+    orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years,partners').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
     q<TickerRow[]>(sb.from('ticker_items').select('tag,text,text_en,tone').eq('active', true).order('sort_order')),
     orElse(q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url,tier,blurb').eq('active', true).order('sort_order')), null).then(r => r ?? q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url').eq('active', true).order('sort_order'))),
     q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
@@ -153,7 +153,7 @@ export async function fetchBundle(): Promise<Bundle> {
   const rentals: RentalItem[] = rentalRows ? rentalRows.map(r => ({ id: r.id, name: r.name, blurb: r.blurb ?? '', price: r.price, image: r.image_url ?? undefined })) : mockRentals
   const cityList: City[] = cities.filter(c => c.lat != null && c.lng != null).map(c => {
     const m = mockCities.find(x => x.id === c.id)   // media fallback until 008 has run
-    return { id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng!, image: c.image_url ?? m?.image, years: c.years?.length ? c.years : m?.years, videos: c.videos?.length ? c.videos : m?.videos }
+    return { id: c.id, name: c.name, nameEn: c.name_en ?? undefined, lat: c.lat!, lng: c.lng!, image: c.image_url ?? m?.image, years: c.years?.length ? c.years : m?.years, videos: c.videos?.length ? c.videos : m?.videos, partners: c.partners?.length ? c.partners : undefined }
   })
   const season: SeasonEvent[] = seasonRows ? seasonRows.map(e => {
     const city = cities.find(c => c.id === e.city_id)

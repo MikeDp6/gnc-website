@@ -148,7 +148,8 @@ export interface Bundle {
 }
 
 export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }
-export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[] }
+export interface CityPartner { name: string; role?: string; url?: string }
+export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[]; partners?: CityPartner[] }
 /** One row of the yearly calendar (from gnc3on3.gr/calendar) — lighter than a full Tournament */
 export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string }
 export type SponsorTier = 'main' | 'official' | 'partner' | 'media'

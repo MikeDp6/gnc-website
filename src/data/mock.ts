@@ -1,6 +1,6 @@
 // Mock data for development — Pefki 2026 registrations (real team names) + invented results.
 // Replaced by the API layer (src/lib/api.ts) once the backend is wired.
-import type { ArchiveItem, Bundle, Category, City, Group, Match, NewsItem, Player, RentalItem, SeasonEvent, Sponsor, Stop, Team, TickerItem, Tournament } from './types'
+import type { ArchiveItem, Bundle, Category, City, Group, Match, NewsItem, Photo, Player, RentalItem, SeasonEvent, Sponsor, Stop, Team, TickerItem, Tournament } from './types'
 
 export const categories: Category[] = [
   { id: 'u11_mixed', key: 'u11', name: 'U11 MIXED', short: 'U11' },
@@ -152,7 +152,7 @@ export const rentals: RentalItem[] = [
 export const cities: City[] = [
   { id: 'patra', name: 'Πάτρα', nameEn: 'Patras', lat: 38.2466, lng: 21.7346, image: '/img/gnc/gnc3on3_patra2-min.jpg', years: [2025, 2024, 2023], videos: [{"kind": "instagram", "id": "DFkIbCnMlLx"}, {"kind": "instagram", "id": "C_qkaYgMoeG"}, {"kind": "instagram", "id": "C_vsAbpMd7D"}, {"kind": "instagram", "id": "C_qu6cGsgw_"}, {"kind": "instagram", "id": "C_0SuqcugtB"}, {"kind": "instagram", "id": "C_n7em0MMYZ"}, {"kind": "youtube", "id": "vMBvhlDaIOE"}, {"kind": "instagram", "id": "CwsbKKnsWDq"}] },
   { id: 'athina', name: 'Αθήνα', nameEn: 'Athens', lat: 37.9838, lng: 23.7275, image: '/img/gnc/IMG_6714.jpg' },
-  { id: 'agrinio', name: 'Αγρίνιο', nameEn: 'Agrinio', lat: 38.621, lng: 21.407, image: '/img/gnc/gnc3on3_agrinio-min.png', years: [2024, 2023], videos: [{"kind": "instagram", "id": "C7ZYWoMs629"}, {"kind": "instagram", "id": "C7YWW7_MgWr"}, {"kind": "instagram", "id": "C7eyDURMUCC"}, {"kind": "youtube", "id": "98WRdRds2Bg"}, {"kind": "instagram", "id": "CtmlgBPMEHE"}] },
+  { id: 'agrinio', name: 'Αγρίνιο', nameEn: 'Agrinio', lat: 38.621, lng: 21.407, image: '/img/gnc/gnc3on3_agrinio-min.png', years: [2024, 2023], videos: [{"kind": "instagram", "id": "C7ZYWoMs629"}, {"kind": "instagram", "id": "C7YWW7_MgWr"}, {"kind": "instagram", "id": "C7eyDURMUCC"}, {"kind": "youtube", "id": "98WRdRds2Bg"}, {"kind": "instagram", "id": "CtmlgBPMEHE"}], partners: [{ name: 'Δήμος Αγρινίου', role: 'Συνδιοργάνωση' }, { name: 'Περιφέρεια Δυτικής Ελλάδας', role: 'Στήριξη' }] },
   { id: 'kavala', name: 'Καβάλα', nameEn: 'Kavala', lat: 40.9397, lng: 24.4019, image: '/img/gnc/gnc3on3_kavala-min.jpg' },
   { id: 'alexandroupoli', name: 'Αλεξανδρούπολη', nameEn: 'Alexandroupoli', lat: 40.8457, lng: 25.874 },
   { id: 'igoumenitsa', name: 'Ηγουμενίτσα', nameEn: 'Igoumenitsa', lat: 39.507, lng: 20.266, years: [2024], videos: [{"kind": "instagram", "id": "C70yjQgMaIc"}] },
@@ -234,4 +234,20 @@ export const sponsorList: Sponsor[] = [
 /** Offline fallback counters — everything counted from the data we actually have, nothing invented. */
 export const stats = { cities: cities.length, tournaments: season2026.length, teams: teams.length, players: players.length, matches: matches.filter(m => m.status === 'final').length, sinceYear: 2018 }
 
-export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities, season: season2026, sponsorList, stats, photos: [] }
+// a small slice of the photo wall, so the built-in sample data shows one before the import has run
+const mockPhotos: Photo[] = [
+  { id: 'ph1', cityId: 'agrinio', url: '/img/wp/kiriakos_agrinio-1024x684.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph2', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-11.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph3', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-6-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph4', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-7-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph5', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-9-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph6', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-12-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph7', cityId: 'agrinio', url: '/img/wp/GNC_agrinio_post_2024-2-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph8', cityId: 'agrinio', url: '/img/wp/kiriakos_agrinio-1-1024x684.jpg', caption: 'LOUX GNC 3on3 | ΑΓΡΙΝΙΟ 2024' },
+  { id: 'ph9', cityId: 'igoumenitsa', url: '/img/wp/GNC_igoumenitsa_plati-1.jpg', caption: 'LOUX GNC 3on3 | ΗΓΟΥΜΕΝΙΤΣΑ 2024' },
+  { id: 'ph10', cityId: 'igoumenitsa', url: '/img/wp/GNC_igoumenitsa_post_2024-6-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΗΓΟΥΜΕΝΙΤΣΑ 2024' },
+  { id: 'ph11', cityId: 'igoumenitsa', url: '/img/wp/GNC_igoumenitsa_post_2024-4-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΗΓΟΥΜΕΝΙΤΣΑ 2024' },
+  { id: 'ph12', cityId: 'igoumenitsa', url: '/img/wp/GNC_igoumenitsa_post_2024-3-1024x1024.jpg', caption: 'LOUX GNC 3on3 | ΗΓΟΥΜΕΝΙΤΣΑ 2024' },
+]
+
+export const mockBundle: Bundle = { categories, tournaments, teams, players, matches, groups, stops, archive, ticker: tickerItems, sponsors, news, rentals, cities, season: season2026, sponsorList, stats, photos: mockPhotos }
