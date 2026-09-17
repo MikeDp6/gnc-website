@@ -41,7 +41,7 @@ export function Home() {
           </h1>
           <div className="rise-in mt-5 flex flex-wrap gap-3" style={{ animationDelay: '.7s' }}>
             <Button variant="orange" to="/register">{t.hero.cta1}</Button>
-            <Button variant="ghost" className="border-white/30" to={`/tournaments/${next.slug}`}>{t.hero.cta2}</Button>
+            <Button variant="ghost" className="border-white/30" to="/tournaments">{t.hero.cta2}</Button>
           </div>
         </div>
       </section>
