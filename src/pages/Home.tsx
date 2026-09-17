@@ -32,7 +32,7 @@ export function Home() {
     <>
       {/* ---------- HERO: full screen, intro blur+scale, nav/ticker overlaid ---------- */}
       <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
-        <Photo src={next.cover} className="hero-in" position="center 40%" eager />
+        <Photo src={next.cover} className="hero-in object-[72%_50%] sm:object-[64%_45%] lg:object-[center_42%]" position="" eager />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.12)_35%,rgba(10,10,11,.30)_70%,rgba(10,10,11,.70)_100%)]" />
         {/* the name of the thing, at BIFA's size; the media strip below overlaps the lower edge */}
         <div className="wrap absolute bottom-[184px] left-0 right-0 z-10 md:bottom-[214px]">

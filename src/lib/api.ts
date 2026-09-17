@@ -102,7 +102,7 @@ export async function fetchBundle(): Promise<Bundle> {
       days: tdays.map(x => `${DAYS[d(x.date).getDay()]} ${d(x.date).getDate()}/${d(x.date).getMonth() + 1}`),
       courts: t.courts, status: t.status === 'done' || t.status === 'archived' ? 'done' : t.status === 'live' ? 'live' : t.status === 'registration' ? 'registration' : 'upcoming',
       teamsCount: teams.filter(x => x.tournament_id === t.id).length,
-      categoryIds: tcats.map(x => x.category_id), cover: t.cover_url ?? '/img/hero-dark.jpg',
+      categoryIds: tcats.map(x => x.category_id), cover: t.cover_url ?? '/img/gnc/hero-gnc-sunset.jpg',
     }
   })
 

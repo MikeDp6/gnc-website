@@ -14,7 +14,7 @@ import { subscribe } from '@/lib/publicApi'
  * Footer. With `finale` (home page) it becomes the BIFA-style last screen: a photo behind everything,
  * partners strip + newsletter + link columns all sitting in glass panels.
  */
-export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { finale?: boolean; photo?: string }) {
+export function Footer({ finale = false, photo = '/img/gnc/hero-gnc-sunset.jpg' }: { finale?: boolean; photo?: string }) {
   const { t, lang } = useI18n()
   const [mail, setMail] = useState({ v: '', state: '' as '' | 'ok' | 'busy' | 'err', msg: '' })
   const send = async (e: FormEvent) => {
