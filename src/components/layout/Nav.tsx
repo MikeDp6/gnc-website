@@ -35,12 +35,12 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   ]
   const item = (l: typeof links[number]) => (
     <NavLink key={l.to} to={l.to} end={l.end}
-      className={({ isActive }) => cn('rounded-full px-[14px] py-[8px] text-[13px] font-semibold uppercase tracking-[.06em] text-[#d9d8d3] transition-colors hover:bg-white/8 hover:text-white', isActive && 'bg-white/12 text-white')}>
+      className={({ isActive }) => cn('rounded-full px-[12px] py-[7px] text-[12px] font-semibold uppercase tracking-[.06em] text-[#d9d8d3] transition-colors hover:bg-white/8 hover:text-white', isActive && 'bg-white/12 text-white')}>
       {l.label}
     </NavLink>
   )
   const langSwitch = (
-    <div className="text-[13px] font-semibold">
+    <div className="text-[12px] font-semibold">
       <button type="button" onClick={() => setLang('el')} className={lang === 'el' ? 'text-white' : 'text-dim'}>EL</button>
       <span className="text-dim"> / </span>
       <button type="button" onClick={() => setLang('en')} className={lang === 'en' ? 'text-white' : 'text-dim'}>EN</button>
@@ -49,18 +49,18 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const register = (
     <div className="flex items-center gap-2">
       <NavLink to={session ? '/me' : '/login'} title={session ? t.account.mine : t.account.signIn}
-        className={({ isActive }) => cn('pop grid h-10 w-10 place-items-center rounded-full border border-white/15 text-[15px]', isActive && 'border-orange text-orange')}>
+        className={({ isActive }) => cn('pop grid h-9 w-9 place-items-center rounded-full border border-white/15 text-[14px]', isActive && 'border-orange text-orange')}>
         <span aria-hidden>{session ? '★' : '☺'}</span><span className="sr-only">{session ? t.account.mine : t.account.signIn}</span>
       </NavLink>
-      <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-5 py-[11px] text-[13px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
+      <NavLink to="/register" className="pop inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-blue px-[18px] py-[9px] text-[12px] font-bold text-white">{t.nav.register} <span aria-hidden>→</span></NavLink>
     </div>
   )
   const big = overlay && !scrolled
   return (
-    <header className={cn('z-30', overlay ? 'fixed left-0 right-0 transition-[top] duration-300' : 'sticky top-0 py-3')} style={overlay ? { top: scrolled ? 10 : 50 } : undefined}>
+    <header className={cn('z-30', overlay ? 'fixed left-0 right-0 transition-[top] duration-300' : 'sticky top-0 py-3')} style={overlay ? { top: scrolled ? 10 : 46 } : undefined}>
       <div className="wrap">
-        <div className={cn('glass flex items-center justify-between rounded-full pl-4 pr-2 transition-[padding] duration-300', big ? 'py-[10px]' : 'py-[6px]')}>
-          <Logo height={big ? 64 : 48} className="[&>img]:transition-[height] [&>img]:duration-300" />
+        <div className={cn('glass flex items-center justify-between rounded-full pl-3 pr-2 transition-[padding] duration-300', big ? 'py-[8px]' : 'py-[5px]')}>
+          <Logo height={big ? 54 : 42} className="[&>img]:transition-[height] [&>img]:duration-300" />
           <nav className="hidden items-center gap-1 lg:flex">{links.map(item)}</nav>
           <div className="hidden items-center gap-4 lg:flex">
             <div className="pl-2">{langSwitch}</div>

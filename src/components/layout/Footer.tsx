@@ -57,7 +57,24 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
     </div>
   )
 
-  if (!finale) return <footer className="wrap pb-10 pt-[100px]">{columns}{legal}</footer>
+  const partners = (
+    <>
+      <div className="mb-[14px] flex items-end justify-between"><span className="kicker">{t.sections.sponsors}</span><Link to="/sponsors" className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">{t.sponsors.cta} →</Link></div>
+      <div className="glass overflow-hidden rounded-[18px]">
+        <Marquee duration={30} className="py-[22px]">
+          {sponsorList.map(s => (
+            <a key={s.name} href={s.url} target="_blank" rel="noreferrer" title={s.name} className="flex items-center">
+              {s.logo
+                ? <img src={s.logo} alt={s.name} loading="lazy" className={cn('w-auto object-contain opacity-80 transition-opacity hover:opacity-100', (s.tier ?? 'partner') === 'main' ? 'h-[58px]' : (s.tier ?? 'partner') === 'official' ? 'h-[48px]' : 'h-[40px]')} />
+                : <span className={cn('disp whitespace-nowrap font-bold tracking-[.04em] text-[#9a9fa3] hover:text-white', (s.tier ?? 'partner') === 'main' ? 'text-[40px]' : 'text-[32px]')}>{s.name}</span>}
+            </a>
+          ))}
+        </Marquee>
+      </div>
+    </>
+  )
+
+  if (!finale) return <footer className="wrap pb-10 pt-[100px]">{partners}<div className="mt-12">{columns}</div>{legal}</footer>
 
   return (
     <footer className="relative mt-[110px] overflow-hidden">
@@ -66,13 +83,7 @@ export function Footer({ finale = false, photo = '/img/hero-dark.jpg' }: { final
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,1)_0%,rgba(10,10,11,.35)_22%,rgba(10,10,11,.45)_75%,rgba(10,10,11,.96)_100%)]" />
 
       <div className="wrap relative z-10 pb-10 pt-[70px]">
-        {/* partners strip */}
-        <div className="mb-[14px] flex items-end justify-between"><span className="kicker">{t.sections.sponsors}</span><Link to="/sponsors" className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">{t.sponsors.cta} →</Link></div>
-        <div className="glass overflow-hidden rounded-[18px]">
-          <Marquee duration={30} className="py-[22px]">
-            {sponsorList.map(s => <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="disp whitespace-nowrap text-[32px] font-bold tracking-[.04em] text-[#9a9fa3] hover:text-white">{s.logo ? <img src={s.logo} alt={s.name} className="h-[44px] w-auto opacity-80 hover:opacity-100" /> : s.name}</a>)}
-          </Marquee>
-        </div>
+        {partners}
 
         {/* newsletter */}
         <div className="glass mt-6 grid items-center gap-8 rounded-band p-7 md:grid-cols-[1.2fr_1fr] md:p-12">

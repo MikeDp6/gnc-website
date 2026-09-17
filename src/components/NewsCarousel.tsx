@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { cn } from '@/lib/cn'
 import type { NewsItem } from '@/data/types'
 
 const FALLBACK = '/img/hero-dark.jpg'
@@ -59,14 +58,8 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
         </Link>
       </div>
 
-      {/* arrows + dots (mobile / narrow) */}
-      <div className="mt-4 flex items-center justify-between xl:justify-center">
-        <div className="xl:hidden">{arrow(-1)}</div>
-        <div className="flex gap-2">
-          {items.map((a, k) => <button key={a.id} type="button" aria-label={`${k + 1}`} onClick={() => setI(k)} className={cn('h-[6px] rounded-full transition-all', k === i % n ? 'w-8 bg-orange' : 'w-[6px] bg-white/25')} />)}
-        </div>
-        <div className="xl:hidden">{arrow(1)}</div>
-      </div>
+      {/* arrows below on narrow screens, where the side ones are hidden */}
+      <div className="mt-4 flex items-center justify-center gap-3 xl:hidden">{arrow(-1)}{arrow(1)}</div>
     </div>
   )
 }

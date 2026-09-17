@@ -32,9 +32,9 @@ export function Home() {
       <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
         <Photo src={next.cover} className="hero-in" position="center 40%" eager />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.55)_0%,rgba(10,10,11,.15)_35%,rgba(10,10,11,.35)_65%,rgba(10,10,11,.98)_100%)]" />
-        <div className="wrap absolute bottom-[56px] left-0 right-0 z-10">
-          <div className="rise-in mb-3 text-[13px] font-bold uppercase tracking-[.18em] text-orange-soft" style={{ animationDelay: '.5s' }}>{t.hero.kicker} · {next.name} · {next.dates}</div>
-          <h1 className="rise-in disp text-[64px] text-white md:text-[112px] xl:text-[150px]" style={{ animationDelay: '.65s' }}>{t.hero.title1}<br /><span className="text-orange">{t.hero.title2}</span></h1>
+        <div className="wrap absolute bottom-[64px] left-0 right-0 z-10">
+          <div className="rise-in mb-3 text-[11px] font-bold uppercase tracking-[.18em] text-orange-soft md:text-[12px]" style={{ animationDelay: '.5s' }}>{t.hero.kicker} · {next.name} · {next.dates}</div>
+          <h1 className="rise-in disp text-[46px] text-white sm:text-[58px] md:text-[80px] xl:text-[104px]" style={{ animationDelay: '.65s' }}>{t.hero.title1}<br /><span className="text-orange">{t.hero.title2}</span></h1>
           <div className="rise-in mt-6 flex flex-wrap gap-3" style={{ animationDelay: '.85s' }}>
             <Button variant="orange" to="/register">{t.hero.cta1}</Button>
             <Button variant="ghost" className="border-white/30" to={`/tournaments/${next.slug}`}>{t.hero.cta2}</Button>
@@ -152,7 +152,7 @@ export function Home() {
           <Heading a={t.sections.news1} b={t.sections.news2} />
           <Link to="/news" className="text-[14px] font-bold uppercase tracking-[.08em] text-orange">{t.sections.viewNews} →</Link>
         </div>
-        <div className="wrap"><NewsCarousel items={news} /></div>
+        <div className="wrap"><NewsCarousel items={news.slice(0, 8)} /></div>
       </section>
 
       {/* ---------- SHOP / RENTALS ---------- */}
@@ -164,11 +164,14 @@ export function Home() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {rentals.slice(0, 4).map(r => (
             <div key={r.id} className="card pop flex flex-col overflow-hidden rounded-[18px]">
-              {r.image ? <div className="h-[170px] bg-cover bg-center" style={{ backgroundImage: `url(${r.image})` }} /> : <div className="flex h-[170px] items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>}
+              <div className="relative h-[170px]">
+                {r.image ? <Photo src={r.image} position="center" /> : <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(16,114,255,.25),rgba(255,135,0,.18))]"><span className="disp text-[64px] text-white/20">GNC</span></div>}
+                <span className="glass absolute left-3 top-3 rounded-full px-3 py-[6px] text-[11px] font-extrabold uppercase tracking-[.1em] text-white">{r.price}</span>
+              </div>
               <div className="flex flex-1 flex-col px-[18px] pb-5 pt-4">
                 <div className="disp text-[30px]">{r.name}</div>
                 <div className="mt-2 flex-1 text-[13px] text-dim">{r.blurb}</div>
-                <div className="mt-4 flex items-center justify-between"><span className="text-[13px] font-bold">{r.price}</span><Link to="/contact" className="rounded-[8px] bg-orange px-3 py-2 text-[12px] font-bold text-[#111]">{t.hero.contactBtn}</Link></div>
+                <Link to="/rentals" className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-orange px-4 py-[9px] text-[12px] font-bold text-[#111]">{t.rentals.quote} →</Link>
               </div>
             </div>
           ))}
