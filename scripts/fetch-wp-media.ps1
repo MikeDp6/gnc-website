@@ -11,11 +11,15 @@ foreach ($u in $urls) {
   $out = Join-Path $dst $name
   if (Test-Path $out) { Write-Host "[$i/$($urls.Count)] exists  $name"; continue }
   try {
-    Invoke-WebRequest -Uri $u -OutFile $out -UseBasicParsing -TimeoutSec 60
+    # percent-encode the path so filenames with Greek characters or spaces resolve
+    $uri = [System.Uri]$u
+    $enc = $uri.Scheme + "://" + $uri.Host + ((($uri.AbsolutePath -split "/") | ForEach-Object { [System.Uri]::EscapeDataString([System.Uri]::UnescapeDataString($_)) }) -join "/")
+    Invoke-WebRequest -Uri $enc -OutFile $out -UseBasicParsing -TimeoutSec 60
     Write-Host "[$i/$($urls.Count)] ok      $name"
   } catch {
     Write-Host "[$i/$($urls.Count)] FAILED  $u  ($($_.Exception.Message))" -ForegroundColor Red
   }
-  Start-Sleep -Milliseconds 400
+  Start-Sleep -Milliseconds 150
 }
-Write-Host "Done → $dst"
+$size = (Get-ChildItem $dst -File | Measure-Object -Property Length -Sum).Sum / 1MB
+Write-Host "Done → $dst  ($([math]::Round($size,1)) MB σε $((Get-ChildItem $dst -File).Count) αρχεία)"

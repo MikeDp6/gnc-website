@@ -28,13 +28,19 @@ for (const it of items) if (tag(it, 'wp:post_type') === 'attachment') attachment
 
 const media = new Set()
 const localName = url => { try { return decodeURIComponent(new URL(url).pathname.split('/').pop() || '') } catch { return url.split('/').pop() } }
-const localise = url => { if (!url) return null; media.add(url); return '/img/wp/' + localName(url) }
+const localise = url => {
+  if (!url) return null
+  if (/^data:/i.test(url)) return null                       // inline base64 images: dropped, not downloadable
+  if (!/^https?:\/\//i.test(url)) return url                 // already a local path
+  media.add(url)
+  return '/img/wp/' + localName(url)
+}
 
 /** Good-enough WordPress HTML → Markdown (headings, paragraphs, lists, bold/italic, links, images). Gutenberg comments and layout tags are dropped. */
 function toMarkdown(html) {
   let s = html.replace(/<!--[\s\S]*?-->/g, '')
   s = s.replace(/<figure[^>]*>([\s\S]*?)<\/figure>/gi, '$1').replace(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/gi, '\n*$1*\n')
-  s = s.replace(/<img[^>]*src="([^"]+)"[^>]*>/gi, (_, src) => `\n![](${localise(src)})\n`)
+  s = s.replace(/<img[^>]*src="([^"]+)"[^>]*>/gi, (_, src) => { const u = localise(src); return u ? `\n![](${u})\n` : '' })
   s = s.replace(/<h([1-4])[^>]*>([\s\S]*?)<\/h\1>/gi, (_, n, t) => `\n${'#'.repeat(Math.max(2, +n))} ${t.replace(/<[^>]+>/g, '').trim()}\n`)
   s = s.replace(/<(strong|b)>([\s\S]*?)<\/\1>/gi, '**$2**').replace(/<(em|i)>([\s\S]*?)<\/\1>/gi, '*$2*')
   s = s.replace(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, t) => `[${t.replace(/<[^>]+>/g, '').trim()}](${href})`)
@@ -60,7 +66,12 @@ const rows = posts.map(it => {
   const firstImg = (content.match(/<img[^>]*src="([^"]+)"/i) || [])[1]
   const image = localise(thumb || firstImg)
   const cats = tags(it, 'category').map(entities)
-  const tagName = /αποτελ|απολογ/i.test(title + cats.join()) ? 'Αποτελέσματα' : /δηλώσ|συμμετοχ/i.test(title + cats.join()) ? 'Δηλώσεις' : /πρόγραμμα/i.test(title) ? 'Πρόγραμμα' : 'Νέα'
+  const hay = (title + ' ' + cats.join(' ')).toLowerCase()
+  const tagName =
+      /αποτελ|απολογ|recap|ολοκληρ|νικητ|αποθέωση|έπεσε η αυλαία|κύπελλ/.test(hay) ? 'Αποτελέσματα'
+    : /δηλώσ|συμμετοχ|εγγραφ|δήλωσε|registration/.test(hay) ? 'Δηλώσεις'
+    : /πρόγραμμα|ωράρι|schedule|ομιλ|όμιλο|κλήρωση/.test(hay) ? 'Πρόγραμμα'
+    : 'Νέα'
   return { slug, title, excerpt, body, tag: tagName, date, image, source: tag(it, 'link') }
 })
 
