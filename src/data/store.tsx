@@ -23,12 +23,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return
     let alive = true
-    fetchBundle().then(b => { if (alive) { setBundle(b); setSource('supabase') } })
-      .catch(err => console.error('[gnc] falling back to mock data:', err))
-      .finally(() => alive && setLoading(false))
-    // live: any match change (score, move, status) re-fetches the bundle — small enough to be cheap
-    const off = subscribeMatches(() => fetchBundle().then(b => alive && setBundle(b)).catch(() => {}))
-    return () => { alive = false; off() }
+    let last = 0
+
+    const load = (force = false) => {
+      if (!alive) return
+      const now = Date.now()
+      if (!force && now - last < 15_000) return       // don't hammer it on every tab switch
+      last = now
+      fetchBundle().then(b => { if (alive) { setBundle(b); setSource('supabase') } })
+        .catch(err => console.error('[gnc] falling back to mock data:', err))
+        .finally(() => alive && setLoading(false))
+    }
+    load(true)
+
+    // Anything edited in the admin — ticker, news, a tournament — should show up without a reload.
+    // The page refreshes itself when it comes back into view and every couple of minutes while open.
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') load(true) }, 120_000)
+
+    // live: any match change (score, move, status) re-fetches at once — small enough to be cheap
+    const off = subscribeMatches(() => load(true))
+    return () => {
+      alive = false; off()
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+      window.clearInterval(timer)
+    }
   }, [])
 
   const value = useMemo<Store>(() => ({

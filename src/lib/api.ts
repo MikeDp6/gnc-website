@@ -169,20 +169,20 @@ export async function fetchBundle(): Promise<Bundle> {
   return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut, stats, photos }
 }
 
-type TeamRankRow = { team_key: string; name: string; team_id: string | null; tournaments: number; played: number; wins: number; losses: number; points_for: number; points_against: number; gold: number; silver: number; bronze: number; points: number }
-type PlayerRankRow = { player_id: string; display_name: string; city: string | null; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }
+type TeamRankRow = { team_key: string; name: string; team_id: string | null; category_id: string | null; tournaments: number; played: number; wins: number; losses: number; points_for: number; points_against: number; gold: number; silver: number; bronze: number; points: number }
+type PlayerRankRow = { player_id: string; display_name: string; city: string | null; category_id: string | null; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }
 
 /** All-time rankings — loaded only by the /rankings page, not with the home bundle. */
 export async function fetchRankings(): Promise<{ teams: TeamRank[]; players: PlayerRank[] }> {
   const sb = supabase
   if (!sb) return { teams: [], players: [] }
   const [teams, players] = await Promise.all([
-    q<TeamRankRow[]>(sb.from('team_rankings').select('*').order('points', { ascending: false }).limit(300)),
-    q<PlayerRankRow[]>(sb.from('player_rankings').select('*').order('points', { ascending: false }).limit(300)),
+    q<TeamRankRow[]>(sb.from('team_rankings').select('*').order('points', { ascending: false }).limit(600)),
+    q<PlayerRankRow[]>(sb.from('player_rankings').select('*').order('points', { ascending: false }).limit(600)),
   ])
   return {
-    teams: teams.map(t => ({ key: t.team_key, name: t.name, teamId: t.team_id ?? undefined, tournaments: t.tournaments, played: t.played, wins: t.wins, losses: t.losses, pointsFor: t.points_for, pointsAgainst: t.points_against, gold: t.gold, silver: t.silver, bronze: t.bronze, points: t.points })),
-    players: players.map(p => ({ id: p.player_id, name: p.display_name, city: p.city ?? undefined, tournaments: p.tournaments, teams: p.teams, played: p.played, wins: p.wins, losses: p.losses, gold: p.gold, silver: p.silver, bronze: p.bronze, points: p.points })),
+    teams: teams.map(t => ({ key: t.team_key, name: t.name, teamId: t.team_id ?? undefined, categoryId: t.category_id ?? undefined, tournaments: t.tournaments, played: t.played, wins: t.wins, losses: t.losses, pointsFor: t.points_for, pointsAgainst: t.points_against, gold: t.gold, silver: t.silver, bronze: t.bronze, points: t.points })),
+    players: players.map(p => ({ id: p.player_id, name: p.display_name, city: p.city ?? undefined, categoryId: p.category_id ?? undefined, tournaments: p.tournaments, teams: p.teams, played: p.played, wins: p.wins, losses: p.losses, gold: p.gold, silver: p.silver, bronze: p.bronze, points: p.points })),
   }
 }
 

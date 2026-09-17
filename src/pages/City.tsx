@@ -84,7 +84,7 @@ export function City() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {stories.map(a => (
                   <Link key={a.id} to={`/news/${a.slug}`} className="card pop grid grid-cols-[104px_1fr] items-stretch overflow-hidden rounded-[16px]">
-                    <Img src={a.image} />
+                    <Img src={a.image} alt={a.title} sizes="104px" />
                     <div className="px-4 py-3">
                       <div className="mb-[5px] flex gap-[10px] text-[10px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
                       <div className="line-clamp-3 text-[14px] font-bold leading-[1.25]">{a.title}</div>

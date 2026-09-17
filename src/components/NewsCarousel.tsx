@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { NewsItem } from '@/data/types'
+import { small } from '@/components/ui/Photo'
 
 const FALLBACK = '/img/hero-dark.jpg'
 
@@ -38,7 +39,9 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
         <div className="flex flex-col gap-4 lg:order-1">
           {rest.map(a => (
             <Link key={a.id} to={`/news/${a.slug}`} className="card pop grid flex-1 grid-cols-[132px_1fr] items-stretch overflow-hidden rounded-[18px]">
-              <div className="bg-cover bg-center" style={{ backgroundImage: `url(${a.image ?? FALLBACK})` }} />
+              <div className="relative overflow-hidden">
+                <img src={small(a.image ?? FALLBACK) ?? a.image ?? FALLBACK} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+              </div>
               <div className="flex flex-col justify-center px-4 py-4">
                 <div className="mb-[6px] flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
                 <div className="disp line-clamp-3 text-[24px] leading-[.95] md:text-[26px]">{a.title}</div>

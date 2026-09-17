@@ -7,6 +7,7 @@ import { useJsonLd, useMeta } from '@/lib/meta'
 import { Band } from '@/components/layout/Band'
 import { SubTabs } from '@/components/layout/SubTabs'
 import { Crumb } from '@/components/ui/Crumb'
+import { Empty } from '@/components/ui/Empty'
 import { Heading } from '@/components/ui/Heading'
 import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
@@ -76,7 +77,7 @@ export function Tournament() {
       {tab === 'schedule' && (
         <section className="wrap pt-[50px]">
           {/* filters stay in view while you scroll the day (glass bar under the nav) */}
-          <div className="glass z-20 mb-[22px] flex flex-col gap-3 rounded-[20px] px-4 py-3 md:sticky md:top-[86px] md:flex-row md:flex-wrap md:items-center md:justify-between md:rounded-full md:px-5">
+          <div className="glass z-20 mb-[22px] flex flex-col gap-3 rounded-[24px] px-4 py-3 md:sticky md:top-[86px] md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-y-2 md:rounded-[34px] md:px-5 md:py-[10px]">
             <Heading a={t.nav.schedule} b={(tour.days[day - 1] ?? '').split(' ')[0]} size="sm" />
             <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
               {tour.days.map((dn, i) => <Chip key={dn} active={day === i + 1} onClick={() => setDay((i + 1) as 1 | 2)}>{dn}</Chip>)}
@@ -91,7 +92,7 @@ export function Tournament() {
               {ms.map(m => <MatchRow key={m.id} m={m} />)}
             </Reveal>
           ))}
-          {!list.length && <div className="card p-8 text-[14px] text-dim">{t.tour.noMatches}</div>}
+          {!list.length && <Empty mark="—" title={t.tour.noMatches} text="Άλλαξε ημέρα ή κατηγορία από τα φίλτρα πιο πάνω." />}
         </section>
       )}
 
@@ -107,7 +108,7 @@ export function Tournament() {
           <div className="grid gap-5 lg:grid-cols-2">
             {groups.filter(g => cat === 'all' || g.categoryId === cat).map((g, i) => <Reveal key={g.id} delay={(i % 2) * 80}><StandingsTable g={g} subtitle={`${categoryById(g.categoryId).name} · ${tour.city}`} /></Reveal>)}
           </div>
-          {!groups.length && <div className="card p-8 text-[14px] text-dim">{t.hero.soon}</div>}
+          {!groups.length && <Empty mark="—" title="Οι όμιλοι δεν έχουν κληρωθεί" text="Η κλήρωση ανακοινώνεται μόλις κλείσουν οι δηλώσεις της κατηγορίας." cta="Δήλωσε ομάδα" to="/register" />}
         </section>
       )}
 
@@ -118,7 +119,7 @@ export function Tournament() {
               <div className="mb-[22px] flex items-center gap-3"><i className="h-3 w-3 rounded-full" style={{ background: catColor[c.key] }} /><Heading a={t.sections.ko} b={c.name} size="md" /></div>
               <BracketGrid matches={ms} />
             </Reveal>
-          )) : <div className="card p-8 text-[14px] text-dim">{t.tour.koSoon}</div>}
+          )) : <Empty mark="⌁" title={t.tour.koSoon} text="Προκρίνονται οι δύο πρώτες κάθε ομίλου. Το δέντρο σχηματίζεται αυτόματα μόλις τελειώσουν οι αγώνες των ομίλων." />}
         </section>
       )}
 

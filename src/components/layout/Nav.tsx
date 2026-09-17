@@ -30,7 +30,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const teamsTab = new URLSearchParams(search).get('tab') === 'teams'
   const links = [
     { to: '/', label: t.nav.tournaments, end: true },
-    { to: `/tournaments/${next?.slug ?? ''}`, label: t.nav.schedule, active: onTour && !teamsTab },
+    { to: '/tournaments', label: t.nav.schedule, active: pathname === '/tournaments' || (onTour && !teamsTab) },
     { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams, active: onTour && teamsTab },
     { to: '/rankings', label: t.nav.rankings },
     { to: '/news', label: t.nav.news },

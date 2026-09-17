@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Marquee } from '@/components/ui/Marquee'
 import { useData } from '@/data/store'
 import { useI18n } from '@/i18n'
+import { small } from '@/components/ui/Photo'
 
 /**
  * The media library from the old site: the tour's cities, one photo each, running past on their own.
@@ -20,7 +21,8 @@ export function MediaCarousel() {
         {shots.map(c => (
           <Link key={c.id} to={`/cities/${c.id}`}
             className="pop group relative block h-[208px] w-[320px] shrink-0 overflow-hidden rounded-[18px] border border-white/12 md:h-[240px] md:w-[360px]">
-            <img src={c.image} alt={name(c)} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" />
+            <img src={c.image} srcSet={small(c.image) ? `${small(c.image)} 640w, ${c.image} 1600w` : undefined} sizes="(min-width:768px) 360px, 320px"
+              alt={name(c)} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" />
             {/* most of these photos already carry the city name in the artwork, so the label is a small
                 chip in the corner rather than a second big title fighting the first */}
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.45)_0%,rgba(10,10,11,0)_45%,rgba(10,10,11,.25)_100%)]" />

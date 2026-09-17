@@ -4,6 +4,7 @@ import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { Heading } from '@/components/ui/Heading'
 import { useMeta } from '@/lib/meta'
+import { useSearchParams } from 'react-router-dom'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, Steps, TextInput } from '@/components/ui/Form'
@@ -18,8 +19,11 @@ export function Register() {
   useMeta('Δήλωσε ομάδα', 'Δήλωσε την ομάδα σου σε διοργάνωση GNC 3on3. Δωρεάν συμμετοχή, κατηγορίες από U11 έως 35+.')
   const { tournaments, categories, categoryById } = useData()
   const open = tournaments.filter(t => t.status === 'registration' || t.status === 'upcoming')
+  const [params] = useSearchParams()
+  // the programme page links straight here with the stop already chosen
+  const asked = open.find(x => x.slug === params.get('t'))
   const [step, setStep] = useState(0)
-  const [tid, setTid] = useState(open[0]?.id ?? '')
+  const [tid, setTid] = useState(asked?.id ?? open[0]?.id ?? '')
   const [cid, setCid] = useState('')
   const [team, setTeam] = useState({ name: '', city: '' })
   const [cap, setCap] = useState({ first: '', last: '', email: '', phone: '', birth: '', guardian: '', consent: false })
