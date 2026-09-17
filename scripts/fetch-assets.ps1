@@ -1,4 +1,4 @@
-# Greek filenames need UTF-8 both on the console and in the request URL.
+# URLs are percent-encoded so this file stays pure ASCII (PowerShell 5.1 reads .ps1 as ANSI).
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 # Downloads photos from gnc3on3.gr into public/img/gnc (run from the repo root in PowerShell: .\scripts\fetch-assets.ps1)
@@ -12,10 +12,10 @@ $urls = @(
   "https://gnc3on3.gr/wp-content/uploads/2025/02/010-768x512.jpg",
   "https://gnc3on3.gr/wp-content/uploads/2025/02/SCHELDE-240x300.png",
   "https://gnc3on3.gr/wp-content/uploads/2025/02/black-17.jpg",
-  "https://gnc3on3.gr/wp-content/uploads/2025/02/Εικόνα1.jpg",
-  "https://gnc3on3.gr/wp-content/uploads/2025/02/Εικόνα4.jpg",
-  "https://gnc3on3.gr/wp-content/uploads/2025/02/ΟΘΟΝΗ-768x513.jpg",
-  "https://gnc3on3.gr/wp-content/uploads/2025/02/ολυμπιακοθ_bg_removed.png-300x300.png",
+  "https://gnc3on3.gr/wp-content/uploads/2025/02/%CE%95%CE%B9%CE%BA%CF%8C%CE%BD%CE%B11.jpg",
+  "https://gnc3on3.gr/wp-content/uploads/2025/02/%CE%95%CE%B9%CE%BA%CF%8C%CE%BD%CE%B14.jpg",
+  "https://gnc3on3.gr/wp-content/uploads/2025/02/%CE%9F%CE%98%CE%9F%CE%9D%CE%97-768x513.jpg",
+  "https://gnc3on3.gr/wp-content/uploads/2025/02/%CE%BF%CE%BB%CF%85%CE%BC%CF%80%CE%B9%CE%B1%CE%BA%CE%BF%CE%B8_bg_removed.png-300x300.png",
   "https://gnc3on3.gr/wp-content/uploads/2025/03/IMG_6714.jpg",
   "https://gnc3on3.gr/wp-content/uploads/2025/10/gnc3on3_agiosnikolaos-min.jpg",
   "https://gnc3on3.gr/wp-content/uploads/2025/10/gnc3on3_agrinio-min.png",
@@ -48,4 +48,4 @@ foreach ($u in $urls) {
   Start-Sleep -Milliseconds 200
 }
 $n = (Get-ChildItem $dst -File).Count
-Write-Host "Done → $dst  ($n αρχεία)"
+Write-Host "Done -> $dst  ($n files)"

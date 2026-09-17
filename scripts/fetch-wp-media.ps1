@@ -1,4 +1,4 @@
-# Windows PowerShell 5.1 reads files as ANSI by default, which mangles the Greek filenames in the list.
+# Windows PowerShell 5.1 reads files as ANSI by default, which mangles Greek filenames in the list.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 # Downloads the media files listed by scripts/import-wp.mjs (supabase/import/wp-media.txt) into public/img/wp/.
@@ -25,4 +25,4 @@ foreach ($u in $urls) {
   Start-Sleep -Milliseconds 150
 }
 $size = (Get-ChildItem $dst -File | Measure-Object -Property Length -Sum).Sum / 1MB
-Write-Host "Done → $dst  ($([math]::Round($size,1)) MB σε $((Get-ChildItem $dst -File).Count) αρχεία)"
+Write-Host "Done -> $dst  ($([math]::Round($size,1)) MB in $((Get-ChildItem $dst -File).Count) files)"
