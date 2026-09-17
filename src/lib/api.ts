@@ -149,7 +149,7 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
 
-  const news: NewsItem[] = newsRows ? newsRows.map((n, i) => ({ id: n.id, slug: n.slug, tag: n.tag, date: shortDate(n.published_on), title: n.title, excerpt: n.excerpt ?? '', body: n.body ?? undefined, tint: tints[i % 4], image: n.image_url ?? undefined, source: n.source_url ?? undefined })) : mockNews
+  const news: NewsItem[] = newsRows ? newsRows.map((n, i) => ({ id: n.id, slug: n.slug, tag: n.tag, date: shortDate(n.published_on), publishedOn: n.published_on ?? undefined, title: n.title, excerpt: n.excerpt ?? '', body: n.body ?? undefined, tint: tints[i % 4], image: n.image_url ?? undefined, source: n.source_url ?? undefined })) : mockNews
   const rentals: RentalItem[] = rentalRows ? rentalRows.map(r => ({ id: r.id, name: r.name, blurb: r.blurb ?? '', price: r.price, image: r.image_url ?? undefined })) : mockRentals
   const cityList: City[] = cities.filter(c => c.lat != null && c.lng != null).map(c => {
     const m = mockCities.find(x => x.id === c.id)   // media fallback until 008 has run

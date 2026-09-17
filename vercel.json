@@ -178,6 +178,17 @@
   ],
   "rewrites": [
     {
+      "source": "/:type(news|tournaments|cities)/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterest|SkypeUriPreview|vkShare|redditbot|Googlebot-Image|Applebot).*"
+        }
+      ],
+      "destination": "/api/share?type=:type&slug=:slug"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { useI18n } from '@/i18n'
-import { useMeta } from '@/lib/meta'
+import { useJsonLd, useMeta } from '@/lib/meta'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Reveal } from '@/components/ui/Reveal'
@@ -58,6 +58,12 @@ export function NewsArticle() {
   const [copied, setCopied] = useState(false)
   const a = news.find(x => x.slug === slug)
   useMeta(a?.title, a?.excerpt, a?.image)
+  useJsonLd(a ? {
+    '@context': 'https://schema.org', '@type': 'NewsArticle', headline: a.title, description: a.excerpt,
+    datePublished: a.publishedOn, image: a.image ? new URL(a.image, window.location.origin).href : undefined,
+    publisher: { '@type': 'Organization', name: 'GNC 3on3', url: window.location.origin },
+    mainEntityOfPage: window.location.origin + window.location.pathname,
+  } : null)
   if (!a) return <NotFound />
   const more = news.filter(x => x.id !== a.id).slice(0, 3)
   const url = typeof window !== 'undefined' ? window.location.href : ''

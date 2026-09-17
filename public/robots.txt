@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /me
+Disallow: /live
+
+Sitemap: https://gnc3on3.gr/sitemap.xml

@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { useI18n } from '@/i18n'
-import { useMeta } from '@/lib/meta'
+import { useJsonLd, useMeta } from '@/lib/meta'
 import { Band } from '@/components/layout/Band'
 import { SubTabs } from '@/components/layout/SubTabs'
 import { Crumb } from '@/components/ui/Crumb'
@@ -32,6 +32,15 @@ export function Tournament() {
   const [cat, setCat] = useState<string>('all')
   const list = useMemo(() => matches.filter(m => m.tournamentId === tour?.id && m.day === day && (cat === 'all' || m.categoryId === cat)), [matches, tour, day, cat])
   useMeta(tour?.name, tour ? `${tour.dates} · ${tour.venue}. ${t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}` : undefined, tour?.cover)
+  useJsonLd(tour ? {
+    '@context': 'https://schema.org', '@type': 'SportsEvent', name: tour.name, sport: '3x3 Basketball',
+    startDate: tour.startsAt, eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: { '@type': 'Place', name: tour.venue, address: { '@type': 'PostalAddress', addressLocality: tour.city, addressCountry: 'GR', streetAddress: tour.address } },
+    image: tour.cover ? new URL(tour.cover, window.location.origin).href : undefined,
+    organizer: { '@type': 'Organization', name: 'GNC 3on3', url: window.location.origin },
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock', url: `${window.location.origin}/register` },
+  } : null)
   if (!tour) return loading ? <div className="wrap py-[120px] text-dim">{t.loading}</div> : <NotFound />
   const cats = categories.filter(c => tour.categoryIds.includes(c.id))
   const all = matches.filter(m => m.tournamentId === tour.id)
