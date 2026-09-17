@@ -100,8 +100,8 @@ export function Register() {
               </div>
             ) : (
               <div className="grid gap-4">
-                <p className="text-[14px] text-dim">Βάλε τα email ή τα κινητά 2–3 συμπαικτών. Θα λάβουν σύνδεσμο για να συμπληρώσουν τα στοιχεία τους — ή στείλ' τον εσύ μετά την καταχώρηση.</p>
-                {mates.map((m, i) => <Field key={i} label={`Συμπαίκτης ${i + 1}${i === 2 ? ' (προαιρετικός 4ος)' : ''}`}><TextInput value={m} onChange={e => setMates(mates.map((x, j) => j === i ? e.target.value : x))} placeholder="email ή κινητό" /></Field>)}
+                <p className="text-[14px] text-dim">Βάλε τα email 2–3 συμπαικτών. Τα κρατάμε για να τους στείλουμε την πρόσκληση· ώσπου να φτάσει, ο σύνδεσμος είναι στον <b className="text-white">λογαριασμό σου</b> και τον στέλνεις κι εσύ από WhatsApp ή Viber.</p>
+                {mates.map((m, i) => <Field key={i} label={`Email συμπαίκτη ${i + 1}${i === 2 ? ' (προαιρετικός 4ος)' : ''}`}><TextInput type="email" value={m} onChange={e => setMates(mates.map((x, j) => j === i ? e.target.value : x))} placeholder="email@example.com" /></Field>)}
                 <label className="flex items-start gap-3 text-[13px] text-dim"><input type="checkbox" required className="mt-1" />Αποδέχομαι τον <Link className="text-white underline" to="/kanonismoi">κανονισμό</Link> και τους <Link className="text-white underline" to="/oroi">όρους συμμετοχής</Link> της διοργάνωσης (4 παίκτες, μισό γήπεδο, 10΄ ή πρώτος στους 21).</label>
                 <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button type="submit" variant="orange" className={cn(busy && 'opacity-50')}>{busy ? 'Καταχώρηση…' : 'Καταχώρηση δήλωσης'}</Button></div>
               </div>
