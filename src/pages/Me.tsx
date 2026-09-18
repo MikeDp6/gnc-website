@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
@@ -22,7 +22,7 @@ import type { Crew, MyPlayer, MyTeam, PlayerHistoryRow, PlayerRank2 } from '@/da
 /** The signed-in player's own page: photo, details, visibility, and their games in the running tournament. */
 export function Me() {
   const { t } = useI18n()
-  const { session, loading: authLoading, signOut } = useAuth()
+  const { session, loading: authLoading, signOut, setPassword } = useAuth()
   const { matches, teams, tournaments } = useData()
   const [me, setMe] = useState<MyPlayer | null | undefined>(undefined)   // undefined = loading, null = no profile
   const [hist, setHist] = useState<PlayerHistoryRow[]>([])
@@ -36,6 +36,9 @@ export function Me() {
   const [crews, setCrews] = useState<Crew[]>([])
   const [crewDraft, setCrewDraft] = useState({ name: '', city: '', m1: '', m2: '', m3: '' })
   const [makingCrew, setMakingCrew] = useState(false)
+  const [params] = useSearchParams()
+  const [pwOpen, setPwOpen] = useState(params.get('reset') === '1')
+  const [pw, setPw] = useState('')
   useMeta(t.account.mine)
 
   const load = useCallback(async () => {
@@ -304,6 +307,31 @@ export function Me() {
           <Field label={t.account.birthYear} value={me.birth_year ? String(me.birth_year) : ''} onSave={v => save({ birthYear: v ? Number(v) : null })} disabled={busy} />
           <div className="flex items-center justify-between gap-4 border-t border-line py-[11px] text-[14px]">
             <span className="text-dim">Email</span><b className="truncate font-semibold">{me.email ?? '—'}</b>
+          </div>
+          <div className="border-t border-line py-4">
+            {pwOpen ? (
+              <div>
+                <div className="text-[13px] font-bold">{t.account.setPassword}</div>
+                <p className="mt-1 text-[12px] text-dim">{t.account.setPasswordHelp}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder={t.account.newPassword} autoComplete="new-password"
+                    className="min-w-[160px] flex-1 rounded-lg border border-white/25 bg-black/30 px-3 py-2 text-[13px] outline-none" />
+                  <button type="button" disabled={busy || pw.length < 8}
+                    onClick={async () => {
+                      setBusy(true); setErr(null)
+                      const e2 = await setPassword(pw)
+                      if (e2) setErr(e2); else { setPw(''); setPwOpen(false); say(t.account.passwordSaved) }
+                      setBusy(false)
+                    }}
+                    className="pop rounded-full bg-white px-4 py-2 text-[12px] font-bold uppercase tracking-[.06em] text-[#111] disabled:opacity-45">
+                    OK
+                  </button>
+                  <button type="button" onClick={() => { setPwOpen(false); setPw('') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">✕</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setPwOpen(true)} className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.account.setPassword} →</button>
+            )}
           </div>
           <label className="flex items-start gap-3 border-t border-line py-4 text-[13px]">
             <input type="checkbox" checked={me.public_profile} disabled={busy} onChange={e => save({ isPublic: e.target.checked })} className="mt-1" />

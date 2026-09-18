@@ -7,11 +7,14 @@ interface Auth {
   isAdmin: boolean
   loading: boolean
   signIn: (email: string, password: string) => Promise<string | null>   // returns error message or null
-  /** players sign in with a one-time link — no password to forget, nothing to leak */
+  /** players sign in with a one-time link — nothing to forget, nothing to leak */
   sendMagicLink: (email: string, redirectTo?: string) => Promise<string | null>
+  /** …or with a password, for whoever prefers one. Both work on the same account. */
+  setPassword: (password: string) => Promise<string | null>
+  sendPasswordReset: (email: string) => Promise<string | null>
   signOut: () => Promise<void>
 }
-const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', signOut: async () => {} })
+const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', setPassword: async () => 'no client', sendPasswordReset: async () => 'no client', signOut: async () => {} })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
@@ -47,6 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sendMagicLink: async (email, redirectTo) => {
       if (!supabase) return 'Δεν έχει ρυθμιστεί το Supabase (.env.local).'
       const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo: redirectTo ?? `${window.location.origin}/me` } })
+      return error ? error.message : null
+    },
+    setPassword: async password => {
+      if (!supabase) return 'Δεν έχει ρυθμιστεί το Supabase (.env.local).'
+      if (password.length < 8) return 'Ο κωδικός θέλει τουλάχιστον 8 χαρακτήρες.'
+      const { error } = await supabase.auth.updateUser({ password })
+      return error ? error.message : null
+    },
+    sendPasswordReset: async email => {
+      if (!supabase) return 'Δεν έχει ρυθμιστεί το Supabase (.env.local).'
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/me?reset=1` })
       return error ? error.message : null
     },
     signOut: async () => { await supabase?.auth.signOut() },
