@@ -63,6 +63,7 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
         <Field label="Κατάσταση"><Select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}>{STATUS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
         <Field label="Προθεσμία δηλώσεων"><Input type="datetime-local" value={(f.registration_deadline ?? '').slice(0, 16)} onChange={e => setF({ ...f, registration_deadline: e.target.value || null })} /></Field>
         <ImageField value={f.cover_url} onChange={v => setF({ ...f, cover_url: v })} folder="covers" label="Εικόνα εξωφύλλου — φωτογραφία γηπέδου, όχι αφίσα (μπαίνει πίσω από τον τίτλο)" className="md:col-span-2" />
+        <ImageField value={f.poster_url} onChange={v => setF({ ...f, poster_url: v })} folder="posters" label="Αφίσα διοργάνωσης — κατακόρυφη, εμφανίζεται στις κάρτες του Προγράμματος και των Ομάδων" className="md:col-span-2" />
         <label className="flex items-center gap-3 text-[14px] md:col-span-2"><input type="checkbox" checked={f.is_public} onChange={e => setF({ ...f, is_public: e.target.checked })} className="h-4 w-4" /> Δημόσιο — φαίνεται στο site και στο app</label>
         <div className="md:col-span-2"><Btn onClick={save}>Αποθήκευση</Btn></div>
       </div>

@@ -18,7 +18,7 @@ function dateRange(a: string, b: string) {
 
 // ---- row types (only the columns we read) ----
 type CatRow = { id: string; label: string; short: string; color_key: CategoryKey; sort_order: number }
-type TourRow = { id: string; slug: string; name: string; city_id: string | null; venue: string | null; address: string | null; starts_on: string; ends_on: string; courts: number; status: string; cover_url: string | null; registration_deadline: string | null }
+type TourRow = { id: string; slug: string; name: string; city_id: string | null; venue: string | null; address: string | null; starts_on: string; ends_on: string; courts: number; status: string; cover_url: string | null; poster_url: string | null; registration_deadline: string | null }
 type DayRow = { id: string; tournament_id: string; day_index: number; date: string; start_time: string }
 type TCRow = { tournament_id: string; category_id: string; qualifiers: number | null; sort_order: number }
 type TeamRow = { id: string; tournament_id: string; category_id: string; name: string; city: string | null; captain_id: string | null; status: string; checked_in_at: string | null }
@@ -34,7 +34,7 @@ type PhotoRow = { id: string; url: string; caption: string | null; credit: strin
 type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null; partners?: CityPartner[] | null }
 type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
 type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
-type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean }
+type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean; poster_url: string | null }
 type StatsRow = { cities: number; tournaments: number; teams: number; players: number; matches: number; since_year: number }
 const MONTHS_SHORT = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ']
 /** "7 Σεπ 2026" */
@@ -56,7 +56,7 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const [cats, tours, days, tcs, cities, ticker, sponsors, winners] = await Promise.all([
     q<CatRow[]>(sb.from('categories').select('id,label,short,color_key,sort_order').order('sort_order')),
-    q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,registration_deadline').order('starts_on')),
+    q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,poster_url,registration_deadline').order('starts_on')),
     q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').order('day_index')),
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
     orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years,partners').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
@@ -67,7 +67,7 @@ export async function fetchBundle(): Promise<Bundle> {
   const [newsRows, rentalRows, seasonRows, statsRow, photoRows] = await Promise.all([
     orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null),
     orElse(q<RentalRow[]>(sb.from('rentals').select('id,name,blurb,price,image_url').eq('active', true).order('sort_order')), null),
-    orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open').order('starts_on')), null),
+    orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open,poster_url').order('starts_on')), null),
     orElse(q<StatsRow>(sb.from('site_stats').select('*').single()), null),
     orElse(q<PhotoRow[]>(sb.from('photos').select('id,url,caption,credit,tournament_id,city_id').order('sort_order')), null),
   ])
@@ -102,7 +102,7 @@ export async function fetchBundle(): Promise<Bundle> {
       days: tdays.map(x => `${DAYS[d(x.date).getDay()]} ${d(x.date).getDate()}/${d(x.date).getMonth() + 1}`),
       courts: t.courts, status: t.status === 'done' || t.status === 'archived' ? 'done' : t.status === 'live' ? 'live' : t.status === 'registration' ? 'registration' : 'upcoming',
       teamsCount: teams.filter(x => x.tournament_id === t.id).length,
-      categoryIds: tcats.map(x => x.category_id), cover: t.cover_url ?? '/img/gnc/hero-gnc-sunset.jpg',
+      categoryIds: tcats.map(x => x.category_id), cover: t.cover_url ?? '/img/gnc/hero-gnc-sunset.jpg', poster: t.poster_url ?? undefined,
     }
   })
 
@@ -157,7 +157,7 @@ export async function fetchBundle(): Promise<Bundle> {
   })
   const season: SeasonEvent[] = seasonRows ? seasonRows.map(e => {
     const city = cities.find(c => c.id === e.city_id)
-    return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined }
+    return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined, poster: e.poster_url ?? undefined }
   }) : season2026
   const sponsorsOut: Sponsor[] = sponsors.length ? sponsors.map(s => ({ name: s.name, url: s.url ?? undefined, logo: s.logo_url ?? undefined, tier: s.tier ?? 'partner', blurb: s.blurb ?? undefined })) : sponsorList
   const photos: Photo[] = (photoRows ?? []).map(p => ({ id: p.id, url: p.url, caption: p.caption ?? undefined, credit: p.credit ?? undefined, tournamentId: p.tournament_id ?? undefined, cityId: p.city_id ?? undefined }))

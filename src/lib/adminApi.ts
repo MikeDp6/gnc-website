@@ -11,12 +11,12 @@ const run = async <T,>(p: PromiseLike<{ data: T | null; error: { message: string
 // ---------- tournaments ----------
 export interface TournamentInput {
   slug: string; name: string; name_en?: string | null; city_id?: string | null; venue?: string | null; address?: string | null
-  starts_on: string; ends_on: string; courts: number; status: string; is_public: boolean; registration_deadline?: string | null; cover_url?: string | null
+  starts_on: string; ends_on: string; courts: number; status: string; is_public: boolean; registration_deadline?: string | null; cover_url?: string | null; poster_url?: string | null
 }
 export const listTournaments = () => run<Array<TournamentInput & { id: string; settings_json: Record<string, unknown> }>>(
-  sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,registration_deadline,cover_url,settings_json').order('starts_on', { ascending: false }))
+  sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,registration_deadline,cover_url,poster_url,settings_json').order('starts_on', { ascending: false }))
 export const getTournament = (id: string) => run<TournamentInput & { id: string; settings_json: Record<string, unknown> }>(
-  sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,registration_deadline,cover_url,settings_json').eq('id', id).single())
+  sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,registration_deadline,cover_url,poster_url,settings_json').eq('id', id).single())
 export const createTournament = async (t: TournamentInput) => {
   const row = await run<{ id: string }>(sb().from('tournaments').insert(t).select('id').single())
   // one day per calendar day between starts_on and ends_on

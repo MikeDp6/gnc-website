@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
 
-type Row = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean; sort_order: number }
+type Row = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean; sort_order: number; poster_url: string | null }
 type CityOpt = { id: string; name: string }
 
 /**
@@ -46,7 +46,7 @@ export function Season() {
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[820px] text-[13px]">
-          <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-3 py-2">Από</th><th className="px-3 py-2">Έως</th><th className="px-3 py-2">Πόλη</th><th className="px-3 py-2">Τίτλος</th><th className="px-3 py-2">Χώρος</th><th className="px-3 py-2">Δηλώσεις</th><th className="px-3 py-2">Έγινε</th><th /></tr></thead>
+          <thead><tr className="text-left text-[11px] uppercase tracking-[.12em] text-dim"><th className="px-3 py-2">Από</th><th className="px-3 py-2">Έως</th><th className="px-3 py-2">Πόλη</th><th className="px-3 py-2">Τίτλος</th><th className="px-3 py-2">Χώρος</th><th className="px-3 py-2">Αφίσα</th><th className="px-3 py-2">Δηλώσεις</th><th className="px-3 py-2">Έγινε</th><th /></tr></thead>
           <tbody>{shown.map(r => (
             <tr key={r.id} className="border-t border-line">
               <td className="px-3 py-1"><Input type="date" defaultValue={r.starts_on} onBlur={e => e.target.value !== r.starts_on && up(r.id, { starts_on: e.target.value })} className="w-[150px] py-1" /></td>
@@ -54,6 +54,7 @@ export function Season() {
               <td className="px-3 py-1"><Select value={r.city_id ?? ''} onChange={e => up(r.id, { city_id: e.target.value || null })} className="py-1">{cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></td>
               <td className="px-3 py-1"><Input defaultValue={r.label ?? ''} onBlur={e => e.target.value !== (r.label ?? '') && up(r.id, { label: e.target.value || null })} className="py-1" /></td>
               <td className="px-3 py-1"><Input defaultValue={r.venue ?? ''} onBlur={e => e.target.value !== (r.venue ?? '') && up(r.id, { venue: e.target.value || null })} className="py-1" /></td>
+              <td className="px-3 py-1"><Input defaultValue={r.poster_url ?? ''} placeholder="/img/wp/…" onBlur={e => e.target.value !== (r.poster_url ?? '') && up(r.id, { poster_url: e.target.value || null })} className="w-[230px] py-1" /></td>
               <td className="px-3 py-1 text-center"><input type="checkbox" checked={r.registration_open} onChange={e => up(r.id, { registration_open: e.target.checked })} /></td>
               <td className="px-3 py-1 text-center"><input type="checkbox" checked={r.done} onChange={e => up(r.id, { done: e.target.checked, registration_open: e.target.checked ? false : r.registration_open })} /></td>
               <td className="px-3 py-1 text-right"><button onClick={() => del(r.id)} className="text-mute hover:text-red">✕</button></td>

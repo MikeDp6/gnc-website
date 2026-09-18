@@ -2,18 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
 import { useI18n } from '@/i18n'
+import { cn } from '@/lib/cn'
 import { useMeta } from '@/lib/meta'
 import { useData } from '@/data/store'
-import { claimPlayer, fetchMyPlayer, fetchMyTeams, fetchPlayerHistory, fetchPlayerRank, updateMyPlayer, uploadAvatar } from '@/lib/playerApi'
+import { claimPlayer, createMyPlayer, fetchMyPlayer, fetchMyTeams, fetchPlayerHistory, fetchPlayerRank, updateMyPlayer, uploadAvatar } from '@/lib/playerApi'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
+import { Field as FormField, TextInput } from '@/components/ui/Form'
 import { Avatar } from '@/components/ui/Avatar'
 import { MatchRow } from '@/components/match/MatchRow'
 import { HistoryList } from '@/components/PlayerHistory'
 import { MyTeamPanel } from '@/components/MyTeamPanel'
+import { CrewPanel } from '@/components/CrewPanel'
+import { claimCrewInvites, createMyCrew, fetchMyCrews, inviteToMyCrew, respondCrewInvite, sendCrewInvites } from '@/lib/crewApi'
 import { RankPanel } from '@/components/RankPanel'
-import type { MyPlayer, MyTeam, PlayerHistoryRow, PlayerRank2 } from '@/data/types'
+import type { Crew, MyPlayer, MyTeam, PlayerHistoryRow, PlayerRank2 } from '@/data/types'
 
 /** The signed-in player's own page: photo, details, visibility, and their games in the running tournament. */
 export function Me() {
@@ -28,6 +32,10 @@ export function Me() {
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const file = useRef<HTMLInputElement>(null)
+  const [draft, setDraft] = useState({ first: '', last: '', phone: '', birthYear: '', city: '' })
+  const [crews, setCrews] = useState<Crew[]>([])
+  const [crewDraft, setCrewDraft] = useState({ name: '', city: '', m1: '', m2: '', m3: '' })
+  const [makingCrew, setMakingCrew] = useState(false)
   useMeta(t.account.mine)
 
   const load = useCallback(async () => {
@@ -36,8 +44,12 @@ export function Me() {
       const p = await fetchMyPlayer()
       setMe(p)
       if (p) {
-        const [h, teams, r] = await Promise.all([fetchPlayerHistory(p.id), fetchMyTeams().catch(() => []), fetchPlayerRank(p.id).catch(() => ({ byCategory: [] }))])
-        setHist(h); setMyTeams(teams); setRank(r)
+        await claimCrewInvites().catch(() => 0)
+        const [h, teams, r, cr] = await Promise.all([
+          fetchPlayerHistory(p.id), fetchMyTeams().catch(() => []),
+          fetchPlayerRank(p.id).catch(() => ({ byCategory: [] })), fetchMyCrews().catch(() => []),
+        ])
+        setHist(h); setMyTeams(teams); setRank(r); setCrews(cr)
       }
     } catch (e) { setErr((e as Error).message); setMe(null) }
   }, [])
@@ -58,28 +70,91 @@ export function Me() {
     if (file.current) file.current.value = ''
   }
 
-  // no player row matched this email — they have never registered a team
-  if (!me) return (
-    <section className="wrap pt-10">
-      <Crumb items={[{ label: t.account.mine }]} />
-      <Heading a={t.account.title1} b={t.account.title2} className="mt-4" as="h1" />
-      <div className="card mt-8 max-w-[640px] p-7">
-        <div className="disp text-[32px]">{t.account.noProfile}</div>
-        <p className="mt-3 text-[15px] text-dim">{t.account.noProfileHelp}</p>
-        {err && <div className="mt-3 text-[13px] text-red">{err}</div>}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="orange" to="/register">{t.hero.cta1} →</Button>
-          <Button variant="ghost" onClick={signOut}>{t.account.signOut}</Button>
+  // no player row matched this email — nobody has written them on a declaration yet, so they make
+  // their own profile here. A declaration that arrives later attaches to it by email.
+  if (!me) {
+    const ok = draft.first.trim().length > 1 && draft.last.trim().length > 1
+    const create = async () => {
+      setBusy(true); setErr(null)
+      try {
+        const year = draft.birthYear.trim() ? Number(draft.birthYear.trim()) : null
+        setMe(await createMyPlayer({ first: draft.first, last: draft.last, phone: draft.phone, birthYear: year, city: draft.city }))
+        await load()
+      } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
+    }
+    return (
+      <section className="wrap pt-10">
+        <Crumb items={[{ label: t.account.mine }]} />
+        <Heading a={t.account.title1} b={t.account.title2} className="mt-4" as="h1" />
+        <div className="card mt-8 max-w-[640px] p-7">
+          <div className="disp text-[32px]">{t.account.newProfile}</div>
+          <p className="mt-3 text-[15px] text-dim">{t.account.newProfileHelp}</p>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <FormField label={t.account.firstName}>
+              <TextInput value={draft.first} disabled={busy} autoComplete="given-name"
+                onChange={e => setDraft({ ...draft, first: e.target.value })} />
+            </FormField>
+            <FormField label={t.account.lastName}>
+              <TextInput value={draft.last} disabled={busy} autoComplete="family-name"
+                onChange={e => setDraft({ ...draft, last: e.target.value })} />
+            </FormField>
+            <FormField label={t.account.phone}>
+              <TextInput value={draft.phone} disabled={busy} inputMode="tel" autoComplete="tel"
+                onChange={e => setDraft({ ...draft, phone: e.target.value })} />
+            </FormField>
+            <FormField label={t.account.birthYear} hint={t.account.birthHelp}>
+              <TextInput value={draft.birthYear} disabled={busy} inputMode="numeric" placeholder="2004" maxLength={4}
+                onChange={e => setDraft({ ...draft, birthYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
+            </FormField>
+            <FormField label={t.account.cityLabel} className="sm:col-span-2">
+              <TextInput value={draft.city} disabled={busy} autoComplete="address-level2"
+                onChange={e => setDraft({ ...draft, city: e.target.value })} />
+            </FormField>
+          </div>
+
+          {err && <div className="mt-3 text-[13px] text-red">{err}</div>}
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button type="button" onClick={create} disabled={!ok || busy}
+              className="pop inline-flex items-center gap-2 rounded-full bg-orange px-5 py-[10px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111] disabled:opacity-45">
+              {t.account.createProfile} <span aria-hidden>→</span>
+            </button>
+            <Button variant="ghost" to="/register">{t.account.orRegister}</Button>
+            <button type="button" onClick={signOut} className="text-[13px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">{t.account.signOut}</button>
+          </div>
         </div>
-      </div>
-    </section>
-  )
+      </section>
+    )
+  }
 
   // the running tournament's teams this player is in, used to find their next game
   const playing = teams.filter(x => hist.some(h => h.teamId === x.id) || x.playerIds?.includes(me.id) || myTeams.some(mt => mt.team_id === x.id))
   const myMatches = matches.filter(m => playing.some(x => x.id === m.homeId || x.id === m.awayId))
   const next = myMatches.find(m => m.status === 'live') ?? myMatches.find(m => m.status === 'scheduled')
   const tour = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
+  const pendingCrews = crews.filter(c => c.accepted === false)
+  const myCrews = crews.filter(c => c.accepted !== false)
+  const reloadCrews = async () => { try { setCrews(await fetchMyCrews()) } catch (e) { setErr((e as Error).message) } }
+  const answer = async (id: string, accept: boolean) => {
+    setBusy(true); setErr(null)
+    try { await respondCrewInvite(id, accept); await reloadCrews(); say(accept ? 'Μπήκες στην ομάδα' : 'Η πρόσκληση απορρίφθηκε') }
+    catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
+  }
+  const invite = async (id: string, email: string) => {
+    setBusy(true); setErr(null)
+    try { await inviteToMyCrew(id, email); await sendCrewInvites(id).catch(() => 0); await reloadCrews(); say('Η πρόσκληση στάλθηκε') }
+    catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
+  }
+  const makeCrew = async () => {
+    setBusy(true); setErr(null)
+    try {
+      const made = await createMyCrew({ name: crewDraft.name, city: crewDraft.city, mates: [crewDraft.m1, crewDraft.m2, crewDraft.m3] })
+      if (made?.id) await sendCrewInvites(made.id).catch(() => 0)
+      setCrewDraft({ name: '', city: '', m1: '', m2: '', m3: '' }); setMakingCrew(false)
+      await reloadCrews(); say('Η ομάδα δημιουργήθηκε')
+    } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
+  }
   const totals = hist.reduce((a, h) => ({ t: a.t + 1, w: a.w + h.wins, l: a.l + h.losses, g: a.g + (h.place === 1 ? 1 : 0) }), { t: 0, w: 0, l: 0, g: 0 })
 
   return (
@@ -119,6 +194,91 @@ export function Me() {
         </section>
       )}
 
+      {pendingCrews.length > 0 && (
+        <section className="wrap pt-[50px]">
+          <Heading a="Προσκλήσεις" b="σε ομάδα" size="md" className="mb-5" />
+          <div className="flex flex-col gap-4">
+            {pendingCrews.map(c => (
+              <div key={c.id} className="card flex flex-wrap items-center justify-between gap-4 rounded-band p-6">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase tracking-[.14em] text-orange">Σε κάλεσαν</div>
+                  <div className="disp mt-1 text-[28px] leading-none">{c.name}</div>
+                  <div className="mt-[6px] text-[13px] text-dim">
+                    {[c.city, `αρχηγός ${c.members.find(m => m.role === 'captain')?.name ?? '—'}`].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" disabled={busy} onClick={() => answer(c.id, true)}
+                    className="pop rounded-full bg-orange px-5 py-[10px] text-[12px] font-bold uppercase tracking-[.06em] text-[#111] disabled:opacity-45">Αποδοχή</button>
+                  <button type="button" disabled={busy} onClick={() => answer(c.id, false)}
+                    className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Απόρριψη</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="wrap pt-[50px]">
+        <Heading a="Οι ομάδες" b="μου" size="md" className="mb-5" />
+        {myCrews.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {myCrews.map(c => <CrewPanel key={c.id} crew={c} busy={busy} onInvite={e => invite(c.id, e)} />)}
+          </div>
+        )}
+
+        {!makingCrew && (
+          <div className={cn('flex flex-wrap items-center justify-between gap-4 rounded-band border border-dashed border-line px-6 py-6', myCrews.length > 0 && 'mt-4')}>
+            <div>
+              <div className="disp text-[26px]">{myCrews.length ? 'Φτιάξε κι άλλη ομάδα' : 'Δημιούργησε την ομάδα σου'}</div>
+              <p className="mt-1 max-w-[520px] text-[14px] text-dim">
+                Δεν χρειάζεται να υπάρχει διοργάνωση. Φτιάξε την ομάδα, κάλεσε τους συμπαίκτες σου, και όταν ανοίξουν δηλώσεις τη δηλώνεις όπως είναι.
+              </p>
+            </div>
+            <button type="button" onClick={() => setMakingCrew(true)}
+              className="pop inline-flex items-center gap-3 rounded-full bg-white py-[6px] pl-5 pr-[6px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111]">
+              Νέα ομάδα<span className="grid h-8 w-8 place-items-center rounded-full bg-[#111] text-[16px] text-white" aria-hidden>→</span>
+            </button>
+          </div>
+        )}
+
+        {makingCrew && (
+          <div className={cn('card rounded-band p-6', myCrews.length > 0 && 'mt-4')}>
+            <div className="disp text-[26px]">Νέα ομάδα</div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <FormField label="Όνομα ομάδας">
+                <TextInput value={crewDraft.name} disabled={busy} autoFocus onChange={e => setCrewDraft({ ...crewDraft, name: e.target.value })} />
+              </FormField>
+              <FormField label="Πόλη">
+                <TextInput value={crewDraft.city} disabled={busy} onChange={e => setCrewDraft({ ...crewDraft, city: e.target.value })} />
+              </FormField>
+              <FormField label="Email συμπαίκτη" hint="Προαιρετικά — μπορείς να τους καλέσεις και αργότερα." className="sm:col-span-2">
+                <TextInput value={crewDraft.m1} disabled={busy} inputMode="email" placeholder="συμπαίκτης 1"
+                  onChange={e => setCrewDraft({ ...crewDraft, m1: e.target.value })} />
+              </FormField>
+              <FormField label="">
+                <TextInput value={crewDraft.m2} disabled={busy} inputMode="email" placeholder="συμπαίκτης 2"
+                  onChange={e => setCrewDraft({ ...crewDraft, m2: e.target.value })} />
+              </FormField>
+              <FormField label="">
+                <TextInput value={crewDraft.m3} disabled={busy} inputMode="email" placeholder="συμπαίκτης 3"
+                  onChange={e => setCrewDraft({ ...crewDraft, m3: e.target.value })} />
+              </FormField>
+            </div>
+            <p className="mt-3 text-[13px] text-dim">
+              Όποιος έχει ήδη λογαριασμό θα δει την πρόσκληση στη σελίδα του. Όποιος δεν έχει, θα την παραλάβει μόλις φτιάξει προφίλ με το ίδιο email. Κανείς δεν μπαίνει στην ομάδα πριν την αποδεχτεί.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={makeCrew} disabled={busy || crewDraft.name.trim().length < 2}
+                className="pop rounded-full bg-orange px-5 py-[10px] text-[12px] font-bold uppercase tracking-[.06em] text-[#111] disabled:opacity-45">
+                Δημιουργία ομάδας
+              </button>
+              <button type="button" onClick={() => setMakingCrew(false)} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Άκυρο</button>
+            </div>
+          </div>
+        )}
+      </section>
+
       {next && (
         <section className="wrap pt-[50px]">
           <Heading a={t.team.next1} b={t.team.next2} size="md" className="mb-5" />
@@ -140,6 +300,8 @@ export function Me() {
           <Field label={t.account.lastName} value={me.last_name} onSave={v => save({ last: v })} disabled={busy} />
           <Field label={t.account.nickname} value={me.nickname ?? ''} onSave={v => save({ nickname: v })} disabled={busy} />
           <Field label={t.team.city} value={me.city ?? ''} onSave={v => save({ city: v })} disabled={busy} />
+          <Field label={t.account.phone} value={me.phone ?? ''} onSave={v => save({ phone: v })} disabled={busy} />
+          <Field label={t.account.birthYear} value={me.birth_year ? String(me.birth_year) : ''} onSave={v => save({ birthYear: v ? Number(v) : null })} disabled={busy} />
           <div className="flex items-center justify-between gap-4 border-t border-line py-[11px] text-[14px]">
             <span className="text-dim">Email</span><b className="truncate font-semibold">{me.email ?? '—'}</b>
           </div>

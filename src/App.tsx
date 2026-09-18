@@ -5,6 +5,7 @@ import { Suspense, lazy } from 'react'
 
 // only the home page ships in the first download; every other page is fetched when it is opened
 const TourList = lazy(() => import('@/pages/Tournaments').then(m => ({ default: m.Tournaments })))
+const TeamsIndex = lazy(() => import('@/pages/TeamsIndex').then(m => ({ default: m.TeamsIndex })))
 const Tournament = lazy(() => import('@/pages/Tournament').then(m => ({ default: m.Tournament })))
 const Team = lazy(() => import('@/pages/Team').then(m => ({ default: m.Team })))
 const Player = lazy(() => import('@/pages/Player').then(m => ({ default: m.Player })))
@@ -61,6 +62,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="tournaments" element={<TourList />} />
+        <Route path="teams" element={<TeamsIndex />} />
         <Route path="tournaments/:slug" element={<Tournament />} />
         <Route path="teams/:id" element={<Team />} />
         <Route path="players/:id" element={<Player />} />

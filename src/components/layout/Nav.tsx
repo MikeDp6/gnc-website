@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useI18n } from '@/i18n'
 import { Logo } from './Logo'
-import { useData } from '@/data/store'
 import { useAuth } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 
@@ -14,24 +13,22 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const { t, lang, setLang } = useI18n()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { tournaments } = useData()
   const { session, isAdmin } = useAuth()
   const { pathname, search } = useLocation()
-  const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 60)
     f(); window.addEventListener('scroll', f, { passive: true })
     return () => window.removeEventListener('scroll', f)
   }, [])
   useEffect(() => { setOpen(false) }, [pathname])
-  // Πρόγραμμα and Ομάδες are the same page with a different tab, so the highlight has to look at
-  // the tab in the address, not only at the path — otherwise both light up at once.
+  // Ομάδες is its own list of stops; from a tournament page the highlight follows the tab in the
+  // address, so Πρόγραμμα and Ομάδες never light up at once.
   const onTour = pathname.startsWith('/tournaments/')
   const teamsTab = new URLSearchParams(search).get('tab') === 'teams'
   const links = [
     { to: '/', label: t.nav.tournaments, end: true },
     { to: '/tournaments', label: t.nav.schedule, active: pathname === '/tournaments' || (onTour && !teamsTab) },
-    { to: `/tournaments/${next?.slug ?? ''}?tab=teams`, label: t.nav.teams, active: onTour && teamsTab },
+    { to: '/teams', label: t.nav.teams, active: pathname === '/teams' || (onTour && teamsTab) },
     { to: '/rankings', label: t.nav.rankings },
     { to: '/news', label: t.nav.news },
     { to: '/rentals', label: t.nav.rentals },

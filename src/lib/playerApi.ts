@@ -53,10 +53,21 @@ export async function fetchMyPlayer(): Promise<MyPlayer | null> {
   return (data as MyPlayer) ?? null
 }
 
-export async function updateMyPlayer(p: { first?: string; last?: string; nickname?: string | null; city?: string | null; avatar?: string | null; isPublic?: boolean }): Promise<MyPlayer> {
+export async function updateMyPlayer(p: { first?: string; last?: string; nickname?: string | null; city?: string | null; avatar?: string | null; isPublic?: boolean; phone?: string | null; birthYear?: number | null }): Promise<MyPlayer> {
   const { data, error } = await sb().rpc('update_my_player', {
     p_first: p.first ?? null, p_last: p.last ?? null, p_nickname: p.nickname ?? null,
     p_city: p.city ?? null, p_avatar: p.avatar ?? null, p_public: p.isPublic ?? null,
+    p_phone: p.phone ?? null, p_birth_year: p.birthYear ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return data as MyPlayer
+}
+
+/** Creates the signed-in account's own profile, for a player nobody has written on a form yet. */
+export async function createMyPlayer(p: { first: string; last: string; phone?: string; birthYear?: number | null; city?: string }): Promise<MyPlayer> {
+  const { data, error } = await sb().rpc('create_my_player', {
+    p_first: p.first, p_last: p.last,
+    p_phone: p.phone || null, p_birth_year: p.birthYear ?? null, p_city: p.city || null,
   })
   if (error) throw new Error(error.message)
   return data as MyPlayer

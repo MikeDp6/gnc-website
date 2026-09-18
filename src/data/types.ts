@@ -101,6 +101,7 @@ export interface Tournament {
   teamsCount: number
   categoryIds: string[]
   cover?: string
+  poster?: string          // κατακόρυφη αφίσα της διοργάνωσης
 }
 
 export interface Stop {
@@ -151,7 +152,7 @@ export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }
 export interface CityPartner { name: string; role?: string; url?: string }
 export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[]; partners?: CityPartner[] }
 /** One row of the yearly calendar (from gnc3on3.gr/calendar) — lighter than a full Tournament */
-export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string }
+export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string; poster?: string }
 export type SponsorTier = 'main' | 'official' | 'partner' | 'media'
 export interface Sponsor { name: string; url?: string; logo?: string; tier: SponsorTier; blurb?: string }
 export interface Photo { id: string; url: string; caption?: string; credit?: string; tournamentId?: string; cityId?: string }
@@ -173,3 +174,13 @@ export interface MyTeam {
 /** Where a player stands in the all-time table. */
 export interface RankSpot { position: number; total: number; points: number }
 export interface PlayerRank2 { overall?: RankSpot; byCategory: Array<RankSpot & { categoryId: string }> }
+
+/** A standing team — exists with or without a tournament. */
+export interface CrewMember { player_id: string; name: string; avatar: string | null; role: 'captain' | 'player'; accepted: boolean }
+export interface CrewInvite { email: string; sent: boolean }
+export interface Crew {
+  id: string; name: string; city: string | null
+  captain: boolean            // am I the captain of it
+  accepted?: boolean          // my own membership: false while the invitation is pending
+  members: CrewMember[]; invites: CrewInvite[]
+}
