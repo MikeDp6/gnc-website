@@ -143,9 +143,9 @@ export function Home() {
       {/* ---------- COUNTERS: everything counted from the database ---------- */}
       <section className="wrap pt-[110px]">
         <Reveal className="glass grid grid-cols-2 gap-6 rounded-band p-8 md:grid-cols-4 md:p-12">
-          {[[stats.cities, t.counters.cities], [stats.tournaments, t.counters.tournaments], [stats.teams, t.counters.teams], [stats.sinceYear, t.counters.since]].map(([v, l]) => (
+          {[[stats.population, t.counters.population, ''], [stats.spectators, t.counters.spectators, '+'], [stats.players, t.counters.players, '+'], [stats.cities, t.counters.cities, '']].map(([v, l, plus]) => (
             <div key={String(l)}>
-              <b className="disp block text-[56px] leading-none text-orange md:text-[80px]">{v}</b>
+              <b className="disp block text-[44px] leading-none text-orange md:text-[64px]">{Number(v).toLocaleString('el-GR')}{plus}</b>
               <span className="mt-2 block text-[11px] font-bold uppercase tracking-[.14em] text-dim md:text-[12px]">{l}</span>
             </div>
           ))}

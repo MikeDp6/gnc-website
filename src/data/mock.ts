@@ -232,7 +232,7 @@ export const sponsorList: Sponsor[] = [
 ]
 
 /** Offline fallback counters — everything counted from the data we actually have, nothing invented. */
-export const stats = { cities: cities.length, tournaments: season2026.length, teams: teams.length, players: players.length, matches: matches.filter(m => m.status === 'final').length, sinceYear: 2018 }
+export const stats = { cities: cities.length, tournaments: season2026.length, teams: teams.length, players: players.length, matches: matches.filter(m => m.status === 'final').length, sinceYear: 2018, population: 4103431, spectators: 15000 }
 
 // a small slice of the photo wall, so the built-in sample data shows one before the import has run
 const mockPhotos: Photo[] = [

@@ -121,7 +121,7 @@ export interface ArchiveItem {
   tint: 'orange' | 'blue' | 'mono' | 'teal'
 }
 
-export interface SiteStats { cities: number; tournaments: number; teams: number; players: number; matches: number; sinceYear: number }
+export interface SiteStats { cities: number; tournaments: number; teams: number; players: number; matches: number; sinceYear: number; population: number; spectators: number }
 export interface TeamRank { key: string; name: string; teamId?: string; categoryId?: string; tournaments: number; played: number; wins: number; losses: number; pointsFor: number; pointsAgainst: number; gold: number; silver: number; bronze: number; points: number }
 export interface PlayerRank { id: string; name: string; city?: string; categoryId?: string; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }
 

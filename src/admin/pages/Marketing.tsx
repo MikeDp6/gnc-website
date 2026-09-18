@@ -5,26 +5,49 @@ import { ImageField } from '../upload'
 
 type Tick = { id: string; tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange'; active: boolean; sort_order: number }
 type Sp = { id: string; name: string; url: string | null; logo_url: string | null; active: boolean; sort_order: number }
+type Stats = { population: number; spectators: number; base_cities: number; base_players: number }
 
 export function Marketing() {
   const [ticks, setTicks] = useState<Tick[]>([]); const [sps, setSps] = useState<Sp[]>([])
+  const [st, setSt] = useState<Stats | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const say = useCallback((m: string) => { setToast(m); setTimeout(() => setToast(null), 2500) }, [])
   const load = useCallback(async () => {
     if (!supabase) return
     const a = await supabase.from('ticker_items').select('*').order('sort_order'); if (a.error) say(a.error.message); else setTicks(a.data as Tick[])
     const b = await supabase.from('sponsors').select('*').order('sort_order'); if (b.error) say(b.error.message); else setSps(b.data as Sp[])
+    const c = await supabase.from('counter_base').select('population,spectators,base_cities,base_players').single(); if (!c.error) setSt(c.data as Stats)
   }, [say])
   useEffect(() => { load() }, [load])
   const up = async (table: 'ticker_items' | 'sponsors', id: string, patch: Record<string, unknown>) => { const r = await supabase!.from(table).update(patch).eq('id', id); if (r.error) say(r.error.message); else load() }
   const del = async (table: 'ticker_items' | 'sponsors', id: string) => { if (!confirm('Διαγραφή;')) return; const r = await supabase!.from(table).delete().eq('id', id); if (r.error) say(r.error.message); else load() }
   const [nt, setNt] = useState({ tag: '', text: '', tone: 'blue' as 'blue' | 'orange' })
   const [ns, setNs] = useState('')
+  const saveStat = async (patch: Partial<Stats>) => { const r = await supabase!.from('counter_base').update(patch).eq('id', true); if (r.error) say(r.error.message); else { say('Αποθηκεύτηκε'); load() } }
   const addTick = async () => { const r = await supabase!.from('ticker_items').insert({ ...nt, sort_order: ticks.length + 1 }); if (r.error) say(r.error.message); else { setNt({ tag: '', text: '', tone: 'blue' }); load() } }
   const addSp = async () => { const r = await supabase!.from('sponsors').insert({ name: ns, sort_order: sps.length + 1 }); if (r.error) say(r.error.message); else { setNs(''); load() } }
   return (
     <>
       <PageTitle a="Ticker" b="& χορηγοί" />
+      <div className="card mb-6 p-5">
+        <div className="kicker mb-1">Μετρητές αρχικής</div>
+        <p className="mb-4 text-[12px] text-dim">
+          Οι αριθμοί που κουβαλήσαμε από το παλιό site. Λειτουργούν ως βάση: οι αθλητές και οι πόλεις
+          μετρώνται ζωντανά από τη βάση και προστίθενται από πάνω, οι θεατές και η πληθυσμιακή κάλυψη
+          γράφονται εδώ με το χέρι μετά από κάθε διοργάνωση.
+        </p>
+        {st && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([['population', 'Πληθυσμιακή κάλυψη'], ['spectators', 'Θεατές'], ['base_players', 'Αθλητές (βάση)'], ['base_cities', 'Πόλεις (βάση)']] as const).map(([k, label]) => (
+              <label key={k} className="block">
+                <span className="mb-1 block text-[11px] font-bold uppercase tracking-[.12em] text-dim">{label}</span>
+                <Input type="number" defaultValue={String(st[k])}
+                  onBlur={e => Number(e.target.value) !== st[k] && saveStat({ [k]: Number(e.target.value) })} />
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-5">
           <div className="kicker mb-3">Ticker (η λωρίδα πάνω-πάνω)</div>

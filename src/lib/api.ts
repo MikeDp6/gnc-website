@@ -35,7 +35,7 @@ type CityRow = { id: string; name: string; name_en: string | null; lat: number |
 type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
 type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
 type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean; poster_url: string | null }
-type StatsRow = { cities: number; tournaments: number; teams: number; players: number; matches: number; since_year: number }
+type StatsRow = { cities: number; tournaments: number; teams: number; players: number; matches: number; since_year: number; population: number; spectators: number }
 const MONTHS_SHORT = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ']
 /** "7 Σεπ 2026" */
 const shortDate = (iso: string) => { const D = d(iso); return `${D.getDate()} ${MONTHS_SHORT[D.getMonth()]} ${D.getFullYear()}` }
@@ -163,8 +163,8 @@ export async function fetchBundle(): Promise<Bundle> {
   const photos: Photo[] = (photoRows ?? []).map(p => ({ id: p.id, url: p.url, caption: p.caption ?? undefined, credit: p.credit ?? undefined, tournamentId: p.tournament_id ?? undefined, cityId: p.city_id ?? undefined }))
 
   const stats: SiteStats = statsRow
-    ? { cities: statsRow.cities, tournaments: statsRow.tournaments, teams: statsRow.teams, players: statsRow.players, matches: statsRow.matches, sinceYear: statsRow.since_year }
-    : { cities: cityList.length, tournaments: tournaments.length, teams: teamList.length, players: playerList.length, matches: matchList.filter(m => m.status === 'final').length, sinceYear: 2018 }
+    ? { cities: statsRow.cities, tournaments: statsRow.tournaments, teams: statsRow.teams, players: statsRow.players, matches: statsRow.matches, sinceYear: statsRow.since_year, population: statsRow.population ?? 0, spectators: statsRow.spectators ?? 0 }
+    : { cities: cityList.length, tournaments: tournaments.length, teams: teamList.length, players: playerList.length, matches: matchList.filter(m => m.status === 'final').length, sinceYear: 2018, population: 0, spectators: 0 }
 
   return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut, stats, photos }
 }

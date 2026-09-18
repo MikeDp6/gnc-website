@@ -95,11 +95,16 @@
 
 @utility no-scrollbar { scrollbar-width: none; &::-webkit-scrollbar { display: none; } & > * { flex: none; } }
 
-/* marquee: the track holds the content twice; translate by half */
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* marquee: the track holds the content twice; slide by exactly one copy + one gap */
+@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(-50% - var(--marquee-gap, 64px) / 2), 0, 0); } }
 @utility marquee-track {
-  display: flex; width: max-content; animation: marquee var(--marquee-duration, 40s) linear infinite;
+  display: flex; width: max-content; gap: var(--marquee-gap, 64px);
+  animation: marquee var(--marquee-duration, 40s) linear infinite;
+  will-change: transform; backface-visibility: hidden;
   &:hover { animation-play-state: paused; }
+}
+@utility marquee-row {
+  display: flex; flex: none; align-items: center; gap: var(--marquee-gap, 64px);
 }
 
 /* appear on scroll: element starts hidden, `.is-in` reveals it */

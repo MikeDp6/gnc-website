@@ -7,27 +7,17 @@ import { Crumb } from '@/components/ui/Crumb'
 import { Heading } from '@/components/ui/Heading'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/ui/Reveal'
-import { cn } from '@/lib/cn'
 import { SponsorLogo } from '@/components/SponsorLogo'
-import type { Sponsor, SponsorTier } from '@/data/types'
+import type { Sponsor } from '@/data/types'
 
-const TIERS: SponsorTier[] = ['main', 'official', 'partner', 'media']
-const SIZE: Record<SponsorTier, { logo: string; text: string; cols: string }> = {
-  main: { logo: 'h-[96px] md:h-[120px]', text: 'text-[44px] md:text-[64px]', cols: 'grid-cols-1' },
-  official: { logo: 'h-[64px] md:h-[76px]', text: 'text-[32px] md:text-[40px]', cols: 'grid-cols-2 md:grid-cols-3' },
-  partner: { logo: 'h-[44px] md:h-[52px]', text: 'text-[24px] md:text-[28px]', cols: 'grid-cols-2 md:grid-cols-4' },
-  media: { logo: 'h-[40px]', text: 'text-[22px]', cols: 'grid-cols-2 md:grid-cols-4' },
-}
-
-/** Sponsors page: the three tiers of the approved structure, plus the media kit numbers a sponsor asks for. */
+/** Sponsors page: everyone on one wall, at one size, plus the media kit numbers a sponsor asks for. */
 export function Sponsors() {
   const { t } = useI18n()
   const { sponsorList, stats, season, tournaments } = useData()
   useMeta(t.sponsors.title1 + ' ' + t.sponsors.title2, t.sponsors.blurb, tournaments[0]?.cover)
-  const byTier = (tier: SponsorTier) => sponsorList.filter(s => (s.tier ?? 'partner') === tier)
-  const card = (s: Sponsor, tier: SponsorTier) => (
-    <div key={s.name} className={cn('card flex flex-col items-center justify-center gap-3 p-6 text-center', tier === 'main' && 'md:p-10')}>
-      <SponsorLogo s={{ ...s, tier }} />
+  const card = (s: Sponsor) => (
+    <div key={s.name} className="card flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <SponsorLogo s={s} />
       {s.blurb && <span className="text-[12px] text-dim">{s.blurb}</span>}
     </div>
   )
@@ -44,16 +34,12 @@ export function Sponsors() {
       <Band kicker={t.sections.sponsors} title={t.sponsors.title1} title2={t.sponsors.title2} cover={tournaments[0]?.cover} sub={t.sponsors.blurb}
         actions={<Button variant="orange" to="/contact">{t.sponsors.cta} →</Button>} stats={reach.slice(0, 3).map(r => ({ v: r.v, l: r.l }))} />
 
-      {TIERS.map(tier => {
-        const list = byTier(tier)
-        if (!list.length) return null
-        return (
-          <section key={tier} className="wrap pt-[60px]">
-            <div className="kicker mb-4">{t.sponsors.tier[tier]}</div>
-            <div className={cn('grid gap-4', SIZE[tier].cols)}>{list.map(s => card(s, tier))}</div>
-          </section>
-        )
-      })}
+      {!!sponsorList.length && (
+        <section className="wrap pt-[60px]">
+          <div className="kicker mb-4">{t.sections.sponsors}</div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{sponsorList.map(card)}</div>
+        </section>
+      )}
 
       <section className="wrap pt-[90px]">
         <Heading a={t.sponsors.kit1} b={t.sponsors.kit2} size="md" className="mb-4" />
