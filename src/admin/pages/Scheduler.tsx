@@ -29,9 +29,9 @@ export function Scheduler({ tid }: { tid: string }) {
   const doPublish = async () => {
     if (!res) return
     if (res.all.unscheduled.length) return say('Υπάρχουν αγώνες εκτός προγράμματος — δεν δημοσιεύεται')
-    if (!confirm('Θα αντικατασταθούν όμιλοι και αγώνες της διοργάνωσης. Σκορ που έχουν ήδη περαστεί θα χαθούν. Συνέχεια;')) return
+    if (!confirm('Θα αντικατασταθούν όμιλοι και αγώνες της διοργάνωσης. Τα σκορ κρατιούνται όπου το ζευγάρι παραμένει ίδιο· όπου άλλαξε ο αντίπαλος χάνονται. Συνέχεια;')) return
     setBusy(true)
-    try { await saveSched(tid, st); const r = await publish(tid, st, res.all); say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες`) } catch (e) { say((e as Error).message) }
+    try { await saveSched(tid, st); const r = await publish(tid, st, res.all); say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες` + (r.restored || r.lost ? ` · ${r.restored} σκορ διατηρήθηκαν${r.lost ? `, ${r.lost} χάθηκαν` : ''}` : '')) } catch (e) { say((e as Error).message) }
     setBusy(false)
   }
 
