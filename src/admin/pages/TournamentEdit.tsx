@@ -148,6 +148,7 @@ function Teams({ tid, say }: { tid: string; say: (m: string) => void }) {
     try { await api.addTeams(tid, names.map(name => ({ category_id: cat, name }))); setPaste(''); say(`Προστέθηκαν ${names.length}`); load() } catch (e) { say((e as Error).message) }
   }
   const setStatus = async (id: string, status: string) => { try { await api.updateTeam(id, { status }); load() } catch (e) { say((e as Error).message) } }
+  const rename = async (id: string, name: string) => { try { await api.updateTeam(id, { name }); load() } catch (e) { say((e as Error).message) } }
   const checkin = async (t: api.TeamRow) => { try { await api.updateTeam(t.id, { checked_in_at: t.checked_in_at ? null : new Date().toISOString() }); load() } catch (e) { say((e as Error).message) } }
   const remove = async (id: string) => { if (!confirm('Διαγραφή ομάδας;')) return; try { await api.deleteTeam(id); load() } catch (e) { say((e as Error).message) } }
   const byCat = useMemo(() => cats.map(c => ({ c, list: teams.filter(t => t.category_id === c.category_id) })), [cats, teams])
@@ -166,7 +167,12 @@ function Teams({ tid, say }: { tid: string; say: (m: string) => void }) {
             <div className="mb-2 flex items-center justify-between"><b className="disp text-[24px]">{label(c.category_id)}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.filter(t => t.status === 'active').length} ενεργές · {list.filter(t => t.status === 'pending').length} εκκρεμείς · {list.filter(t => t.status === 'waitlist').length} λίστα</span></div>
             {list.map(t => (
               <div key={t.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 border-t border-line py-2 text-[14px]">
-                <span className={cn('font-semibold', t.status !== 'active' && 'text-dim')}>{t.name}{t.city && <span className="ml-2 text-[12px] font-normal text-mute">{t.city}</span>}</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <Input defaultValue={t.name} title="Όνομα ομάδας — αλλάζει με το που φύγεις από το πεδίο"
+                    onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) rename(t.id, v); else e.target.value = t.name }}
+                    className={cn('py-1 font-semibold', t.status !== 'active' && 'text-dim')} />
+                  {t.city && <span className="shrink-0 text-[12px] text-mute">{t.city}</span>}
+                </div>
                 <Select value={t.status} onChange={e => setStatus(t.id, e.target.value)} className="w-[130px] py-1 text-[12px]"><option value="pending">Εκκρεμεί</option><option value="active">Ενεργή</option><option value="waitlist">Λίστα αναμονής</option><option value="removed">Αποσύρθηκε</option></Select>
                 <button onClick={() => checkin(t)} className={cn('rounded-lg border px-2 py-1 text-[11px] font-bold uppercase tracking-[.08em]', t.checked_in_at ? 'border-ok text-ok' : 'border-line text-dim')}>{t.checked_in_at ? '✓ Check-in' : 'Check-in'}</button>
                 <button onClick={() => remove(t.id)} className="text-[12px] text-mute hover:text-red">✕</button>

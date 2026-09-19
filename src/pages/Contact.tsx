@@ -26,7 +26,7 @@ export function Contact() {
         <div>
           <Heading a={t.contact.title1} as="h1" />
           <div className="mt-8 space-y-5 text-[15px]">
-            {[[t.contact.email, <a key="m" href="mailto:gnc3on3@gmail.com" className="hover:text-orange">gnc3on3@gmail.com</a>], [t.contact.hq, 'Πάτρα · Αθήνα'], [t.contact.hours, t.contact.hoursV]].map(([k, v]) => (
+            {[[t.contact.email, <a key="m" href="mailto:gnc3on3@gmail.com" className="hover:text-orange">gnc3on3@gmail.com</a>], [t.contact.hq, 'Πάτρα · Αθήνα']].map(([k, v]) => (
               <div key={String(k)} className="border-t border-line pt-4"><div className="kicker mb-1">{k}</div><div className="font-semibold">{v}</div></div>
             ))}
             <div className="border-t border-line pt-4"><div className="kicker mb-2">{t.contact.social}</div><div className="flex flex-wrap gap-4 font-semibold">{SOCIAL.map(([s, u]) => <a key={s} href={u} target="_blank" rel="noreferrer" className="hover:text-orange">{s}</a>)}</div></div>

@@ -146,6 +146,39 @@
   .pop, .pop:hover { transition: none; transform: none; }
 }
 
+
+/* ---------- Admin light mode ----------
+   Only the admin shell carries data-theme="light"; the public site stays dark. The tokens are
+   redefined on that subtree, so every utility built on them (text-dim, border-line, bg-bg…) turns
+   over on its own. The few places that hard-code white are rewritten below, because white on a
+   white panel is invisible. */
+[data-admin][data-theme='light'] {
+  --color-bg: #F7F7F6;
+  --color-bg2: #EFEFEE;
+  --color-ink: #16181A;
+  --color-dim: #575D63;
+  --color-mute: #8A9096;
+  --color-line: rgba(0,0,0,0.14);
+  --color-card: rgba(0,0,0,0.035);
+  --color-card-2: rgba(0,0,0,0.07);
+  color-scheme: light;
+}
+[data-admin][data-theme='light'] .card {
+  background: #FFFFFF; border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+[data-admin][data-theme='light'] .glass {
+  background: #FFFFFF; border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+[data-admin][data-theme='light'] select option { background: #FFFFFF; color: #16181A; }
+[data-admin][data-theme='light'] .text-white,
+[data-admin][data-theme='light'] .hover\:text-white:hover { color: var(--color-ink); }
+[data-admin][data-theme='light'] .bg-white\/8 { background-color: rgba(0,0,0,0.07); }
+[data-admin][data-theme='light'] .focus\:border-white\/30:focus { border-color: rgba(0,0,0,0.38); }
+/* the toast is a dark chip on a light page, the other way round from the dark theme */
+[data-admin][data-theme='light'] .bg-white { background-color: #16181A; color: #F7F7F6; }
+
 /* ---------- Print (schedule PDF) ---------- */
 .print-only { display: none; }
 @media print {
