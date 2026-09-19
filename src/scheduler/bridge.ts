@@ -79,12 +79,7 @@ export async function saveSched(tid: string, st: E.SchedState) {
   await run(sb().from('tournaments').update({ settings_json: { ...(cur.settings_json ?? {}), scheduler: toSaved(st) } }).eq('id', tid))
 }
 
-/** Seed pairs of a clean bracket of P teams, in match order: 8 → [1,8],[4,5],[3,6],[2,7]. */
-export function bracketPair(P: number, i: number): [number, number] {
-  let order = [1]
-  while (order.length < P) { const n = order.length * 2 + 1; order = order.flatMap(s => [s, n - s]) }
-  return [order[2 * i], order[2 * i + 1]]
-}
+export const bracketPair = E.bracketPair
 
 interface PrevMatch { code: string | null; category_id: string; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null; status: string }
 

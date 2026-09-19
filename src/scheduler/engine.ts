@@ -43,6 +43,12 @@ export function koInfo(Q: number | null | undefined): KoInfo | null {
   return { Q, P: Pw, byes: 2 * Pw - Q, prelim: Q - Pw, total: Q - 1, clean: Pw === Q }
 }
 export const roundName = (size: number) => size === 2 ? 'Τελικός' : size === 4 ? 'Ημιτελικοί' : 'Φάση των ' + size
+/** Seed pairs of a clean bracket of P teams, in match order: 8 → [1,8],[4,5],[3,6],[2,7]. */
+export function bracketPair(P: number, i: number): [number, number] {
+  let order = [1]
+  while (order.length < P) { const n = order.length * 2 + 1; order = order.flatMap(s => [s, n - s]) }
+  return [order[2 * i], order[2 * i + 1]]
+}
 const shortKo = (m: { label?: string }) => (m.label ?? '').replace('Φάση των ', 'Φ').replace('Ημιτελικοί ', 'ΗΜ').replace('Προκριματικός ', 'ΠΡ').replace(/ /g, '')
 
 // ---------- state ----------
@@ -165,6 +171,8 @@ function buildAllCore(st: SchedState, allowSoft: boolean): BuildResult {
       for (let i = 0; i < n; i++) {
         const m: SMatch = { cat: ci, catName: c.name, ko: true, round: ri, idx: mi++, label: roundName(size) + (n > 1 ? ' ' + (i + 1) : ''), teams: '', day: null, slot: null, wantDay: kd }
         if (prevMain) { const a = prevMain[2 * i], b = prevMain[2 * i + 1]; m.feeds = [a.idx, b.idx]; m.teams = 'Νικ. ' + shortKo(a) + ' – Νικ. ' + shortKo(b) }
+        // first main round of a clean bracket: show which group placings meet, so the preview is not blank
+        else if (k.prelim === 0) { const [sa, sb] = bracketPair(k.P, i); m.teams = 'Σ' + sa + ' – Σ' + sb }
         matches.push(m); cur.push(m)
       }
       prevMain = cur; ri++

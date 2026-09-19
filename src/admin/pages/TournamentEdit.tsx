@@ -5,9 +5,11 @@ import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
 import { ImageField } from '../upload'
 import { cn } from '@/lib/cn'
 import { Scheduler } from './Scheduler'
+import { Bracket } from '../components/Bracket'
+import { catColor } from '@/lib/categories'
 import { splits } from '@/scheduler/engine'
 
-const TABS = ['Στοιχεία', 'Κατηγορίες', 'Ομάδες', 'Αγώνες & σκορ', 'Πρόγραμμα']
+const TABS = ['Στοιχεία', 'Κατηγορίες', 'Ομάδες', 'Αγώνες & σκορ', 'Νοκ-άουτ', 'Πρόγραμμα']
 const STATUS = [['draft', 'Πρόχειρο'], ['registration', 'Δηλώσεις ανοιχτές'], ['upcoming', 'Επερχόμενο'], ['live', 'Σε εξέλιξη'], ['done', 'Ολοκληρώθηκε'], ['archived', 'Αρχείο']]
 
 export function TournamentEdit() {
@@ -29,6 +31,7 @@ export function TournamentEdit() {
       {tab === 'Κατηγορίες' && <Categories tid={id} say={say} />}
       {tab === 'Ομάδες' && <Teams tid={id} say={say} />}
       {tab === 'Αγώνες & σκορ' && <Results tid={id} say={say} />}
+      {tab === 'Νοκ-άουτ' && <Ko tid={id} say={say} />}
       {tab === 'Πρόγραμμα' && <Scheduler tid={id} />}
       <Toast msg={toast} />
     </>
@@ -229,6 +232,54 @@ function Results({ tid, say }: { tid: string; say: (m: string) => void }) {
         {!list.length && <div className="p-6 text-dim">Δεν υπάρχουν αγώνες για αυτή τη μέρα — φτιάξε πρόγραμμα από την καρτέλα «Πρόγραμμα».</div>}
       </div>
       <div className="mt-3 text-[12px] text-mute">Το «Τελικό» ενημερώνει αμέσως βαθμολογίες, site και app (realtime). Οι νικητές των νοκ-άουτ περνούν στον επόμενο γύρο όταν κλείσει ο αγώνας.</div>
+    </>
+  )
+}
+
+// ---------- Νοκ-άουτ ----------
+function Ko({ tid, say }: { tid: string; say: (m: string) => void }) {
+  const [ms, setMs] = useState<api.MatchRowA[]>([])
+  const [teams, setTeams] = useState<api.TeamRow[]>([])
+  const [days, setDays] = useState<Awaited<ReturnType<typeof api.listDays>>>([])
+  const [cats, setCats] = useState<Array<{ id: string; label: string; color_key: string }>>([])
+  const [busy, setBusy] = useState(false)
+  const load = useCallback(() => api.listMatches(tid).then(setMs).catch(e => say(e.message)), [tid, say])
+  useEffect(() => {
+    load()
+    api.listTeams(tid).then(setTeams).catch(() => {})
+    api.listDays(tid).then(setDays).catch(() => {})
+    api.listCategories().then(setCats).catch(() => {})
+  }, [tid, load])
+
+  // The DB trigger fills the bracket by itself the moment the last group match goes final.
+  // This is the manual rerun for what it cannot see: a republished schedule, or a score fixed later.
+  const resolve = async () => {
+    setBusy(true)
+    try {
+      const tcs = await api.listTournamentCategories(tid)
+      for (const tc of tcs) await api.resolveSeeds(tid, tc.category_id)
+      load(); say('Οι προκρίσεις υπολογίστηκαν')
+    } catch (e) { say((e as Error).message) }
+    setBusy(false)
+  }
+
+  const withKo = cats.filter(c => ms.some(m => m.category_id === c.id && m.phase !== 'group'))
+  return (
+    <>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-[560px] text-[13px] text-dim">Οι θέσεις γεμίζουν μόνες τους μόλις τελειώσουν όλοι οι αγώνες ομίλων της κατηγορίας. Μέχρι τότε δείχνουν τη θέση κατάταξης («Σ1», «Σ2») με πλάγια γράμματα.</p>
+        <button onClick={resolve} disabled={busy} className="rounded-full border border-line px-4 py-2 text-[13px] font-bold text-dim hover:text-white disabled:opacity-50">⟳ Υπολογισμός προκρίσεων</button>
+      </div>
+      {withKo.map(c => (
+        <div key={c.id} className="mb-9">
+          <div className="mb-3 flex items-center gap-3">
+            <i className="h-3 w-3 rounded-full" style={{ background: catColor[c.color_key as keyof typeof catColor] }} />
+            <b className="disp text-[22px]">{c.label}</b>
+          </div>
+          <Bracket matches={ms.filter(m => m.category_id === c.id)} teams={teams} days={days} />
+        </div>
+      ))}
+      {!withKo.length && <div className="card p-6 text-[14px] text-dim">Δεν υπάρχουν αγώνες νοκ-άουτ. Όρισε Q στις κατηγορίες από το «Πρόγραμμα» και δημοσίευσε ξανά.</div>}
     </>
   )
 }
