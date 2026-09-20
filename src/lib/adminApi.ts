@@ -53,8 +53,8 @@ export const updateTeam = (id: string, patch: Partial<Pick<TeamRow, 'name' | 'ci
 export const deleteTeam = (id: string) => run(sb().from('teams').delete().eq('id', id))
 
 // ---------- matches / results ----------
-export interface MatchRowA { id: string; category_id: string; phase: string; label: string; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
-export const listMatches = (tid: string) => run<MatchRowA[]>(sb().from('matches').select('id,category_id,phase,label,day_id,court,slot_time,home_team_id,away_team_id,home_label,away_label,home_score,away_score,status').eq('tournament_id', tid).order('slot_time'))
+export interface MatchRowA { id: string; code: string | null; category_id: string; phase: string; label: string; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
+export const listMatches = (tid: string) => run<MatchRowA[]>(sb().from('matches').select('id,code,category_id,phase,label,day_id,court,slot_time,home_team_id,away_team_id,home_label,away_label,home_score,away_score,status').eq('tournament_id', tid).order('slot_time'))
 /** Recompute the bracket seeds of a category from its group standings (no-op while the groups run). */
 export const resolveSeeds = (tid: string, cid: string) => run(sb().rpc('resolve_seeds', { p_tournament: tid, p_category: cid }))
 

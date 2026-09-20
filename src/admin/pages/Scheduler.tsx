@@ -27,7 +27,7 @@ export function Scheduler({ tid }: { tid: string }) {
       const [ms, tms] = await Promise.all([api.listMatches(tid), api.listTeams(tid)])
       const nameOf = (id: string | null) => tms.find(t => t.id === id)?.name
       const m = new Map<string, { home: string; away: string }>()
-      for (const x of ms as Array<api.MatchRowA & { code?: string | null }>) {
+      for (const x of ms) {
         const h = nameOf(x.home_team_id), a = nameOf(x.away_team_id)
         if (x.code && h && a) m.set(x.code, { home: h, away: a })
       }
