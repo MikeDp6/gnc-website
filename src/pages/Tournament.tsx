@@ -78,8 +78,7 @@ export function Tournament() {
       <Band kicker={<>{liveNow > 0 && <span className="mr-3 inline-flex items-center gap-2 rounded-full bg-orange px-3 py-1 text-[11px] text-[#111]"><i className="live-dot h-2 w-2 rounded-full bg-[#111]" />LIVE · {liveNow}</span>}{tour.dates} · {tour.venue}</>}
         title={tour.name.split('–')[0]} title2={tour.name.split('–')[1]} cover={tour.cover}
         sub={t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}
-        actions={tour.status === 'registration' ? <Button variant="orange" to="/register">{t.hero.cta1} →</Button> : undefined}
-        stats={[{ v: tour.teamsCount, l: t.status.teams }, { v: tour.categoryIds.length, l: t.status.cats }, { v: all.length, l: t.team.matches }, { v: tour.courts, l: t.status.courts }]} />
+        actions={tour.status === 'registration' ? <Button variant="orange" to="/register">{t.hero.cta1} →</Button> : undefined} />
       {/* Το PDF είναι το αναλυτικό πρόγραμμα: όταν αυτό δεν είναι δημόσιο, δεν προσφέρεται καν. */}
       <SubTabs tabs={tabLabels} active={t.tour.tabs[view]} onChange={l => setTab(tabOf(l))}
         right={hasSchedule ? <Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button> : undefined} />

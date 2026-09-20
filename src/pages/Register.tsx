@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
@@ -9,7 +9,7 @@ import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { Field, SelectInput, Steps, TextInput } from '@/components/ui/Form'
 import { cn } from '@/lib/cn'
-import { registerTeam } from '@/lib/publicApi'
+import { registerTeam , eligibleCategories, type EligibleCategory } from '@/lib/publicApi'
 
 const STEPS = ['Διοργάνωση', 'Ομάδα & αρχηγός', 'Συμπαίκτες']
 const MINOR = ['u11', 'u13', 'u15', 'u18']
@@ -27,7 +27,27 @@ export function Register() {
   const [cid, setCid] = useState('')
   const [team, setTeam] = useState({ name: '', city: '' })
   const [cap, setCap] = useState({ first: '', last: '', email: '', phone: '', birth: '', guardian: '', consent: false })
-  const [mates, setMates] = useState(['', '', ''])
+  const empty = { first: '', last: '', birthYear: '', email: '' }
+  const [mates, setMates] = useState([{ ...empty }, { ...empty }, { ...empty }])
+  const setMate = (i: number, patch: Partial<typeof empty>) => setMates(mates.map((x, j) => j === i ? { ...x, ...patch } : x))
+  // Ένας συμπαίκτης είναι προαιρετικός· μόλις αρχίσεις να τον γράφεις όμως, θέλει ολόκληρο όνομα και έτος.
+  const started = (m: typeof empty) => !!(m.first.trim() || m.last.trim() || m.email.trim() || m.birthYear.trim())
+  const mateOk = (m: typeof empty) => !started(m) || (m.first.trim().length > 1 && m.last.trim().length > 1 && /^\d{4}$/.test(m.birthYear.trim()))
+  const rosterOk = mates.every(mateOk)
+  // Η κατηγορία δεν είναι ελεύθερη επιλογή: βγαίνει από τις ηλικίες. Ανεβαίνεις, δεν κατεβαίνεις.
+  const years = useMemo(() => [
+    ...(/^\d{4}$/.test(cap.birth) ? [+cap.birth] : []),
+    ...mates.filter(started).filter(m => /^\d{4}$/.test(m.birthYear)).map(m => +m.birthYear),
+  ], [cap.birth, mates])
+  const [allowed, setAllowed] = useState<EligibleCategory[] | null>(null)
+  useEffect(() => {
+    if (!tid || !years.length) { setAllowed(null); return }
+    let live = true
+    eligibleCategories(tid, years).then(r => { if (live) setAllowed(r) }).catch(() => { if (live) setAllowed(null) })
+    return () => { live = false }
+  }, [tid, years])
+  const catOk = !allowed || !cid || allowed.some(a => a.id === cid)
+  const suggested = allowed?.find(a => a.suggested)
   const [done, setDone] = useState<{ code: string; status: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -89,21 +109,46 @@ export function Register() {
                 <Field label="Επώνυμο"><TextInput required value={cap.last} onChange={e => setCap({ ...cap, last: e.target.value })} /></Field>
                 <Field label="Email"><TextInput type="email" required value={cap.email} onChange={e => setCap({ ...cap, email: e.target.value })} /></Field>
                 <Field label="Κινητό"><TextInput type="tel" required value={cap.phone} onChange={e => setCap({ ...cap, phone: e.target.value })} /></Field>
-                <Field label="Έτος γέννησης" hint="Ελέγχεται με την κατηγορία"><TextInput type="number" min={1940} max={2020} value={cap.birth} onChange={e => setCap({ ...cap, birth: e.target.value })} /></Field>
+                <Field label="Έτος γέννησης" hint="Ελέγχεται με την κατηγορία"><TextInput required type="number" min={1940} max={2020} value={cap.birth} onChange={e => setCap({ ...cap, birth: e.target.value })} /></Field>
                 {minor && (
                   <>
                     <Field label="Ονοματεπώνυμο γονέα / κηδεμόνα"><TextInput required value={cap.guardian} onChange={e => setCap({ ...cap, guardian: e.target.value })} /></Field>
                     <label className="flex items-start gap-3 text-[13px] text-dim md:col-span-2"><input type="checkbox" required checked={cap.consent} onChange={e => setCap({ ...cap, consent: e.target.checked })} className="mt-1" />Ως γονέας/κηδεμόνας συναινώ στη συμμετοχή του ανηλίκου στη διοργάνωση και στη χρήση φωτογραφιών από την εκδήλωση.</label>
                   </>
                 )}
-                <div className="flex justify-between md:col-span-2"><Button variant="ghost" onClick={() => setStep(0)}>← Πίσω</Button><Button onClick={() => team.name && cap.first && cap.email && setStep(2)}>Συνέχεια →</Button></div>
+                <div className="flex justify-between md:col-span-2"><Button variant="ghost" onClick={() => setStep(0)}>← Πίσω</Button><Button onClick={() => team.name && cap.first && cap.last && cap.email && /^\d{4}$/.test(cap.birth) && setStep(2)}>Συνέχεια →</Button></div>
               </div>
             ) : (
               <div className="grid gap-4">
-                <p className="text-[14px] text-dim">Βάλε τα email 2–3 συμπαικτών. Τα κρατάμε για να τους στείλουμε την πρόσκληση· ώσπου να φτάσει, ο σύνδεσμος είναι στον <b className="text-white">λογαριασμό σου</b> και τον στέλνεις κι εσύ από WhatsApp ή Viber.</p>
-                {mates.map((m, i) => <Field key={i} label={`Email συμπαίκτη ${i + 1}${i === 2 ? ' (προαιρετικός 4ος)' : ''}`}><TextInput type="email" value={m} onChange={e => setMates(mates.map((x, j) => j === i ? e.target.value : x))} placeholder="email@example.com" /></Field>)}
+                <p className="text-[14px] text-dim">Γράψε ποιοι παίζουν μαζί σου. Το όνομα και το έτος γέννησης χρειάζονται για να μετρήσουν οι συμμετοχές και οι βαθμοί τους στην κατάταξη. Το email είναι προαιρετικό — αν το βάλεις, τους στέλνουμε πρόσκληση· αλλιώς μπαίνουν στο ρόστερ και επιβεβαιώνουν όταν φτιάξουν προφίλ.</p>
+                {allowed && cid && !catOk && (
+                  <div className="rounded-[12px] border border-red/60 bg-red/10 px-4 py-3 text-[13px]">
+                    Με αυτές τις ηλικίες η ομάδα δεν δικαιούται να παίξει στην {categoryById(cid).name}.
+                    {suggested
+                      ? <> Η κατηγορία που σας δέχεται όλους είναι η <b className="text-white">{suggested.label}</b>.{' '}
+                          <button type="button" onClick={() => setCid(suggested.id)} className="font-bold uppercase tracking-[.06em] text-orange">Άλλαξέ την →</button></>
+                      : <> Καμία κατηγορία αυτής της διοργάνωσης δεν σας δέχεται όλους — έλεγξε τα έτη γέννησης.</>}
+                  </div>
+                )}
+                {allowed && allowed.length > 1 && catOk && (
+                  <p className="text-[12px] text-mute">
+                    Μπορείτε να παίξετε και σε μεγαλύτερη κατηγορία: {allowed.filter(a => a.id !== cid).map(a => a.short).join(' · ')}.
+                  </p>
+                )}
+                {mates.map((m, i) => (
+                  <div key={i} className="card grid gap-3 p-4 sm:grid-cols-2">
+                    <div className="kicker sm:col-span-2">Συμπαίκτης {i + 1}{i === 2 ? ' · προαιρετικός 4ος' : ''}</div>
+                    <Field label="Όνομα"><TextInput value={m.first} onChange={e => setMate(i, { first: e.target.value })} /></Field>
+                    <Field label="Επώνυμο"><TextInput value={m.last} onChange={e => setMate(i, { last: e.target.value })} /></Field>
+                    <Field label="Έτος γέννησης"><TextInput inputMode="numeric" maxLength={4} placeholder="2004" value={m.birthYear}
+                      onChange={e => setMate(i, { birthYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} /></Field>
+                    <Field label="Email (προαιρετικό)"><TextInput type="email" value={m.email} placeholder="email@example.com"
+                      onChange={e => setMate(i, { email: e.target.value })} /></Field>
+                    {started(m) && !mateOk(m) && <div className="text-[12px] text-red sm:col-span-2">Συμπλήρωσε όνομα, επώνυμο και τετραψήφιο έτος γέννησης.</div>}
+                  </div>
+                ))}
                 <label className="flex items-start gap-3 text-[13px] text-dim"><input type="checkbox" required className="mt-1" />Αποδέχομαι τον <Link className="text-white underline" to="/kanonismoi">κανονισμό</Link> και τους <Link className="text-white underline" to="/oroi">όρους συμμετοχής</Link> της διοργάνωσης (4 παίκτες, μισό γήπεδο, 10΄ ή πρώτος στους 21).</label>
-                <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button type="submit" variant="orange" className={cn(busy && 'opacity-50')}>{busy ? 'Καταχώρηση…' : 'Καταχώρηση δήλωσης'}</Button></div>
+                <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button type="submit" variant="orange" className={cn((busy || !rosterOk || !catOk) && 'pointer-events-none opacity-50')}>{busy ? 'Καταχώρηση…' : 'Καταχώρηση δήλωσης'}</Button></div>
               </div>
             )}
           </form>
