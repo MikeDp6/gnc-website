@@ -12,7 +12,7 @@ import { bioSupported, clearQuick, hasBio, hasQuick, quickEmail, unlockWithBio, 
 /** Player sign-in: a one-time link by email. No password to set, forget or leak. */
 export function Login() {
   const { t } = useI18n()
-  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset, signInWithTokens } = useAuth()
+  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset, signInWithTokenHash } = useAuth()
   // Αυτή η συσκευή έχει ήδη κλειδωμένη συνεδρία → μπες με PIN ή Face ID, χωρίς email
   const [quick, setQuick] = useState(hasQuick())
   const [bioOk, setBioOk] = useState(false)
@@ -36,10 +36,10 @@ export function Login() {
     const error = await sendPasswordReset(email)
     if (error) { setErr(error); setState('') } else setState('reset')
   }
-  const enter = async (r: { tokens?: import('@/lib/quickAuth').QuickTokens; error?: string }) => {
-    if (r.error || !r.tokens) { setErr(r.error ?? 'Κάτι πήγε στραβά.'); setState(''); if (!hasQuick()) setQuick(false); return }
-    const error = await signInWithTokens(r.tokens)
-    if (error) { setErr(error); setState(''); setQuick(hasQuick()) }
+  const enter = async (r: { tokenHash?: string; error?: string }) => {
+    if (r.error || !r.tokenHash) { setErr(r.error ?? 'Κάτι πήγε στραβά.'); setState(''); return }
+    const error = await signInWithTokenHash(r.tokenHash)
+    if (error) { setErr(error); setState('') }
   }
   const byPin = async (pin: string) => { setState('busy'); setErr(null); await enter(await unlockWithPin(pin)) }
   const byBio = async () => { setState('busy'); setErr(null); await enter(await unlockWithBio()) }

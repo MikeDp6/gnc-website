@@ -48,6 +48,7 @@ export function Me() {
   const [bioOn, setBioOn] = useState(quick.hasBio())
   const [bioOk, setBioOk] = useState(false)
   const [pinOpen, setPinOpen] = useState(false)
+  const [bioOpen, setBioOpen] = useState(false)
   useEffect(() => { quick.bioSupported().then(setBioOk) }, [])
   const [pw, setPw] = useState('')
   useMeta(t.account.mine)
@@ -429,27 +430,34 @@ export function Me() {
                 <PinPad busy={busy} label="Διάλεξε 4ψήφιο PIN"
                   onDone={async pin => {
                     setBusy(true); setErr(null)
-                    const t2 = session ? { access_token: session.access_token, refresh_token: session.refresh_token } : null
-                    const e2 = t2 ? await quick.enrolPin(pin, me.email ?? '', t2) : 'Δεν υπάρχει ενεργή συνεδρία.'
-                    if (e2) setErr(e2); else { setQuickOn(true); setPinOpen(false); say('Το PIN αποθηκεύτηκε σε αυτή τη συσκευή') }
+                    const e2 = await quick.enrolPin(pin, me.email ?? '')
+                    if (e2) setErr(e2); else { setQuickOn(true); setPinOpen(false); say('Το PIN καταχωρήθηκε για αυτή τη συσκευή') }
                     setBusy(false)
                   }} />
                 <button type="button" onClick={() => setPinOpen(false)} className="mt-4 text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Άκυρο</button>
               </div>
+            ) : bioOpen ? (
+              <div className="mt-4">
+                {/* Το PIN ζητείται μία φορά, για να κλειδωθεί πίσω από τη βιομετρική επαλήθευση. */}
+                <PinPad busy={busy} label="Βάλε το PIN σου για να ενεργοποιηθεί το Face ID"
+                  onDone={async pin => {
+                    setBusy(true); setErr(null)
+                    const e2 = await quick.enableBio(me.email ?? '', pin)
+                    if (e2) setErr(e2); else { setBioOn(true); setBioOpen(false); say('Το Face ID ενεργοποιήθηκε') }
+                    setBusy(false)
+                  }} />
+                <button type="button" onClick={() => setBioOpen(false)} className="mt-4 text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Άκυρο</button>
+              </div>
             ) : quickOn ? (
               <>
-                <p className="mt-1 text-[12px] text-dim">Την επόμενη φορά μπαίνεις με το PIN σου{bioOn ? ' ή με Face ID' : ''}, χωρίς email. Η αποσύνδεση το αφαιρεί από τη συσκευή.</p>
+                <p className="mt-1 text-[12px] text-dim">Την επόμενη φορά μπαίνεις με το PIN σου{bioOn ? ' ή με Face ID' : ''}, χωρίς email. Πέντε λάθος προσπάθειες κλειδώνουν τη συσκευή για ένα τέταρτο.</p>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
                   <button type="button" onClick={() => setPinOpen(true)} className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">Αλλαγή PIN</button>
                   {bioOk && (bioOn
                     ? <button type="button" onClick={() => { quick.disableBio(); setBioOn(false); say('Το Face ID απενεργοποιήθηκε') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Απενεργοποίηση Face ID</button>
-                    : <button type="button" disabled={busy} onClick={async () => {
-                        setBusy(true); setErr(null)
-                        const e2 = await quick.enableBio(me.email ?? '')
-                        if (e2) setErr(e2); else { setBioOn(true); say('Το Face ID ενεργοποιήθηκε') }
-                        setBusy(false)
-                      }} className="text-[12px] font-bold uppercase tracking-[.08em] text-orange disabled:opacity-50">Ενεργοποίηση Face ID / δακτυλικού</button>)}
-                  <button type="button" onClick={() => { quick.clearQuick(); setQuickOn(false); setBioOn(false); say('Η γρήγορη είσοδος αφαιρέθηκε') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Αφαίρεση</button>
+                    : <button type="button" disabled={busy} onClick={() => setBioOpen(true)}
+                        className="text-[12px] font-bold uppercase tracking-[.08em] text-orange disabled:opacity-50">Ενεργοποίηση Face ID / δακτυλικού</button>)}
+                  <button type="button" onClick={() => { quick.clearQuick(); setQuickOn(false); setBioOn(false); say('Η γρήγορη είσοδος αφαιρέθηκε από αυτή τη συσκευή') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Αφαίρεση</button>
                 </div>
               </>
             ) : (

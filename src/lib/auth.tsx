@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import { clearQuick, hasQuick, refreshQuick, type QuickTokens } from './quickAuth'
+import { clearQuick, hasQuick } from './quickAuth'
 
 interface Auth {
   session: Session | null
@@ -13,11 +13,11 @@ interface Auth {
   /** …or with a password, for whoever prefers one. Both work on the same account. */
   setPassword: (password: string) => Promise<string | null>
   sendPasswordReset: (email: string) => Promise<string | null>
-  /** Μπαίνει με τη συνεδρία που ξεκλείδωσε το PIN ή το Face ID αυτής της συσκευής. */
-  signInWithTokens: (t: QuickTokens) => Promise<string | null>
+  /** Εξαργυρώνει το token που επέστρεψε ο server μετά από σωστό PIN ή Face ID. */
+  signInWithTokenHash: (tokenHash: string) => Promise<string | null>
   signOut: () => Promise<void>
 }
-const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', setPassword: async () => 'no client', sendPasswordReset: async () => 'no client', signInWithTokens: async () => 'no client', signOut: async () => {} })
+const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', setPassword: async () => 'no client', sendPasswordReset: async () => 'no client', signInWithTokenHash: async () => 'no client', signOut: async () => {} })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
@@ -28,14 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return
     const sb = supabase
     sb.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: sub } = sb.auth.onAuthStateChange((e, s) => {
-      setSession(s)
-      // Το Supabase περιστρέφει το refresh token· κράτα το κλειδωμένο αντίγραφο σε συγχρονισμό,
-      // αλλιώς η γρήγορη είσοδος θα ξεκλείδωνε ένα token που δεν ισχύει πια.
-      if (s?.refresh_token && s.access_token && hasQuick() && (e === 'TOKEN_REFRESHED' || e === 'SIGNED_IN')) {
-        refreshQuick({ access_token: s.access_token, refresh_token: s.refresh_token })
-      }
-    })
+    const { data: sub } = sb.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
 
@@ -76,16 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/me?reset=1` })
       return error ? error.message : null
     },
-    signInWithTokens: async t => {
+    signInWithTokenHash: async tokenHash => {
       if (!supabase) return 'Δεν έχει ρυθμιστεί το Supabase (.env.local).'
-      const { error } = await supabase.auth.setSession(t)
-      // άκυρο αποθηκευμένο token: η γρήγορη είσοδος δεν έχει νόημα πια σε αυτή τη συσκευή
-      if (error) { clearQuick(); return 'Η αποθηκευμένη σύνδεση έληξε. Συνδέσου ξανά με email.' }
-      return null
+      const { error } = await supabase.auth.verifyOtp({ type: 'magiclink', token_hash: tokenHash })
+      return error ? error.message : null
     },
-    // Η αποσύνδεση ακυρώνει το refresh token στον server — ακόμη και με scope 'local'. Άρα ό,τι
-    // κλειδωμένο κρατούσε το PIN γίνεται άχρηστο· σβήνεται μαζί, αντί να σκάει στο επόμενο ξεκλείδωμα.
-    signOut: async () => { clearQuick(); await supabase?.auth.signOut() },
+    // Πλέον η αποσύνδεση δεν αγγίζει τη γρήγορη είσοδο: το PIN δεν φυλάει συνεδρία για να ακυρωθεί.
+    signOut: async () => { await supabase?.auth.signOut() },
   }), [session, isAdmin, loading])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

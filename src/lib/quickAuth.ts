@@ -1,32 +1,20 @@
-// Γρήγορη είσοδος: 4ψήφιο PIN ή Face ID / δακτυλικό, ανά συσκευή.
+// Γρήγορη είσοδος: 4ψήφιο PIN, και προαιρετικά Face ID / δακτυλικό, ανά συσκευή.
 //
-// Ένα 4ψήφιο PIN έχει 10.000 συνδυασμούς — δεν γίνεται να είναι κωδικός προς τον server. Άρα δεν
-// στέλνεται πουθενά. Η συνεδρία κλειδώνεται εδώ, στη συσκευή, με κλειδί AES-GCM που φτιάχνεται μία
-// φορά και ζει στην IndexedDB ως non-extractable: ο browser δεν επιτρέπει ούτε στον δικό μας κώδικα
-// να το διαβάσει, μόνο να κρυπτογραφεί μ' αυτό, και μόνο από αυτό το origin. Όποιος αντιγράψει το
-// localStorage παίρνει ακαταλαβίστικα.
+// Το PIN κρίνεται στον SERVER. Στη συσκευή μένει μόνο ένα αναγνωριστικό — τίποτα εκμεταλλεύσιμο αν
+// κλαπεί. Το κλείδωμα μετά από αποτυχίες ζει στη βάση, οπότε δεν παρακάμπτεται με καθάρισμα του
+// browser ούτε με δοκιμές από άλλη συσκευή. Και η αποσύνδεση δεν χαλάει τίποτα, γιατί δεν φυλάμε
+// συνεδρία που να μπορεί να ακυρωθεί.
 //
-// Το PIN και το Face ID είναι η πύλη: ελέγχονται τοπικά πριν ξεκλειδώσουμε. Προστατεύουν από κάποιον
-// που πήρε το ξεκλείδωτο κινητό στα χέρια του — όχι από κάποιον που τρέχει κώδικα στο origin μας,
-// αλλά αυτός έχει έτσι κι αλλιώς τη ζωντανή συνεδρία. Πέντε λάθος PIN σβήνουν τα πάντα.
-//
-// Η ανανέωση των tokens γίνεται με το κλειδί συσκευής μόνο, χωρίς PIN, ώστε το αποθηκευμένο refresh
-// token να μη μένει ποτέ πίσω όταν το Supabase το περιστρέφει.
+// Το Face ID παραμένει τοπικό, γιατί έτσι δουλεύει ο browser: φυλάει το PIN κλειδωμένο με κλειδί
+// AES-GCM που ζει στην IndexedDB ως non-extractable, και το ξεκλειδώνει μόνο μετά από επιτυχή
+// βιομετρική επαλήθευση. Ακόμα κι αν κάποιος το άρπαζε, θα έπεφτε πάνω στο κλείδωμα του server.
 
-const LS = 'gnc-quick-v1'
+import { supabase } from './supabase'
+
+const LS = 'gnc-quick-v2'
 const DB = 'gnc-quick', STORE = 'keys', KEY_ID = 'device'
-const ITER = 210_000
-const MAX_TRIES = 5
 
-export interface QuickTokens { access_token: string; refresh_token: string }
-interface Vault {
-  email: string
-  iv: string
-  ct: string
-  pin: { salt: string; hash: string; iter: number }
-  bio?: { id: string }
-  tries: number
-}
+interface Vault { device: string; email: string; bio?: { id: string; iv: string; ct: string } }
 
 const b64 = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b as ArrayBuffer)))
 const unb64 = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0))
@@ -64,66 +52,43 @@ async function deviceKey(create: boolean): Promise<CryptoKey | null> {
   return k
 }
 
-async function pinHash(pin: string, salt: Uint8Array, iter: number) {
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits'])
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt as BufferSource, iterations: iter, hash: 'SHA-256' }, base, 256)
-  return b64(bits)
-}
+const fn = () => { if (!supabase) throw new Error('Δεν έχει ρυθμιστεί το Supabase.'); return supabase }
 
-export const quickSupported = () => typeof indexedDB !== 'undefined' && !!globalThis.crypto?.subtle && typeof localStorage !== 'undefined'
+// ---------- δημόσιο API ----------
+export const quickSupported = () => typeof localStorage !== 'undefined' && !!supabase
 export const hasQuick = () => !!read()
 export const quickEmail = () => read()?.email ?? null
 export const hasBio = () => !!read()?.bio
-export const triesLeft = () => { const v = read(); return v ? Math.max(0, MAX_TRIES - v.tries) : MAX_TRIES }
 
-/** Το κλειδί συσκευής μένει: δεν ξεκλειδώνει τίποτα χωρίς αποθηκευμένο blob, και μια νέα εγγραφή το ξαναχρησιμοποιεί. */
 export function clearQuick() { write(null) }
 
-/** Καταχώριση PIN για αυτή τη συσκευή. */
-export async function enrolPin(pin: string, email: string, tokens: QuickTokens): Promise<string | null> {
+/** Καταχώριση PIN για αυτή τη συσκευή. Απαιτεί ενεργή συνεδρία — ο server δένει το PIN στον χρήστη. */
+export async function enrolPin(pin: string, email: string): Promise<string | null> {
   if (!/^\d{4}$/.test(pin)) return 'Το PIN θέλει ακριβώς 4 ψηφία.'
   if (/^(\d)\1{3}$/.test(pin)) return 'Διάλεξε PIN που δεν είναι τέσσερα ίδια ψηφία.'
-  if (!quickSupported()) return 'Η συσκευή δεν υποστηρίζει γρήγορη είσοδο.'
   try {
-    const key = await deviceKey(true)
-    if (!key) return 'Δεν ήταν δυνατή η δημιουργία κλειδιού στη συσκευή.'
-    const salt = rand(16), iv = rand(12)
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(JSON.stringify(tokens)))
-    write({ email, iv: b64(iv), ct: b64(ct), pin: { salt: b64(salt), hash: await pinHash(pin, salt, ITER), iter: ITER }, tries: 0, bio: read()?.bio })
+    const label = typeof navigator !== 'undefined' ? navigator.platform || 'Συσκευή' : 'Συσκευή'
+    const { data, error } = await fn().functions.invoke('device-pin', { body: { action: 'enrol', pin, label } })
+    if (error) return (data as { error?: string })?.error ?? error.message
+    const device = (data as { device?: string })?.device
+    if (!device) return 'Δεν ήταν δυνατή η καταχώριση.'
+    write({ device, email })
     return null
   } catch (e) { return (e as Error).message }
 }
 
-/** Ξαναγράφει τα tokens όταν τα ανανεώνει το Supabase — χωρίς PIN, με το κλειδί συσκευής. */
-export async function refreshQuick(tokens: QuickTokens) {
-  const v = read(); if (!v) return
-  try {
-    const key = await deviceKey(false); if (!key) return
-    const iv = rand(12)
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(JSON.stringify(tokens)))
-    write({ ...v, iv: b64(iv), ct: b64(ct) })
-  } catch { /* η γρήγορη είσοδος είναι ευκολία, ποτέ δεν μπλοκάρει τη ροή */ }
-}
-
-async function openVault(v: Vault): Promise<QuickTokens> {
-  const key = await deviceKey(false)
-  if (!key) { clearQuick(); throw new Error('Το κλειδί αυτής της συσκευής δεν βρέθηκε. Συνδέσου ξανά.') }
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(v.iv) as BufferSource }, key, unb64(v.ct) as BufferSource)
-  return JSON.parse(new TextDecoder().decode(plain)) as QuickTokens
-}
-
-/** Ξεκλείδωμα με PIN. Πέντε αποτυχίες σβήνουν τη γρήγορη είσοδο από τη συσκευή. */
-export async function unlockWithPin(pin: string): Promise<{ tokens?: QuickTokens; error?: string }> {
+/** Ξεκλείδωμα με PIN. Επιστρέφει το token που εξαργυρώνεται σε κανονική συνεδρία. */
+export async function unlockWithPin(pin: string): Promise<{ tokenHash?: string; error?: string }> {
   const v = read(); if (!v) return { error: 'Δεν υπάρχει γρήγορη είσοδος σε αυτή τη συσκευή.' }
-  const hash = await pinHash(pin, unb64(v.pin.salt), v.pin.iter)
-  if (hash !== v.pin.hash) {
-    const tries = v.tries + 1
-    if (tries >= MAX_TRIES) { clearQuick(); return { error: 'Πέντε λάθος προσπάθειες — η γρήγορη είσοδος διαγράφηκε. Συνδέσου με email.' } }
-    write({ ...v, tries })
-    return { error: 'Λάθος PIN. Απομένουν ' + (MAX_TRIES - tries) + ' προσπάθειες.' }
-  }
-  write({ ...v, tries: 0 })
-  try { return { tokens: await openVault(v) } } catch (e) { return { error: (e as Error).message } }
+  try {
+    const { data, error } = await fn().functions.invoke('device-pin', { body: { action: 'unlock', device: v.device, pin } })
+    const body = data as { token_hash?: string; error?: string; left?: number } | null
+    if (error || !body?.token_hash) {
+      const msg = body?.error ?? 'Λάθος PIN'
+      return { error: body?.left != null ? `${msg}. Απομένουν ${body.left} προσπάθειες.` : msg }
+    }
+    return { tokenHash: body.token_hash }
+  } catch (e) { return { error: (e as Error).message } }
 }
 
 // ---------- Face ID / δακτυλικό (WebAuthn, platform authenticator) ----------
@@ -134,9 +99,10 @@ export async function bioSupported(): Promise<boolean> {
   } catch { return false }
 }
 
-/** Δένει βιομετρικό διαπιστευτήριο της συσκευής ως εναλλακτική πύλη για το ίδιο κλειδί. */
-export async function enableBio(email: string): Promise<string | null> {
+/** Δένει βιομετρικό διαπιστευτήριο και φυλάει το PIN κλειδωμένο πίσω του. Θέλει το PIN μία φορά. */
+export async function enableBio(email: string, pin: string): Promise<string | null> {
   const v = read(); if (!v) return 'Όρισε πρώτα PIN.'
+  if (!/^\d{4}$/.test(pin)) return 'Βάλε το PIN σου για επιβεβαίωση.'
   try {
     const cred = await navigator.credentials.create({
       publicKey: {
@@ -145,12 +111,14 @@ export async function enableBio(email: string): Promise<string | null> {
         user: { id: rand(16), name: email, displayName: email },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
         authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
-        timeout: 60_000,
-        attestation: 'none',
+        timeout: 60_000, attestation: 'none',
       },
     }) as PublicKeyCredential | null
     if (!cred) return 'Ακυρώθηκε.'
-    write({ ...read()!, bio: { id: b64(cred.rawId) } })
+    const key = await deviceKey(true); if (!key) return 'Η συσκευή δεν υποστηρίζει ασφαλή αποθήκευση.'
+    const iv = rand(12)
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(pin))
+    write({ ...read()!, bio: { id: b64(cred.rawId), iv: b64(iv), ct: b64(ct) } })
     return null
   } catch (e) {
     const err = e as Error
@@ -160,21 +128,21 @@ export async function enableBio(email: string): Promise<string | null> {
 
 export function disableBio() { const v = read(); if (v) write({ ...v, bio: undefined }) }
 
-export async function unlockWithBio(): Promise<{ tokens?: QuickTokens; error?: string }> {
+export async function unlockWithBio(): Promise<{ tokenHash?: string; error?: string }> {
   const v = read(); if (!v?.bio) return { error: 'Δεν έχει ενεργοποιηθεί βιομετρική είσοδος.' }
   try {
     const got = await navigator.credentials.get({
       publicKey: {
-        challenge: rand(32),
-        rpId: location.hostname,
+        challenge: rand(32), rpId: location.hostname,
         allowCredentials: [{ type: 'public-key', id: unb64(v.bio.id) as BufferSource }],
-        userVerification: 'required',
-        timeout: 60_000,
+        userVerification: 'required', timeout: 60_000,
       },
     }) as PublicKeyCredential | null
     if (!got) return { error: 'Ακυρώθηκε.' }
-    write({ ...v, tries: 0 })
-    return { tokens: await openVault(v) }
+    const key = await deviceKey(false)
+    if (!key) { disableBio(); return { error: 'Το κλειδί της συσκευής δεν βρέθηκε. Μπες με PIN.' } }
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(v.bio.iv) as BufferSource }, key, unb64(v.bio.ct) as BufferSource)
+    return await unlockWithPin(new TextDecoder().decode(plain))
   } catch (e) {
     const err = e as Error
     return { error: err.name === 'NotAllowedError' ? 'Ακυρώθηκε ή έληξε ο χρόνος.' : err.message }
