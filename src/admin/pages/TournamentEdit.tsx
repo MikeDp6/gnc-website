@@ -68,6 +68,8 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
         <ImageField value={f.cover_url} onChange={v => setF({ ...f, cover_url: v })} folder="covers" label="Εικόνα εξωφύλλου — φωτογραφία γηπέδου, όχι αφίσα (μπαίνει πίσω από τον τίτλο)" className="md:col-span-2" />
         <ImageField value={f.poster_url} onChange={v => setF({ ...f, poster_url: v })} folder="posters" label="Αφίσα διοργάνωσης — κατακόρυφη, εμφανίζεται στις κάρτες του Προγράμματος και των Ομάδων" className="md:col-span-2" />
         <label className="flex items-center gap-3 text-[14px] md:col-span-2"><input type="checkbox" checked={f.is_public} onChange={e => setF({ ...f, is_public: e.target.checked })} className="h-4 w-4" /> Δημόσιο — φαίνεται στο site και στο app</label>
+        <label className="flex items-start gap-3 text-[14px] md:col-span-2"><input type="checkbox" checked={f.schedule_public !== false} onChange={e => setF({ ...f, schedule_public: e.target.checked })} className="mt-1 h-4 w-4" />
+          <span>Αναλυτικό πρόγραμμα ορατό στο κοινό<span className="mt-[2px] block text-[12px] text-dim">Αν το ξεμαρκάρεις, το site δείχνει μόνο τις ώρες προσέλευσης. Οι αγώνες και τα σκορ μένουν κανονικά στο admin.</span></span></label>
         <div className="md:col-span-2"><Btn onClick={save}>Αποθήκευση</Btn></div>
       </div>
       <div className="card p-5">

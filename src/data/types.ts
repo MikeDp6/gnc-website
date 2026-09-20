@@ -103,6 +103,7 @@ export interface Tournament {
   cover?: string
   poster?: string          // κατακόρυφη αφίσα της διοργάνωσης
   arrivals?: ArrivalsPublic // δημοσιευμένες ώρες προσέλευσης (ανεξάρτητα από το πρόγραμμα)
+  schedulePublic?: boolean  // false = μόνο ώρες προσέλευσης στο κοινό
 }
 
 /** Snapshot published by the admin: when each category shows up, plus whatever knockout is decided. */
