@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Επιβεβαίωσε τη νέα σου διεύθυνση</title>
+</head>
+<body style="margin:0;padding:0;background:#0A0A0B;" bgcolor="#0A0A0B">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Επιβεβαίωσε την αλλαγή email στον λογαριασμό σου.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0A0A0B" style="background:#0A0A0B;">
+<tr><td align="center" style="padding:32px 16px;">
+
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;">
+
+    <tr><td align="left" style="padding:0 0 22px 0;">
+      <span style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;letter-spacing:.14em;color:#F5F4F1;">GNC</span><span style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;letter-spacing:.14em;color:#FF8700;">&nbsp;3on3</span>
+    </td></tr>
+
+    <tr><td bgcolor="#131316" style="background:#131316;border-radius:16px;padding:36px 32px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:.16em;text-transform:uppercase;color:#9A9FA3;padding:0 0 10px 0;">Αλλαγή email</td></tr>
+        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:27px;line-height:1.2;font-weight:bold;color:#F5F4F1;padding:0 0 14px 0;">Επιβεβαίωσε τη νέα διεύθυνση</td></tr>
+        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#C9CDD1;padding:0 0 26px 0;">Ζητήθηκε αλλαγή του email του λογαριασμού σου σε <span style="color:#F5F4F1;">{{ .NewEmail }}</span>. Πάτα το κουμπί για να την επιβεβαιώσεις.</td></tr>
+
+        <tr><td style="padding:0 0 22px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr><td bgcolor="#FF8700" style="background:#FF8700;border-radius:999px;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 34px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:#111111;text-decoration:none;">Επιβεβαίωση</a>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8A9096;border-top:1px solid rgba(255,255,255,0.09);padding:18px 0 0 0;">
+          Αν το κουμπί δεν ανοίγει, αντίγραψε αυτή τη διεύθυνση στον browser σου:<br>
+          <span style="color:#9A9FA3;word-break:break-all;">{{ .ConfirmationURL }}</span>
+        </td></tr>
+
+        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8A9096;padding:14px 0 0 0;">Αν δεν το ζήτησες εσύ, αγνόησε αυτό το μήνυμα και η διεύθυνσή σου μένει ως έχει.</td></tr>
+      </table>
+
+    </td></tr>
+
+    <tr><td align="left" style="padding:20px 4px 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.7;color:#6E7479;">
+      LOUX GNC 3on3 · Τουρνουά 3on3 σε όλη την Ελλάδα<br>
+      <a href="https://gnc3on3.gr" style="color:#8A9096;text-decoration:none;">gnc3on3.gr</a>
+    </td></tr>
+
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>

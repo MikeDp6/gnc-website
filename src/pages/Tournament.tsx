@@ -80,8 +80,10 @@ export function Tournament() {
         sub={t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}
         actions={tour.status === 'registration' ? <Button variant="orange" to="/register">{t.hero.cta1} →</Button> : undefined}
         stats={[{ v: tour.teamsCount, l: t.status.teams }, { v: tour.categoryIds.length, l: t.status.cats }, { v: all.length, l: t.team.matches }, { v: tour.courts, l: t.status.courts }]} />
-      <SubTabs tabs={tabLabels} active={t.tour.tabs[view]} onChange={l => setTab(tabOf(l))} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
-      <PrintSchedule tour={tour} />
+      {/* Το PDF είναι το αναλυτικό πρόγραμμα: όταν αυτό δεν είναι δημόσιο, δεν προσφέρεται καν. */}
+      <SubTabs tabs={tabLabels} active={t.tour.tabs[view]} onChange={l => setTab(tabOf(l))}
+        right={hasSchedule ? <Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button> : undefined} />
+      {hasSchedule && <PrintSchedule tour={tour} />}
 
       {view === 'schedule' && (
         <section className="wrap pt-[50px]">
