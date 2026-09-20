@@ -1,5 +1,4 @@
 import { useData } from '@/data/store'
-import { useI18n } from '@/i18n'
 import { useMeta } from '@/lib/meta'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
@@ -13,10 +12,9 @@ import { TourCard, type TourCardData } from '@/components/TourCard'
  */
 export function TeamsIndex() {
   const { tournaments, teams, matches } = useData()
-  const { t } = useI18n()
   useMeta('Ομάδες', 'Οι ομάδες κάθε διοργάνωσης GNC 3on3, ανά κατηγορία.')
 
-  const rows: TourCardData[] = tournaments
+  const listed = tournaments
     .map(x => {
       const mine = teams.filter(y => y.tournamentId === x.id)
       const count = mine.length || x.teamsCount
@@ -25,22 +23,18 @@ export function TeamsIndex() {
     })
     .filter(r => r.count > 0)
     .sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0) || +new Date(b.x.startsAt) - +new Date(a.x.startsAt))
-    .map(({ x, count, live }) => ({
+  const total = listed.reduce((a, r) => a + r.count, 0)
+  const rows: TourCardData[] = listed
+    .map(({ x, live }) => ({
       key: x.id, name: x.name, city: x.city, dates: x.dates, venue: x.venue, cover: x.cover, poster: x.poster, startsAt: x.startsAt,
       badge: live
         ? { label: 'Σε εξέλιξη', cls: 'border-orange bg-orange text-[#111]', live: true }
         : x.status === 'done' ? { label: 'Ολοκληρώθηκε', cls: 'border-line text-dim' }
         : x.status === 'registration' ? { label: 'Ανοιχτές δηλώσεις', cls: 'border-blue bg-blue text-white' }
         : undefined,
-      stats: [
-        { v: count, l: t.status.teams },
-        { v: x.categoryIds.length, l: t.status.cats },
-      ],
       cta: 'Δες τις ομάδες',
       to: `/tournaments/${x.slug}?tab=teams`,
     }))
-
-  const total = rows.reduce((a, r) => a + (Number(r.stats?.[0]?.v) || 0), 0)
 
   return (
     <>

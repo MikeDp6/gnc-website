@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Photo } from '@/components/ui/Photo'
 import { Reveal } from '@/components/ui/Reveal'
@@ -15,7 +14,6 @@ export type TourCardData = {
   poster?: string
   startsAt?: string
   countdown?: boolean
-  stats?: Array<{ v: ReactNode; l: string }>
   badge?: { label: string; cls: string; live?: boolean }
   cta: string
   to?: string
@@ -63,16 +61,6 @@ export function TourCard({ d, delay = 0 }: { d: TourCardData; delay?: number }) 
           </div>
         )}
 
-        {!!d.stats?.length && (
-          <div className="flex flex-wrap gap-3 md:justify-end">
-            {d.stats.map(s => (
-              <div key={s.l} className="glass min-w-[92px] rounded-[16px] px-[15px] py-[12px]">
-                <b className="disp block text-[30px] leading-none md:text-[34px]">{s.v}</b>
-                <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.12em] text-dim">{s.l}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </>
   )

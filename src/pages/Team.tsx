@@ -47,8 +47,7 @@ export function Team() {
       <Band kicker={<><i className="mr-2 inline-block h-[10px] w-[10px] rounded-full align-[-1px]" style={{ background: catColor[cat.key] }} />{cat.name}{group ? ` · ${group.name}` : ''} · {tour.name}</>}
         title={a} title2={rest.join(' ') || undefined} cover={tour.cover}
         sub={[team.city, captain ? `${t.team.captain}: ${captain.name}` : null].filter(Boolean).join(' · ') || undefined}
-        stats={row ? [{ v: `${row.wins}–${row.losses}`, l: t.team.wl }, { v: `${pos}η`, l: group!.name }, { v: `${row.pointsFor - row.pointsAgainst > 0 ? '+' : ''}${row.pointsFor - row.pointsAgainst}`, l: t.team.diff }, { v: roster.length || '—', l: t.team.players }]
-          : [{ v: `${wins}–${played.length - wins}`, l: t.team.wl }, { v: my.length, l: t.team.matches }, { v: roster.length || '—', l: t.team.players }]} />
+        />
 
       <section className="wrap pt-[70px]">
         <div className="mb-[26px] flex items-end justify-between"><Heading a={t.team.next1} b={t.team.next2} size="md" /><Link to={`/tournaments/${tour.slug}`} className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.team.allMatches} →</Link></div>

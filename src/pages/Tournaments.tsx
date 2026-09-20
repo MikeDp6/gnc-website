@@ -46,12 +46,6 @@ export function Tournaments() {
       startsAt: x.startsAt, countdown: kind === 'registration', kind,
       badge: { label: s.label, cls: s.badge ?? s.cls, live: kind === 'live' },
       cta: s.cta,
-      stats: [
-        { v: x.teamsCount, l: t.status.teams },
-        { v: x.categoryIds.length, l: t.status.cats },
-        ...(mine.length ? [{ v: mine.length, l: t.team.matches }] : []),
-        { v: x.courts, l: t.status.courts },
-      ],
       to: kind === 'registration' ? `/register?t=${x.slug}` : kind === 'soon' ? undefined : `/tournaments/${x.slug}`,
     }
   })
