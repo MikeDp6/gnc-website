@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 import { useMeta } from '@/lib/meta'
 import { useData } from '@/data/store'
-import { claimPlayer, createMyPlayer, fetchMyPlayer, fetchMyTeams, fetchPlayerHistory, fetchPlayerRank, updateMyPlayer, uploadAvatar } from '@/lib/playerApi'
+import { claimPlayer, createMyPlayer, fetchMyPlayer, fetchMyTeams, fetchPlayerCandidates, fetchPlayerHistory, fetchPlayerRank, linkMyPlayer, updateMyPlayer, uploadAvatar, type PlayerCandidate } from '@/lib/playerApi'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
@@ -40,6 +40,8 @@ export function Me() {
   const [makingCrew, setMakingCrew] = useState(false)
   const [params] = useSearchParams()
   const [loadFailed, setLoadFailed] = useState(false)
+  // Υποψήφιες παλιές εγγραφές με το ίδιο όνομα: προτείνονται, δεν ενώνονται ποτέ αυτόματα.
+  const [cands, setCands] = useState<PlayerCandidate[] | null>(null)
   const [pwOpen, setPwOpen] = useState(params.get('reset') === '1')
   // Γρήγορη είσοδος σε αυτή τη συσκευή: το PIN κλειδώνει τοπικά τη συνεδρία, δεν φεύγει ποτέ από εδώ
   const [quickOn, setQuickOn] = useState(quick.hasQuick())
@@ -101,14 +103,68 @@ export function Me() {
   // their own profile here. A declaration that arrives later attaches to it by email.
   if (!me) {
     const ok = draft.first.trim().length > 1 && draft.last.trim().length > 1
-    const create = async () => {
+    const year = draft.birthYear.trim() ? Number(draft.birthYear.trim()) : null
+    const makeNew = async () => {
       setBusy(true); setErr(null)
       try {
-        const year = draft.birthYear.trim() ? Number(draft.birthYear.trim()) : null
         setMe(await createMyPlayer({ first: draft.first, last: draft.last, phone: draft.phone, birthYear: year, city: draft.city }))
         await load()
       } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
     }
+    // Πρώτα κοιτάμε αν το όνομα υπάρχει ήδη από παλιά δήλωση. Αν ναι, ρωτάμε· αλλιώς προχωράμε.
+    const create = async () => {
+      setBusy(true); setErr(null)
+      try {
+        const found = await fetchPlayerCandidates(draft.first, draft.last, year)
+        if (found.length) { setCands(found); setBusy(false); return }
+      } catch { /* η ταυτοποίηση είναι βοήθημα· αν πέσει, φτιάχνουμε κανονικά νέο προφίλ */ }
+      await makeNew()
+    }
+    const linkTo = async (id: string) => {
+      setBusy(true); setErr(null)
+      try {
+        setMe(await linkMyPlayer(id, { first: draft.first, last: draft.last, phone: draft.phone, birthYear: year, city: draft.city }))
+        await load()
+      } catch (e) { setErr((e as Error).message); setBusy(false) }
+    }
+
+    if (cands) return (
+      <section className="wrap pt-10">
+        <Crumb items={[{ label: t.account.mine }]} />
+        <Heading a="Μήπως" b="είσαι εσύ;" className="mt-4" as="h1" />
+        <div className="card mt-8 max-w-[640px] p-7">
+          <p className="text-[15px] text-dim">
+            Βρήκαμε {cands.length === 1 ? 'μία παλιά δήλωση' : `${cands.length} παλιές δηλώσεις`} με αυτό το όνομα.
+            Αν κάποια είναι δική σου, διάλεξέ τη και θα κρατήσεις το ιστορικό και τους βαθμούς σου.
+          </p>
+          <div className="mt-5 grid gap-2">
+            {cands.map(c => (
+              <button key={c.id} type="button" disabled={busy} onClick={() => linkTo(c.id)}
+                className="card flex items-center justify-between gap-4 px-4 py-3 text-left hover:border-orange/60 disabled:opacity-50">
+                <span>
+                  <b className="block text-[15px]">{c.first_name} {c.last_name}</b>
+                  <small className="text-[12px] text-dim">
+                    {[c.city, c.birth_year ? `γεν. ${c.birth_year}` : null,
+                      c.tournaments ? `${c.tournaments} ${c.tournaments === 1 ? 'διοργάνωση' : 'διοργανώσεις'}` : 'καμία συμμετοχή',
+                    ].filter(Boolean).join(' · ')}
+                  </small>
+                </span>
+                {c.strong && <span className="whitespace-nowrap rounded-full border border-orange/60 px-2 py-[2px] text-[10px] font-bold uppercase tracking-[.08em] text-orange">ίδιο έτος</span>}
+              </button>
+            ))}
+          </div>
+          {err && <div className="mt-3 text-[13px] text-red">{err}</div>}
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <button type="button" onClick={makeNew} disabled={busy}
+              className="pop rounded-full bg-orange px-5 py-[10px] text-[13px] font-bold uppercase tracking-[.06em] text-[#111] disabled:opacity-45">
+              Καμία από αυτές — νέο προφίλ
+            </button>
+            <button type="button" onClick={() => { setCands(null); setErr(null) }} disabled={busy}
+              className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Πίσω</button>
+          </div>
+        </div>
+      </section>
+    )
     return (
       <section className="wrap pt-10">
         <Crumb items={[{ label: t.account.mine }]} />

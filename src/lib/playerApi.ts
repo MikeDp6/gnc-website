@@ -47,6 +47,29 @@ export async function claimPlayer(): Promise<string | null> {
   return (data as { player_id: string | null })?.player_id ?? null
 }
 
+export interface PlayerCandidate {
+  id: string; first_name: string; last_name: string
+  city: string | null; birth_year: number | null
+  strong: boolean; tournaments: number
+}
+
+/** Παλιές, αδιεκδίκητες εγγραφές που ταιριάζουν στο όνομα — υποψήφιες, όχι βεβαιότητα. */
+export async function fetchPlayerCandidates(first: string, last: string, birthYear: number | null): Promise<PlayerCandidate[]> {
+  const { data, error } = await sb().rpc('player_candidates', { p_first: first, p_last: last, p_birth_year: birthYear })
+  if (error) throw new Error(error.message)
+  return (data as PlayerCandidate[]) ?? []
+}
+
+/** Σύνδεση του λογαριασμού με επιλεγμένη παλιά εγγραφή, ώστε να κρατήσει ιστορικό και βαθμούς. */
+export async function linkMyPlayer(id: string, p: { first: string; last: string; phone?: string; birthYear?: number | null; city?: string }) {
+  const { data, error } = await sb().rpc('link_my_player', {
+    p_player_id: id, p_first: p.first, p_last: p.last,
+    p_phone: p.phone ?? null, p_birth_year: p.birthYear ?? null, p_city: p.city ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return data as MyPlayer
+}
+
 export async function fetchMyPlayer(): Promise<MyPlayer | null> {
   const { data, error } = await sb().rpc('my_player')
   if (error) throw new Error(error.message)
