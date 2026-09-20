@@ -49,6 +49,7 @@ export function Me() {
   const [bioOk, setBioOk] = useState(false)
   const [pinOpen, setPinOpen] = useState(false)
   const [bioOpen, setBioOpen] = useState(false)
+  const [setupHidden, setSetupHidden] = useState(false)
   useEffect(() => { quick.bioSupported().then(setBioOk) }, [])
   const [pw, setPw] = useState('')
   useMeta(t.account.mine)
@@ -244,11 +245,41 @@ export function Me() {
       await reloadCrews(); say('Η ομάδα δημιουργήθηκε')
     } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
   }
+  // Οι παλιοί λογαριασμοί μπήκαν με σύνδεσμο email: δεν έχουν ούτε κωδικό ούτε PIN. Τους το ζητάμε
+  // μία φορά, εδώ, χωρίς να τους κλειδώνουμε έξω — μπορούν να το προσπεράσουν.
+  const hasPassword = !!(session?.user?.user_metadata as { has_password?: boolean } | undefined)?.has_password
+  const needsSetup = !isAdmin && !setupHidden && (!hasPassword || !quickOn)
+
   const totals = hist.reduce((a, h) => ({ t: a.t + 1, w: a.w + h.wins, l: a.l + h.losses, g: a.g + (h.place === 1 ? 1 : 0) }), { t: 0, w: 0, l: 0, g: 0 })
 
   return (
     <>
       <Crumb items={[{ label: t.account.mine }]} />
+      {needsSetup && (
+        <section className="wrap pt-6">
+          <div className="card flex flex-col gap-4 border-orange/50 bg-orange/[.06] p-5 md:flex-row md:items-center md:justify-between md:p-6">
+            <div>
+              <b className="block text-[15px]">Ολοκλήρωσε τη σύνδεσή σου</b>
+              <span className="text-[13px] text-dim">
+                {!hasPassword && !quickOn ? 'Όρισε κωδικό και 4ψήφιο PIN για να μπαίνεις χωρίς να περιμένεις email κάθε φορά.'
+                  : !hasPassword ? 'Όρισε κωδικό, για να μη χρειάζεσαι σύνδεσμο στο email.'
+                  : 'Όρισε 4ψήφιο PIN και μπαίνεις σε αυτή τη συσκευή με ένα άγγιγμα.'}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {!hasPassword && (
+                <button type="button" onClick={() => { setPwOpen(true); document.getElementById('gnc-account')?.scrollIntoView({ behavior: 'smooth' }) }}
+                  className="pop rounded-full bg-white px-4 py-2 text-[12px] font-bold uppercase tracking-[.06em] text-[#111]">Όρισε κωδικό</button>
+              )}
+              {!quickOn && (
+                <button type="button" onClick={() => { setPinOpen(true); document.getElementById('gnc-account')?.scrollIntoView({ behavior: 'smooth' }) }}
+                  className="pop rounded-full bg-orange px-4 py-2 text-[12px] font-bold uppercase tracking-[.06em] text-[#111]">Όρισε PIN</button>
+              )}
+              <button type="button" onClick={() => setSetupHidden(true)} className="text-[12px] text-mute hover:text-white">Αργότερα</button>
+            </div>
+          </div>
+        </section>
+      )}
       <section className="wrap pt-6">
         <div className="card grid gap-7 rounded-band p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:p-9">
           <div className="relative">
@@ -383,7 +414,7 @@ export function Me() {
         </div>
         <div className="flex flex-col gap-5">
           <RankPanel rank={rank} />
-          <div className="card h-fit p-6">
+          <div id="gnc-account" className="card h-fit scroll-mt-[100px] p-6">
           <h4 className="kicker mb-4">{t.account.details}</h4>
           <Field label={t.contact.name} value={me.first_name} onSave={v => save({ first: v })} disabled={busy} />
           <Field label={t.account.lastName} value={me.last_name} onSave={v => save({ last: v })} disabled={busy} />

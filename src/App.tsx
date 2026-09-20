@@ -12,6 +12,7 @@ const NewsList = lazy(() => import('@/pages/News').then(m => ({ default: m.NewsL
 const NewsArticle = lazy(() => import('@/pages/News').then(m => ({ default: m.NewsArticle })))
 const Rentals = lazy(() => import('@/pages/Rentals').then(m => ({ default: m.Rentals })))
 const Rankings = lazy(() => import('@/pages/Rankings').then(m => ({ default: m.Rankings })))
+const Newsletter = lazy(() => import('./pages/Newsletter').then(m => ({ default: m.Newsletter })))
 const Sponsors = lazy(() => import('@/pages/Sponsors').then(m => ({ default: m.Sponsors })))
 const Contact = lazy(() => import('@/pages/Contact').then(m => ({ default: m.Contact })))
 const Archive = lazy(() => import('@/pages/Archive').then(m => ({ default: m.Archive })))
@@ -76,6 +77,8 @@ export default function App() {
         <Route path="login" element={<PlayerLogin />} />
         <Route path="me" element={<Me />} />
         <Route path="join/:code" element={<Join />} />
+        <Route path="newsletter/confirm" element={<Newsletter mode="confirm" />} />
+        <Route path="newsletter/unsubscribe" element={<Newsletter mode="unsubscribe" />} />
         <Route path="contact" element={<Contact />} />
         <Route path="kanonismoi" element={<Rules />} />
         <Route path="about" element={<About />} />

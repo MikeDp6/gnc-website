@@ -7,24 +7,34 @@ import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
 import { PinPad } from '@/components/PinPad'
-import { bioSupported, clearQuick, hasBio, hasQuick, quickEmail, unlockWithBio, unlockWithPin } from '@/lib/quickAuth'
+import { bioSupported, clearQuick, enableBio, enrolPin, hasBio, hasQuick, quickEmail, unlockWithBio, unlockWithPin } from '@/lib/quickAuth'
 
 /** Player sign-in: a one-time link by email. No password to set, forget or leak. */
 export function Login() {
   const { t } = useI18n()
-  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset, signInWithTokenHash } = useAuth()
+  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset, signInWithTokenHash, signUp } = useAuth()
   // Αυτή η συσκευή έχει ήδη κλειδωμένη συνεδρία → μπες με PIN ή Face ID, χωρίς email
   const [quick, setQuick] = useState(hasQuick())
   const [bioOk, setBioOk] = useState(false)
   useEffect(() => { if (quick && hasBio()) bioSupported().then(setBioOk) }, [quick])
   const [email, setEmail] = useState('')
   const [state, setState] = useState<'' | 'busy' | 'sent' | 'reset'>('')
-  const [mode, setMode] = useState<'link' | 'password'>('link')
+  const [mode, setMode] = useState<'link' | 'password' | 'signup'>('link')
+  // Η εγγραφή δεν τελειώνει με τον κωδικό: ακολουθεί PIN και, όπου γίνεται, Face ID.
+  const [stage, setStage] = useState<'form' | 'pin' | 'bio'>('form')
+  const [newPin, setNewPin] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState<string | null>(null)
   useMeta(t.account.signIn)
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setState('busy'); setErr(null)
+    if (mode === 'signup') {
+      const r = await signUp(email, pw)
+      if (r.error) { setErr(r.error); setState('') }
+      else if (r.confirm) setState('sent')          // θέλει επιβεβαίωση· το PIN μπαίνει μετά, στο προφίλ
+      else { setState(''); setStage('pin') }
+      return
+    }
     const error = mode === 'link' ? await sendMagicLink(email) : await signIn(email, pw)
     if (error) { setErr(error); setState('') }
     else if (mode === 'link') setState('sent')
@@ -44,7 +54,8 @@ export function Login() {
   const byPin = async (pin: string) => { setState('busy'); setErr(null); await enter(await unlockWithPin(pin)) }
   const byBio = async () => { setState('busy'); setErr(null); await enter(await unlockWithBio()) }
 
-  if (session) return <Navigate to={isAdmin ? '/admin' : '/me'} replace />
+  // Μόλις η εγγραφή δημιουργήσει συνεδρία, η ανακατεύθυνση θα έκοβε τη ροή πριν μπει το PIN.
+  if (session && stage === 'form') return <Navigate to={isAdmin ? '/admin' : '/me'} replace />
   return (
     <section className="wrap grid gap-10 pt-10 lg:grid-cols-2">
       <div className="lg:order-2">
@@ -56,7 +67,38 @@ export function Login() {
         </ul>
       </div>
       <div className="card self-start rounded-band p-7 md:p-9 lg:order-1">
-        {quick ? (
+        {stage === 'pin' ? (
+          <div className="flex flex-col items-center">
+            <div className="disp text-[34px]">Ένα βήμα ακόμα</div>
+            <p className="mt-2 max-w-[360px] text-center text-[14px] text-dim">
+              Διάλεξε 4ψήφιο PIN. Από την επόμενη φορά μπαίνεις μ' αυτό, χωρίς email και χωρίς κωδικό.
+            </p>
+            <div className="mt-7 w-full"><PinPad busy={state === 'busy'} onDone={async pin => {
+              setState('busy'); setErr(null)
+              const e2 = await enrolPin(pin, email)
+              if (e2) { setErr(e2); setState(''); return }
+              setNewPin(pin); setState('')
+              setStage(await bioSupported() ? 'bio' : 'form')
+            }} /></div>
+            {err && <div className="mt-5 text-center text-[13px] text-red">{err}</div>}
+            <button type="button" onClick={() => setStage('form')} className="mt-7 text-[12px] text-mute hover:text-white">Όχι τώρα</button>
+          </div>
+        ) : stage === 'bio' ? (
+          <div className="flex flex-col items-center text-center">
+            <div className="disp text-[34px]">Και με Face ID;</div>
+            <p className="mt-2 max-w-[360px] text-[14px] text-dim">
+              Η συσκευή σου το υποστηρίζει. Μπορείς να μπαίνεις χωρίς να πληκτρολογείς τίποτα.
+            </p>
+            <Button variant="orange" className="mt-7 w-full rounded-full" onClick={async () => {
+              setState('busy'); setErr(null)
+              const e2 = await enableBio(email, newPin)
+              if (e2) setErr(e2); else setStage('form')
+              setState('')
+            }}>{state === 'busy' ? '…' : 'Ενεργοποίηση'}</Button>
+            {err && <div className="mt-4 text-[13px] text-red">{err}</div>}
+            <button type="button" onClick={() => setStage('form')} className="mt-5 text-[12px] text-mute hover:text-white">Άλλη φορά</button>
+          </div>
+        ) : quick ? (
           <div className="flex flex-col items-center">
             <div className="disp text-[38px]">Καλώς ήρθες</div>
             <p className="mt-2 text-center text-[14px] text-dim">{quickEmail()}</p>
@@ -92,28 +134,28 @@ export function Login() {
             <div className="disp text-[38px]">{t.account.signIn}</div>
 
             <div className="mt-5 inline-flex rounded-full border border-line p-1">
-              {(['link', 'password'] as const).map(m => (
+              {(['link', 'password', 'signup'] as const).map(m => (
                 <button key={m} type="button" onClick={() => { setMode(m); setErr(null) }}
                   className={'rounded-full px-4 py-[7px] text-[12px] font-bold uppercase tracking-[.06em] ' + (mode === m ? 'bg-white text-[#111]' : 'text-dim')}>
-                  {m === 'link' ? t.account.byLink : t.account.byPassword}
+                  {m === 'link' ? t.account.byLink : m === 'password' ? t.account.byPassword : 'Νέος'}
                 </button>
               ))}
             </div>
 
-            <p className="mt-4 text-[14px] text-dim">{mode === 'link' ? t.account.emailHelp : t.account.setPasswordHelp}</p>
+            <p className="mt-4 text-[14px] text-dim">{mode === 'link' ? t.account.emailHelp : mode === 'password' ? t.account.setPasswordHelp : 'Email, κωδικός και ένα 4ψήφιο PIN. Το PIN είναι που θα σε βάζει μέσα στο εξής.'}</p>
             {mode === 'link' && <p className="mt-2 text-[13px] text-mute">{t.account.noAccount}</p>}
 
             <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" autoComplete="email"
               className="mt-5 w-full rounded-full border border-white/20 bg-black/25 px-5 py-4 text-[15px] outline-none placeholder:text-mute focus:border-white/40" />
 
-            {mode === 'password' && (
-              <input type="password" required value={pw} onChange={e => setPw(e.target.value)} placeholder={t.account.password} autoComplete="current-password"
+            {mode !== 'link' && (
+              <input type="password" required value={pw} onChange={e => setPw(e.target.value)} placeholder={t.account.password} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 className="mt-3 w-full rounded-full border border-white/20 bg-black/25 px-5 py-4 text-[15px] outline-none placeholder:text-mute focus:border-white/40" />
             )}
 
             {err && <div className="mt-3 text-[13px] text-red">{err}</div>}
             <Button type="submit" variant="orange" className="mt-4 w-full rounded-full">
-              {state === 'busy' ? '…' : mode === 'link' ? t.account.send : t.account.signInCta}
+              {state === 'busy' ? '…' : mode === 'link' ? t.account.send : mode === 'signup' ? 'Δημιουργία λογαριασμού' : t.account.signInCta}
             </Button>
 
             {mode === 'password'

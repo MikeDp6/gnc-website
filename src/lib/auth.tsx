@@ -10,6 +10,8 @@ interface Auth {
   signIn: (email: string, password: string) => Promise<string | null>   // returns error message or null
   /** players sign in with a one-time link — nothing to forget, nothing to leak */
   sendMagicLink: (email: string, redirectTo?: string) => Promise<string | null>
+  /** Νέος λογαριασμός με email και κωδικό. Αν το Supabase ζητάει επιβεβαίωση, γυρνάει 'confirm'. */
+  signUp: (email: string, password: string) => Promise<{ error?: string; confirm?: boolean }>
   /** …or with a password, for whoever prefers one. Both work on the same account. */
   setPassword: (password: string) => Promise<string | null>
   sendPasswordReset: (email: string) => Promise<string | null>
@@ -17,7 +19,7 @@ interface Auth {
   signInWithTokenHash: (tokenHash: string) => Promise<string | null>
   signOut: () => Promise<void>
 }
-const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', setPassword: async () => 'no client', sendPasswordReset: async () => 'no client', signInWithTokenHash: async () => 'no client', signOut: async () => {} })
+const Ctx = createContext<Auth>({ session: null, isAdmin: false, loading: true, signIn: async () => 'no client', sendMagicLink: async () => 'no client', signUp: async () => ({ error: 'no client' }), setPassword: async () => 'no client', sendPasswordReset: async () => 'no client', signInWithTokenHash: async () => 'no client', signOut: async () => {} })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
@@ -58,10 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo: redirectTo ?? `${window.location.origin}/me` } })
       return error ? error.message : null
     },
+    signUp: async (email, password) => {
+      if (!supabase) return { error: 'Δεν έχει ρυθμιστεί το Supabase (.env.local).' }
+      if (password.length < 8) return { error: 'Ο κωδικός θέλει τουλάχιστον 8 χαρακτήρες.' }
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(), password,
+        options: { emailRedirectTo: `${window.location.origin}/me`, data: { has_password: true } },
+      })
+      if (error) return { error: error.message }
+      // χωρίς συνεδρία σημαίνει ότι το Supabase περιμένει επιβεβαίωση email πριν μπει ο χρήστης
+      return data.session ? {} : { confirm: true }
+    },
     setPassword: async password => {
       if (!supabase) return 'Δεν έχει ρυθμιστεί το Supabase (.env.local).'
       if (password.length < 8) return 'Ο κωδικός θέλει τουλάχιστον 8 χαρακτήρες.'
-      const { error } = await supabase.auth.updateUser({ password })
+      const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } })
       return error ? error.message : null
     },
     sendPasswordReset: async email => {
