@@ -156,6 +156,17 @@ function GroupsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sched
                 <Btn variant="ghost" className="py-1 text-[12px]" onClick={() => mutate(() => E.drawSerpentine(c))}>Κλήρωση</Btn>
               </div>
             </div>
+            <div className="mb-2 flex flex-wrap items-center gap-3 text-[12px]">
+              <label className={cn('flex items-center gap-2', !c.seeds?.some(x => x > 0) && 'opacity-45')}
+                title="Με σειρά δύναμης, οι κορυφαίες ομάδες μοιράζονται στους ομίλους με φιδάκι και δεν συναντιούνται πριν τα νοκ-άουτ.">
+                <input type="checkbox" disabled={!c.seeds?.some(x => x > 0)} checked={!!c.seeded}
+                  onChange={e => mutate(() => { c.seeded = e.target.checked; E.drawSerpentine(c) })} />
+                Κλήρωση με κατάταξη
+              </label>
+              {!c.seeds?.some(x => x > 0)
+                ? <span className="text-mute">Καμία ομάδα δεν έχει βαθμούς από προηγούμενες διοργανώσεις — η κλήρωση είναι τυχαία.</span>
+                : <span className="text-mute">Οι αριθμοί δίπλα στα ονόματα είναι βαθμοί κατάταξης των παικτών, από παλιότερα τουρνουά.</span>}
+            </div>
             {!sp.length && <div className="text-[13px] text-red">Δεν βγαίνει χωρισμός με {c.teams.length} ομάδες — συγχώνευσε κατηγορίες ή πρόσθεσε ομάδα.</div>}
             {c.split && <div className="mb-2 flex flex-wrap gap-4 text-[12px]">{[...new Set(c.split.sizes)].map(sz => <label key={sz} className="flex items-center gap-2 whitespace-nowrap">Όμιλοι των {sz}: <Select value={c.format[sz]} onChange={e => mutate(x => { c.format[sz] = e.target.value; E.clearOverridesOf(x, c) })} className="py-1" style={{ width: 'auto' }}>{E.FORMATS_BY_SIZE[sz].map(f => <option key={f} value={f}>{E.FORMATS[f].name} ({E.fmtMatches(f)} αγ.)</option>)}</Select></label>)}</div>}
             <div className="grid gap-2 sm:grid-cols-2">
@@ -163,7 +174,13 @@ function GroupsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sched
                 <div key={gi} className={cn('rounded-[10px] border border-line p-2', g.length !== c.split!.sizes[gi] && 'border-red')}
                   onDragOver={e => e.preventDefault()} onDrop={e => { const ti = +e.dataTransfer.getData('text/plain'); if (!isNaN(ti)) mutate(() => E.moveTeam(c, ti, gi)) }}>
                   <div className="mb-1 text-[11px] font-bold uppercase tracking-[.1em] text-dim">Όμιλος {E.GREEK[gi]} · {g.length}/{c.split!.sizes[gi]}</div>
-                  {g.map(ti => <div key={ti} draggable onDragStart={e => e.dataTransfer.setData('text/plain', String(ti))} className="cursor-grab rounded-md bg-white/5 px-2 py-1 text-[13px]">{c.teams[ti]}</div>)}
+                  {g.map(ti => (
+                    <div key={ti} draggable onDragStart={e => e.dataTransfer.setData('text/plain', String(ti))}
+                      className="flex cursor-grab items-center justify-between gap-2 rounded-md bg-white/5 px-2 py-1 text-[13px]">
+                      <span className="truncate">{c.teams[ti]}</span>
+                      {!!c.seeds?.[ti] && <b className="mono shrink-0 text-[11px] text-orange">{c.seeds[ti]}</b>}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

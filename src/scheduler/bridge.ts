@@ -15,17 +15,21 @@ const DAYNAMES = ['Κυρ', 'Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ', '�
 const dayLabel = (d: DbDay) => { const D = new Date(d.date + 'T00:00:00'); return `${DAYNAMES[D.getDay()]} ${D.getDate()}/${D.getMonth() + 1}` }
 
 /** Persisted scheduler state lives in tournaments.settings_json.scheduler (settings + per-category choices + overrides). */
-export interface SavedSched { settings?: Partial<E.Settings>; cats?: Record<string, { split?: number; format?: Record<number, string>; Q?: number | null; day?: number; dayTo?: number; koDay?: number; groups?: string[][] }>; overrides?: Record<string, E.Override>; order?: string[] }
+export interface SavedSched { settings?: Partial<E.Settings>; cats?: Record<string, { split?: number; format?: Record<number, string>; Q?: number | null; day?: number; dayTo?: number; koDay?: number; groups?: string[][]; seeded?: boolean }>; overrides?: Record<string, E.Override>; order?: string[] }
+
+export interface DbSeed { team_id: string; points: number }
 
 export async function loadInputs(tid: string) {
-  const [days, teams, tcs, cats, tour] = await Promise.all([
+  const [days, teams, tcs, cats, tour, seeds] = await Promise.all([
     run<DbDay[]>(sb().from('tournament_days').select('id,day_index,date,start_time,end_time,courts').eq('tournament_id', tid).order('day_index')),
     run<DbTeam[]>(sb().from('teams').select('id,category_id,name,status').eq('tournament_id', tid).eq('status', 'active').order('name')),
     run<DbTc[]>(sb().from('tournament_categories').select('category_id,format,qualifiers,sort_order').eq('tournament_id', tid).order('sort_order')),
     run<Array<{ id: string; label: string; color_key: string }>>(sb().from('categories').select('id,label,color_key')),
     run<{ settings_json: Record<string, unknown> }>(sb().from('tournaments').select('settings_json').eq('id', tid).single()),
+    // η όψη μπορεί να μην έχει τρέξει ακόμα· η κλήρωση απλώς πέφτει πίσω στην τυχαία σειρά
+    run<DbSeed[]>(sb().from('team_seed').select('team_id,points').eq('tournament_id', tid)).catch(() => [] as DbSeed[]),
   ])
-  return { days, teams, tcs, cats, saved: (tour.settings_json?.scheduler ?? null) as SavedSched | null }
+  return { days, teams, tcs, cats, seeds, saved: (tour.settings_json?.scheduler ?? null) as SavedSched | null }
 }
 
 const COLOR: Record<string, string> = { u11: '#0B57C7', u13: '#D86F0C', u15: '#1E7A4D', u18: '#8E24AA', o18: '#0097A7', o35: '#C91016' }
@@ -44,6 +48,9 @@ export function fromDb(inp: Awaited<ReturnType<typeof loadInputs>>): E.SchedStat
     const c = E.newCat(st, meta?.label ?? tc.category_id, tc.category_id)
     c.color = COLOR[meta?.color_key ?? ''] ?? undefined
     c.teams = teams.map(t => t.name); c.teamIds = teams.map(t => t.id)
+    const seedOf = new Map(inp.seeds.map(x => [x.team_id, x.points]))
+    c.seeds = teams.map(t => seedOf.get(t.id) ?? 0)
+    c.seeded = c.seeds.some(x => x > 0)      // χωρίς ιστορικό δεν υπάρχει τίποτα να σπείρεις
     const s = inp.saved?.cats?.[tc.category_id]
     if (s?.day != null && days[s.day]) c.day = days[s.day].id
     if (s?.dayTo != null && days[s.dayTo]) c.dayTo = days[s.dayTo].id
@@ -59,6 +66,7 @@ export function fromDb(inp: Awaited<ReturnType<typeof loadInputs>>): E.SchedStat
         const g = s.groups.map(ids => ids.map(id => byId.get(id)).filter((x): x is number => x != null))
         const all = g.flat(); if (all.length === c.teams.length && new Set(all).size === all.length) c.groups = g
       }
+      if (s?.seeded !== undefined) c.seeded = s.seeded
       c.Q = s?.Q !== undefined ? s.Q : (tc.qualifiers ?? null)
       if (c.Q && c.Q >= c.teams.length) c.Q = null   // KO of everyone is pointless; 2 teams = one match
     }
@@ -71,7 +79,7 @@ export function fromDb(inp: Awaited<ReturnType<typeof loadInputs>>): E.SchedStat
 export function toSaved(st: E.SchedState): SavedSched {
   const { days: _d, ...settings } = st.settings
   const cats: SavedSched['cats'] = {}
-  st.categories.forEach(c => { cats![c.id] = { split: c.splitIdx, format: c.format, Q: c.Q, day: E.dayIdx(st, c.day), dayTo: E.dayIdx(st, c.dayTo), koDay: E.dayIdx(st, c.koDay), groups: c.groups?.map(g => g.map(i => c.teamIds![i])) } })
+  st.categories.forEach(c => { cats![c.id] = { split: c.splitIdx, format: c.format, Q: c.Q, seeded: c.seeded, day: E.dayIdx(st, c.day), dayTo: E.dayIdx(st, c.dayTo), koDay: E.dayIdx(st, c.koDay), groups: c.groups?.map(g => g.map(i => c.teamIds![i])) } })
   return { settings, cats, overrides: st.overrides ?? {}, order: st.categories.map(c => c.id) }
 }
 export async function saveSched(tid: string, st: E.SchedState) {

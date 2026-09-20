@@ -60,6 +60,8 @@ export interface Settings {
 export interface Cat {
   id: string; name: string; teams: string[]; teamIds?: string[]; color?: string
   split: Split | null; splitIdx?: number; groups: number[][] | null; format: Record<number, string>; Q: number | null
+  seeds?: number[]        // βαθμοί κατάταξης ανά ομάδα, από προηγούμενες διοργανώσεις
+  seeded?: boolean        // αν η κλήρωση ακολουθεί τη δύναμη ή είναι τυχαία
   day: string; dayTo: string; koDay: string
 }
 export interface Override { d: number; t: number; c: number }
@@ -116,10 +118,17 @@ export function applySplit(st: SchedState, c: Cat, idx: number) {
   c.groups = sp.sizes.map(() => []); c.Q = null
   drawSerpentine(c)
 }
+/**
+ * Κλήρωση φιδάκι. Με βαθμούς κατάταξης, οι ομάδες μπαίνουν με σειρά δύναμης: ο 1ος στον όμιλο Α,
+ * ο 2ος στον Β, ο 3ος στον Γ, ο 4ος πάλι στον Γ και ανάποδα. Έτσι οι κορυφαίοι χωρίζονται και δεν
+ * συναντιούνται πριν τα νοκ-άουτ. Χωρίς βαθμούς — ή με ισοβαθμία — η σειρά είναι τυχαία, όπως πάντα.
+ */
 export function drawSerpentine(c: Cat) {
   if (!c.split) return
   const idx = c.teams.map((_, i) => i)
   for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]] }
+  // η τυχαία σειρά προηγείται, ώστε οι ισόβαθμες ομάδες να μην μπαίνουν πάντα αλφαβητικά
+  if (c.seeded && c.seeds) { const sd = c.seeds; idx.sort((x, y) => (sd[y] ?? 0) - (sd[x] ?? 0)) }
   const sizes = c.split.sizes; c.groups = sizes.map(() => [])
   let g = 0, dir = 1
   for (const t of idx) {
