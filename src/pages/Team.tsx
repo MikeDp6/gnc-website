@@ -26,7 +26,6 @@ export function Team() {
   const my = matches.filter(m => m.homeId === team.id || m.awayId === team.id)
   const next = my.find(m => m.status === 'live') ?? my.find(m => m.status === 'scheduled')
   const played = my.filter(m => m.status === 'final')
-  const wins = played.filter(m => (m.homeId === team.id ? (m.homeScore ?? 0) > (m.awayScore ?? 0) : (m.awayScore ?? 0) > (m.homeScore ?? 0))).length
   const group = groups.find(g => g.rows.some(r => r.teamId === team.id))
   const row = group?.rows.find(r => r.teamId === team.id)
   const pos = group ? group.rows.findIndex(r => r.teamId === team.id) + 1 : undefined
