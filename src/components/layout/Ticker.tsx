@@ -55,6 +55,8 @@ export function Ticker({ overlay = false }: { overlay?: boolean }) {
     // schedules that have gone up, for stops that have not started yet
     for (const x of tournaments) {
       if (x.id === running?.id || x.status === 'done' || x.status === 'registration') continue
+      // μια διοργάνωση που κρατάει το αναλυτικό πρόγραμμα εκτός site δεν το διαφημίζει κιόλας
+      if (x.schedulePublic === false) continue
       if (matches.some(m => m.tournamentId === x.id)) out.push({ tag: w.schedule, text: `${x.name} · ${w.posted}`, tone: 'blue' })
     }
 
