@@ -83,9 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) { clearQuick(); return 'Η αποθηκευμένη σύνδεση έληξε. Συνδέσου ξανά με email.' }
       return null
     },
-    // Με ενεργή γρήγορη είσοδο η αποσύνδεση είναι τοπική: το global signOut ακυρώνει το refresh token
-    // στον server, οπότε το PIN θα ξεκλείδωνε μια νεκρή συνεδρία. Το «Αφαίρεση» στο προφίλ το σβήνει.
-    signOut: async () => { await supabase?.auth.signOut(hasQuick() ? { scope: 'local' } : undefined) },
+    // Η αποσύνδεση ακυρώνει το refresh token στον server — ακόμη και με scope 'local'. Άρα ό,τι
+    // κλειδωμένο κρατούσε το PIN γίνεται άχρηστο· σβήνεται μαζί, αντί να σκάει στο επόμενο ξεκλείδωμα.
+    signOut: async () => { clearQuick(); await supabase?.auth.signOut() },
   }), [session, isAdmin, loading])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

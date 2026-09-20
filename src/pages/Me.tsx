@@ -39,6 +39,7 @@ export function Me() {
   const [crewDraft, setCrewDraft] = useState({ name: '', city: '', m1: '', m2: '', m3: '' })
   const [makingCrew, setMakingCrew] = useState(false)
   const [params] = useSearchParams()
+  const [loadFailed, setLoadFailed] = useState(false)
   const [pwOpen, setPwOpen] = useState(params.get('reset') === '1')
   // Γρήγορη είσοδος σε αυτή τη συσκευή: το PIN κλειδώνει τοπικά τη συνεδρία, δεν φεύγει ποτέ από εδώ
   const [quickOn, setQuickOn] = useState(quick.hasQuick())
@@ -51,6 +52,7 @@ export function Me() {
 
   const load = useCallback(async () => {
     try {
+      setLoadFailed(false)
       await claimPlayer()
       const p = await fetchMyPlayer()
       setMe(p)
@@ -62,11 +64,25 @@ export function Me() {
         ])
         setHist(h); setMyTeams(teams); setRank(r); setCrews(cr)
       }
-    } catch (e) { setErr((e as Error).message); setMe(null) }
+    } catch (e) {
+      // Ένα σφάλμα φόρτωσης ΔΕΝ σημαίνει «δεν έχει προφίλ». Το να δείχναμε τότε τη φόρμα δημιουργίας
+      // τρόμαζε τον χρήστη ότι χάθηκαν τα στοιχεία του, ενώ απλώς δεν διαβάστηκαν.
+      setErr((e as Error).message); setLoadFailed(true)
+    }
   }, [])
   useEffect(() => { if (session) load() }, [session, load])
 
   if (!authLoading && !session) return <Navigate to="/login" replace />
+  if (loadFailed) return (
+    <div className="wrap py-[120px]">
+      <div className="card max-w-[520px] p-7">
+        <div className="disp text-[30px]">Δεν φορτώθηκε το προφίλ σου</div>
+        <p className="mt-3 text-[15px] text-dim">Τα στοιχεία σου είναι στη θέση τους — απλώς δεν καταφέραμε να τα διαβάσουμε τώρα.</p>
+        {err && <p className="mt-2 text-[13px] text-red">{err}</p>}
+        <button type="button" onClick={() => { setErr(null); load() }} className="mt-6 text-[13px] font-bold uppercase tracking-[.08em] text-orange">Δοκίμασε ξανά →</button>
+      </div>
+    </div>
+  )
   if (me === undefined) return <div className="wrap py-[120px] text-dim">{t.loading}</div>
 
   const say = (m: string) => { setMsg(m); setTimeout(() => setMsg(null), 2500) }
@@ -361,7 +377,7 @@ export function Me() {
               </div>
             ) : quickOn ? (
               <>
-                <p className="mt-1 text-[12px] text-dim">Την επόμενη φορά μπαίνεις με το PIN σου{bioOn ? ' ή με Face ID' : ''}, χωρίς email.</p>
+                <p className="mt-1 text-[12px] text-dim">Την επόμενη φορά μπαίνεις με το PIN σου{bioOn ? ' ή με Face ID' : ''}, χωρίς email. Η αποσύνδεση το αφαιρεί από τη συσκευή.</p>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
                   <button type="button" onClick={() => setPinOpen(true)} className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">Αλλαγή PIN</button>
                   {bioOk && (bioOn
