@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
 import { useI18n } from '@/i18n'
@@ -6,11 +6,17 @@ import { useMeta } from '@/lib/meta'
 import { Heading } from '@/components/ui/Heading'
 import { Crumb } from '@/components/ui/Crumb'
 import { Button } from '@/components/ui/Button'
+import { PinPad } from '@/components/PinPad'
+import { bioSupported, clearQuick, hasBio, hasQuick, quickEmail, unlockWithBio, unlockWithPin } from '@/lib/quickAuth'
 
 /** Player sign-in: a one-time link by email. No password to set, forget or leak. */
 export function Login() {
   const { t } = useI18n()
-  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset } = useAuth()
+  const { session, isAdmin, sendMagicLink, signIn, sendPasswordReset, signInWithTokens } = useAuth()
+  // Αυτή η συσκευή έχει ήδη κλειδωμένη συνεδρία → μπες με PIN ή Face ID, χωρίς email
+  const [quick, setQuick] = useState(hasQuick())
+  const [bioOk, setBioOk] = useState(false)
+  useEffect(() => { if (quick && hasBio()) bioSupported().then(setBioOk) }, [quick])
   const [email, setEmail] = useState('')
   const [state, setState] = useState<'' | 'busy' | 'sent' | 'reset'>('')
   const [mode, setMode] = useState<'link' | 'password'>('link')
@@ -30,6 +36,14 @@ export function Login() {
     const error = await sendPasswordReset(email)
     if (error) { setErr(error); setState('') } else setState('reset')
   }
+  const enter = async (r: { tokens?: import('@/lib/quickAuth').QuickTokens; error?: string }) => {
+    if (r.error || !r.tokens) { setErr(r.error ?? 'Κάτι πήγε στραβά.'); setState(''); if (!hasQuick()) setQuick(false); return }
+    const error = await signInWithTokens(r.tokens)
+    if (error) { setErr(error); setState(''); setQuick(hasQuick()) }
+  }
+  const byPin = async (pin: string) => { setState('busy'); setErr(null); await enter(await unlockWithPin(pin)) }
+  const byBio = async () => { setState('busy'); setErr(null); await enter(await unlockWithBio()) }
+
   if (session) return <Navigate to={isAdmin ? '/admin' : '/me'} replace />
   return (
     <section className="wrap grid gap-10 pt-10 lg:grid-cols-2">
@@ -42,7 +56,26 @@ export function Login() {
         </ul>
       </div>
       <div className="card self-start rounded-band p-7 md:p-9 lg:order-1">
-        {state === 'sent' ? (
+        {quick ? (
+          <div className="flex flex-col items-center">
+            <div className="disp text-[38px]">Καλώς ήρθες</div>
+            <p className="mt-2 text-center text-[14px] text-dim">{quickEmail()}</p>
+            <div className="mt-8 w-full">
+              <PinPad onDone={byPin} busy={state === 'busy'} label="Βάλε το PIN σου" />
+            </div>
+            {bioOk && (
+              <button type="button" onClick={byBio} disabled={state === 'busy'}
+                className="mt-7 flex items-center gap-2 text-[13px] font-bold uppercase tracking-[.08em] text-orange disabled:opacity-50">
+                <span aria-hidden className="text-[18px]">☺</span> Face ID / δακτυλικό
+              </button>
+            )}
+            {err && <div className="mt-5 text-center text-[13px] text-red">{err}</div>}
+            <button type="button" onClick={() => { setQuick(false); setErr(null); setState('') }}
+              className="mt-7 text-[12px] text-mute hover:text-white">Σύνδεση με άλλο τρόπο</button>
+            <button type="button" onClick={() => { clearQuick(); setQuick(false); setErr(null) }}
+              className="mt-2 text-[12px] text-mute hover:text-white">Δεν είμαι εγώ — σβήσε το PIN από τη συσκευή</button>
+          </div>
+        ) : state === 'sent' ? (
           <>
             <div className="disp text-[38px] text-orange">{t.account.checkMail}</div>
             <p className="mt-3 text-[15px] text-dim">{t.account.sentTo} <b className="text-white">{email}</b>. {t.account.sentHelp}</p>

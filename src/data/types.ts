@@ -102,6 +102,15 @@ export interface Tournament {
   categoryIds: string[]
   cover?: string
   poster?: string          // κατακόρυφη αφίσα της διοργάνωσης
+  arrivals?: ArrivalsPublic // δημοσιευμένες ώρες προσέλευσης (ανεξάρτητα από το πρόγραμμα)
+}
+
+/** Snapshot published by the admin: when each category shows up, plus whatever knockout is decided. */
+export interface ArrivalsPublic {
+  at: string
+  lead: number
+  rows: Array<{ day: number; dayLabel: string; categoryId: string; category: string; color: string; first: string; arrive: string; phase: 'group' | 'ko' }>
+  ko: Array<{ categoryId: string; category: string; color: string; day: number; dayLabel: string; time: string; court: number; label: string; home: string; away: string }>
 }
 
 export interface Stop {

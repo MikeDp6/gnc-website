@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
+import { PinPad } from '@/components/PinPad'
+import * as quick from '@/lib/quickAuth'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 import { useMeta } from '@/lib/meta'
@@ -22,7 +24,7 @@ import type { Crew, MyPlayer, MyTeam, PlayerHistoryRow, PlayerRank2 } from '@/da
 /** The signed-in player's own page: photo, details, visibility, and their games in the running tournament. */
 export function Me() {
   const { t } = useI18n()
-  const { session, loading: authLoading, signOut, setPassword } = useAuth()
+  const { session, isAdmin, loading: authLoading, signOut, setPassword } = useAuth()
   const { matches, teams, tournaments } = useData()
   const [me, setMe] = useState<MyPlayer | null | undefined>(undefined)   // undefined = loading, null = no profile
   const [hist, setHist] = useState<PlayerHistoryRow[]>([])
@@ -38,6 +40,12 @@ export function Me() {
   const [makingCrew, setMakingCrew] = useState(false)
   const [params] = useSearchParams()
   const [pwOpen, setPwOpen] = useState(params.get('reset') === '1')
+  // Γρήγορη είσοδος σε αυτή τη συσκευή: το PIN κλειδώνει τοπικά τη συνεδρία, δεν φεύγει ποτέ από εδώ
+  const [quickOn, setQuickOn] = useState(quick.hasQuick())
+  const [bioOn, setBioOn] = useState(quick.hasBio())
+  const [bioOk, setBioOk] = useState(false)
+  const [pinOpen, setPinOpen] = useState(false)
+  useEffect(() => { quick.bioSupported().then(setBioOk) }, [])
   const [pw, setPw] = useState('')
   useMeta(t.account.mine)
 
@@ -331,6 +339,47 @@ export function Me() {
               </div>
             ) : (
               <button type="button" onClick={() => setPwOpen(true)} className="text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.account.setPassword} →</button>
+            )}
+          </div>
+          <div className="border-t border-line py-4">
+            <div className="text-[13px] font-bold">Γρήγορη είσοδος σε αυτή τη συσκευή</div>
+            {isAdmin ? (
+              <p className="mt-1 text-[12px] text-dim">Δεν είναι διαθέσιμη σε λογαριασμούς διαχείρισης. Ο λογαριασμός σου ελέγχει σκορ και προγράμματα διοργανώσεων, οπότε μπαίνει πάντα με email ή κωδικό.</p>
+            ) : !quick.quickSupported() ? (
+              <p className="mt-1 text-[12px] text-dim">Αυτός ο browser δεν την υποστηρίζει.</p>
+            ) : pinOpen ? (
+              <div className="mt-4">
+                <PinPad busy={busy} label="Διάλεξε 4ψήφιο PIN"
+                  onDone={async pin => {
+                    setBusy(true); setErr(null)
+                    const t2 = session ? { access_token: session.access_token, refresh_token: session.refresh_token } : null
+                    const e2 = t2 ? await quick.enrolPin(pin, me.email ?? '', t2) : 'Δεν υπάρχει ενεργή συνεδρία.'
+                    if (e2) setErr(e2); else { setQuickOn(true); setPinOpen(false); say('Το PIN αποθηκεύτηκε σε αυτή τη συσκευή') }
+                    setBusy(false)
+                  }} />
+                <button type="button" onClick={() => setPinOpen(false)} className="mt-4 text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Άκυρο</button>
+              </div>
+            ) : quickOn ? (
+              <>
+                <p className="mt-1 text-[12px] text-dim">Την επόμενη φορά μπαίνεις με το PIN σου{bioOn ? ' ή με Face ID' : ''}, χωρίς email.</p>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <button type="button" onClick={() => setPinOpen(true)} className="text-[12px] font-bold uppercase tracking-[.08em] text-orange">Αλλαγή PIN</button>
+                  {bioOk && (bioOn
+                    ? <button type="button" onClick={() => { quick.disableBio(); setBioOn(false); say('Το Face ID απενεργοποιήθηκε') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Απενεργοποίηση Face ID</button>
+                    : <button type="button" disabled={busy} onClick={async () => {
+                        setBusy(true); setErr(null)
+                        const e2 = await quick.enableBio(me.email ?? '')
+                        if (e2) setErr(e2); else { setBioOn(true); say('Το Face ID ενεργοποιήθηκε') }
+                        setBusy(false)
+                      }} className="text-[12px] font-bold uppercase tracking-[.08em] text-orange disabled:opacity-50">Ενεργοποίηση Face ID / δακτυλικού</button>)}
+                  <button type="button" onClick={() => { quick.clearQuick(); setQuickOn(false); setBioOn(false); say('Η γρήγορη είσοδος αφαιρέθηκε') }} className="text-[12px] font-bold uppercase tracking-[.08em] text-dim hover:text-white">Αφαίρεση</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-[12px] text-dim">Όρισε 4ψήφιο PIN και μπαίνεις χωρίς email. Το PIN μένει μόνο σε αυτή τη συσκευή — πέντε λάθος προσπάθειες το σβήνουν.</p>
+                <button type="button" onClick={() => setPinOpen(true)} className="mt-3 text-[13px] font-bold uppercase tracking-[.08em] text-orange">Όρισε PIN →</button>
+              </>
             )}
           </div>
           <label className="flex items-start gap-3 border-t border-line py-4 text-[13px]">

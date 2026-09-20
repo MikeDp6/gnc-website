@@ -18,7 +18,7 @@ function dateRange(a: string, b: string) {
 
 // ---- row types (only the columns we read) ----
 type CatRow = { id: string; label: string; short: string; color_key: CategoryKey; sort_order: number }
-type TourRow = { id: string; slug: string; name: string; city_id: string | null; venue: string | null; address: string | null; starts_on: string; ends_on: string; courts: number; status: string; cover_url: string | null; poster_url: string | null; registration_deadline: string | null }
+type TourRow = { id: string; slug: string; name: string; city_id: string | null; venue: string | null; address: string | null; starts_on: string; ends_on: string; courts: number; status: string; cover_url: string | null; poster_url: string | null; registration_deadline: string | null; arrivals_json: Tournament['arrivals'] | null }
 type DayRow = { id: string; tournament_id: string; day_index: number; date: string; start_time: string }
 type TCRow = { tournament_id: string; category_id: string; qualifiers: number | null; sort_order: number }
 type TeamRow = { id: string; tournament_id: string; category_id: string; name: string; city: string | null; captain_id: string | null; status: string; checked_in_at: string | null }
@@ -56,7 +56,7 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const [cats, tours, days, tcs, cities, ticker, sponsors, winners] = await Promise.all([
     q<CatRow[]>(sb.from('categories').select('id,label,short,color_key,sort_order').order('sort_order')),
-    q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,poster_url,registration_deadline').order('starts_on')),
+    q<TourRow[]>(sb.from('tournaments').select('id,slug,name,city_id,venue,address,starts_on,ends_on,courts,status,cover_url,poster_url,registration_deadline,arrivals_json').order('starts_on')),
     q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').order('day_index')),
     q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order')),
     orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years,partners').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
@@ -103,6 +103,7 @@ export async function fetchBundle(): Promise<Bundle> {
       courts: t.courts, status: t.status === 'done' || t.status === 'archived' ? 'done' : t.status === 'live' ? 'live' : t.status === 'registration' ? 'registration' : 'upcoming',
       teamsCount: teams.filter(x => x.tournament_id === t.id).length,
       categoryIds: tcats.map(x => x.category_id), cover: t.cover_url ?? '/img/gnc/hero-gnc-sunset.jpg', poster: t.poster_url ?? undefined,
+      arrivals: t.arrivals_json ?? undefined,
     }
   })
 

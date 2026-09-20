@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as E from '@/scheduler/engine'
-import { fromDb, loadInputs, publish, saveSched } from '@/scheduler/bridge'
+import { buildArrivals, fromDb, loadInputs, publish, publishArrivals, saveSched } from '@/scheduler/bridge'
+import * as api from '@/lib/adminApi'
 import { Btn, Select, Toast } from '../ui'
 import { cn } from '@/lib/cn'
 
@@ -18,6 +19,23 @@ export function Scheduler({ tid }: { tid: string }) {
 
   useEffect(() => { loadInputs(tid).then(i => setSt(fromDb(i))).catch(e => say(e.message)) }, [tid, say])
 
+  // Names of the teams the published schedule has already decided, keyed by match code. The engine
+  // plans with placeholders ("Σ1"), so this is the only way the preview can show who actually plays.
+  const [resolved, setResolved] = useState<Map<string, { home: string; away: string }>>(new Map())
+  const loadResolved = useCallback(async () => {
+    try {
+      const [ms, tms] = await Promise.all([api.listMatches(tid), api.listTeams(tid)])
+      const nameOf = (id: string | null) => tms.find(t => t.id === id)?.name
+      const m = new Map<string, { home: string; away: string }>()
+      for (const x of ms as Array<api.MatchRowA & { code?: string | null }>) {
+        const h = nameOf(x.home_team_id), a = nameOf(x.away_team_id)
+        if (x.code && h && a) m.set(x.code, { home: h, away: a })
+      }
+      setResolved(m)
+    } catch { /* the preview simply keeps its placeholders */ }
+  }, [tid])
+  useEffect(() => { loadResolved() }, [loadResolved])
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const res = useMemo(() => st ? E.schedule(st) : null, [st, tick])
 
@@ -29,9 +47,31 @@ export function Scheduler({ tid }: { tid: string }) {
   const doPublish = async () => {
     if (!res) return
     if (res.all.unscheduled.length) return say('Υπάρχουν αγώνες εκτός προγράμματος — δεν δημοσιεύεται')
-    if (!confirm('Θα αντικατασταθούν όμιλοι και αγώνες της διοργάνωσης. Τα σκορ κρατιούνται όπου το ζευγάρι παραμένει ίδιο· όπου άλλαξε ο αντίπαλος χάνονται. Συνέχεια;')) return
+    if (!confirm('Θα αντικατασταθούν όμιλοι και αγώνες της διοργάνωσης. Οι κατηγορίες που δεν πείραξες κρατούν όλα τους τα σκορ. Σε κατηγορία που ξανακληρώνεται χάνονται όσα σκορ δεν αντιστοιχούν πια σε αγώνα. Συνέχεια;')) return
     setBusy(true)
-    try { await saveSched(tid, st); const r = await publish(tid, st, res.all); say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες` + (r.restored || r.lost ? ` · ${r.restored} σκορ διατηρήθηκαν${r.lost ? `, ${r.lost} χάθηκαν` : ''}` : '')) } catch (e) { say((e as Error).message) }
+    try { await saveSched(tid, st); const r = await publish(tid, st, res.all); await loadResolved(); say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες` + (r.restored || r.lost ? ` · ${r.restored} σκορ διατηρήθηκαν${r.lost ? `, ${r.lost} χάθηκαν` : ''}` : '')) } catch (e) { say((e as Error).message) }
+    setBusy(false)
+  }
+  // Published on their own, so a tournament can announce only the arrival times and keep the
+  // full schedule off the site. Needs no match rows — it snapshots whatever the engine planned.
+  const doArrivals = async () => {
+    if (!res) return
+    const raw = prompt('Πόσα λεπτά πριν τον πρώτο αγώνα της κατηγορίας;', '20')
+    if (raw == null) return
+    const lead = Math.max(0, Math.round(+raw))
+    if (!Number.isFinite(lead)) return say('Βάλε αριθμό λεπτών')
+    setBusy(true)
+    try {
+      const a = buildArrivals(st, res.all, lead, resolved)
+      await publishArrivals(tid, a)
+      say(`Δημοσιεύτηκαν ${a.rows.length} ώρες προσέλευσης` + (a.ko.length ? ` και ${a.ko.length} ζευγάρια νοκ-άουτ` : ''))
+    } catch (e) { say((e as Error).message) }
+    setBusy(false)
+  }
+  const hideArrivals = async () => {
+    if (!confirm('Να κατέβουν οι ώρες προσέλευσης από τη σελίδα;')) return
+    setBusy(true)
+    try { await publishArrivals(tid, null); say('Οι ώρες προσέλευσης κατέβηκαν') } catch (e) { say((e as Error).message) }
     setBusy(false)
   }
 
@@ -42,12 +82,14 @@ export function Scheduler({ tid }: { tid: string }) {
         <div className="flex items-center gap-3 text-[13px]">
           <span className={cn('mono', req.sum > cap && 'text-red')}>{req.sum}{req.complete ? '' : '+'} αγώνες / {cap} θέσεις</span>
           <Btn variant="ghost" onClick={save} disabled={busy}>Αποθήκευση ρυθμίσεων</Btn>
+          <Btn variant="ghost" onClick={doArrivals} disabled={busy || !res}>Δημοσίευση ωρών προσέλευσης</Btn>
+          <button onClick={hideArrivals} disabled={busy} title="Κατεβάζει τις ώρες προσέλευσης από τη δημόσια σελίδα" className="text-[12px] text-mute hover:text-white disabled:opacity-50">κατέβασμα</button>
           <Btn variant="orange" onClick={doPublish} disabled={busy || !res || !!res.all.unscheduled.length}>Δημοσίευση προγράμματος</Btn>
         </div>
       </div>
       {tab === 'Ρυθμίσεις' && <SettingsPane st={st} mutate={mutate} />}
       {tab === 'Όμιλοι' && <GroupsPane st={st} mutate={mutate} />}
-      {tab === 'Πρόγραμμα' && res && <SchedPane st={st} res={res} mutate={mutate} />}
+      {tab === 'Πρόγραμμα' && res && <SchedPane st={st} res={res} mutate={mutate} resolved={resolved} />}
       <Toast msg={toast} />
     </>
   )
@@ -134,7 +176,7 @@ function GroupsPane({ st, mutate }: { st: E.SchedState; mutate: (fn: (s: E.Sched
 }
 
 // ---------- Πρόγραμμα ----------
-function SchedPane({ st, res, mutate }: { st: E.SchedState; res: ReturnType<typeof E.schedule>; mutate: (fn: (s: E.SchedState) => void) => void }) {
+function SchedPane({ st, res, mutate, resolved }: { st: E.SchedState; res: ReturnType<typeof E.schedule>; mutate: (fn: (s: E.SchedState) => void) => void; resolved: Map<string, { home: string; away: string }> }) {
   const [sel, setSel] = useState<string | null>(null)
   const { all, warnings } = res
   const drop = (key: string, d: number, t: number, c: number) => mutate(x => E.moveMatch(x, key, d, t, c))
@@ -165,12 +207,17 @@ function SchedPane({ st, res, mutate }: { st: E.SchedState; res: ReturnType<type
                           <td key={c} className={cn('h-[44px] px-1 py-[2px] align-top', !m && 'bg-white/[.02]')}
                             onDragOver={e => e.preventDefault()} onDrop={e => { const k = e.dataTransfer.getData('text/plain'); if (k) drop(k, di, t, c) }}
                             onClick={() => { if (sel && sel !== key) { drop(sel, di, t, c); setSel(null) } }}>
-                            {m && (() => { const l = E.matchLabel(st, m); return (
+                            {m && (() => {
+                              const l = E.matchLabel(st, m)
+                              // once the published schedule knows who plays, show the names instead of «Σ1 – Σ4»
+                              const r = resolved.get(key!)
+                              const main = r ? (m.ko ? (m.label ?? '') + ': ' : '') + r.home + ' – ' + r.away : l.main
+                              return (
                               <div draggable onDragStart={e => e.dataTransfer.setData('text/plain', key!)} onClick={e => { e.stopPropagation(); setSel(sel === key ? null : key) }}
                                 className={cn('cursor-grab rounded-md border-l-[4px] bg-white/5 px-2 py-1', sel === key && 'ring-2 ring-orange', m.bad && 'bg-red/20', st.overrides?.[key!] && 'border-dashed border-t border-r border-b border-white/30')}
                                 style={{ borderLeftColor: E.catColor(st, m.cat) }}>
                                 <div className="text-[10px] uppercase tracking-[.06em] text-dim">{l.top}{m.b2b ? ' ⚡' : ''}</div>
-                                <div className="font-semibold">{l.main}</div>
+                                <div className="font-semibold">{main}</div>
                               </div>) })()}
                           </td>)
                       })}

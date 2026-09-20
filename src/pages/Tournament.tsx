@@ -19,8 +19,8 @@ import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { NotFound } from './NotFound'
 import { PrintSchedule } from '@/components/PrintSchedule'
 
-type TabKey = 'schedule' | 'groups' | 'ko' | 'teams' | 'photos' | 'info'
-const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'teams', 'photos', 'info']
+type TabKey = 'schedule' | 'groups' | 'ko' | 'arrivals' | 'teams' | 'photos' | 'info'
+const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'arrivals', 'teams', 'photos', 'info']
 
 export function Tournament() {
   const { slug = '' } = useParams()
@@ -59,7 +59,16 @@ export function Tournament() {
   // knockout per category (every category that has one)
   const koByCat = cats.map(c => ({ c, ms: all.filter(m => m.categoryId === c.id && m.phase !== 'group') })).filter(x => x.ms.length)
   const gallery = photos.filter(p => p.tournamentId === tour.id)
-  const TAB_KEYS = ALL_KEYS.filter(k => k !== 'photos' || gallery.length > 0)
+  const arr = tour.arrivals
+  // Arrival times are published separately, so a tournament can announce only those: when there is
+  // no schedule online, the schedule/groups/knockout tabs have nothing to show and step aside.
+  const hasSchedule = all.length > 0
+  const TAB_KEYS = ALL_KEYS.filter(k =>
+    (k !== 'photos' || gallery.length > 0) &&
+    (k !== 'arrivals' || !!arr) &&
+    (!['schedule', 'groups', 'ko'].includes(k) || hasSchedule))
+  // a tab that is not offered (no schedule online, say) falls back to the first one that is
+  const view: TabKey = TAB_KEYS.includes(tab) ? tab : (TAB_KEYS[0] ?? 'info')
   const tabLabels = TAB_KEYS.map(k => t.tour.tabs[k])
   const tabOf = (label: string) => TAB_KEYS[tabLabels.indexOf(label)] ?? 'schedule'
 
@@ -71,10 +80,10 @@ export function Tournament() {
         sub={t.tour.sub(tour.days.join(' & '), tour.courts, tour.categoryIds.length)}
         actions={tour.status === 'registration' ? <Button variant="orange" to="/register">{t.hero.cta1} →</Button> : undefined}
         stats={[{ v: tour.teamsCount, l: t.status.teams }, { v: tour.categoryIds.length, l: t.status.cats }, { v: all.length, l: t.team.matches }, { v: tour.courts, l: t.status.courts }]} />
-      <SubTabs tabs={tabLabels} active={t.tour.tabs[tab]} onChange={l => setTab(tabOf(l))} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
+      <SubTabs tabs={tabLabels} active={t.tour.tabs[view]} onChange={l => setTab(tabOf(l))} right={<Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button>} />
       <PrintSchedule tour={tour} />
 
-      {tab === 'schedule' && (
+      {view === 'schedule' && (
         <section className="wrap pt-[50px]">
           {/* filters stay in view while you scroll the day (glass bar under the nav) */}
           <div className="glass z-20 mb-[22px] flex flex-col gap-3 rounded-[24px] px-4 py-3 md:sticky md:top-[86px] md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-y-2 md:rounded-[34px] md:px-5 md:py-[10px]">
@@ -96,7 +105,7 @@ export function Tournament() {
         </section>
       )}
 
-      {tab === 'groups' && (
+      {view === 'groups' && (
         <section className="wrap pt-[70px]">
           <div className="mb-[26px] flex flex-wrap items-end justify-between gap-4">
             <Heading a={t.tour.tabs.groups} b={t.tour.groupsBy} size="md" />
@@ -112,7 +121,7 @@ export function Tournament() {
         </section>
       )}
 
-      {tab === 'ko' && (
+      {view === 'ko' && (
         <section className="wrap pt-[70px]">
           {koByCat.length ? koByCat.map(({ c, ms }, i) => (
             <Reveal key={c.id} className={i > 0 ? 'mt-14' : ''}>
@@ -123,7 +132,46 @@ export function Tournament() {
         </section>
       )}
 
-      {tab === 'teams' && (
+      {view === 'arrivals' && arr && (
+        <section className="wrap pt-[70px]">
+          <Heading a={t.tour.tabs.arrivals} b={t.tour.arrivalsLead(arr.lead)} size="md" className="mb-[26px]" />
+          {[...new Set(arr.rows.map(r => r.day))].map(dn => (
+            <Reveal key={dn} className="mb-10">
+              <div className="kicker mb-3 text-white">{arr.rows.find(r => r.day === dn)!.dayLabel}</div>
+              <div className="grid gap-2">
+                {arr.rows.filter(r => r.day === dn).map(r => (
+                  <div key={r.categoryId} className="card grid grid-cols-[1fr_auto] items-center gap-3 border-l-[3px] px-4 py-3 md:grid-cols-[1fr_140px_140px] md:px-5" style={{ borderLeftColor: r.color }}>
+                    <div className="font-semibold">{r.category}</div>
+                    <div className="text-right md:text-left">
+                      <div className="disp text-[28px] leading-none text-orange">{r.arrive}</div>
+                      <small className="text-[11px] uppercase tracking-[.08em] text-dim">{t.tour.arriveAt}</small>
+                    </div>
+                    <div className="col-span-2 border-t border-line pt-2 text-[13px] text-dim md:col-span-1 md:border-0 md:pt-0 md:text-right">
+                      {t.tour.firstGame} <b className="mono text-white">{r.first}</b> · {r.phase === 'ko' ? t.tour.koPhase : t.tour.groupPhase}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          ))}
+          {arr.ko.length > 0 && (
+            <Reveal className="mt-14">
+              <Heading a={t.tour.qualified} b={String(arr.ko.length)} size="md" className="mb-[22px]" />
+              <div className="grid gap-2">
+                {arr.ko.map((k, i) => (
+                  <div key={i} className="card grid grid-cols-[64px_1fr] items-center gap-3 border-l-[3px] px-4 py-3 md:grid-cols-[100px_170px_1fr] md:px-5" style={{ borderLeftColor: k.color }}>
+                    <div className="mono text-[13px] font-bold text-white">{k.time}<small className="block text-[10px] font-normal uppercase tracking-[.08em] text-dim">{k.dayLabel} · {t.misc.courtShort}{k.court}</small></div>
+                    <div className="hidden text-[11px] font-extrabold uppercase tracking-[.1em] md:block" style={{ color: k.color }}>{k.category} · {k.label}</div>
+                    <div className="font-semibold">{k.home} <span className="text-mute">–</span> {k.away}</div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          )}
+        </section>
+      )}
+
+      {view === 'teams' && (
         <section className="wrap pt-[70px]">
           <Heading a={t.tour.tabs.teams} b={`${teams.filter(x => x.tournamentId === tour.id).length || tour.teamsCount}`} size="md" className="mb-[26px]" />
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -141,7 +189,7 @@ export function Tournament() {
         </section>
       )}
 
-      {tab === 'photos' && (
+      {view === 'photos' && (
         <section className="wrap pt-[70px]">
           <Heading a={t.tour.tabs.photos} b={String(gallery.length)} size="md" className="mb-[26px]" />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -161,7 +209,7 @@ export function Tournament() {
         </section>
       )}
 
-      {tab === 'info' && (
+      {view === 'info' && (
         <section className="wrap grid gap-5 pt-[70px] lg:grid-cols-[2fr_1fr]">
           <div className="card p-6">
             <h4 className="kicker mb-[14px]">{t.tour.info}</h4>

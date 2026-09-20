@@ -83,6 +83,10 @@ export const bracketPair = E.bracketPair
 
 interface PrevMatch { code: string | null; category_id: string; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null; status: string }
 
+/** The draw of a category, as a string: groups in order, each listing its teams in seed order.
+ *  Identical strings mean every fixture of that category is literally the same match as before. */
+const drawKey = (groups: string[][]) => groups.map(g => g.join(',')).join(' | ')
+
 /** A fixture is "the same match" when the same two teams of the same category meet again. */
 const pairKey = (cat: string, h: string, a: string) => cat + '|' + h + '|' + a
 /** Index the played matches by pair; a pair that occurs twice (e.g. group + KO) is ambiguous and dropped. */
@@ -97,10 +101,17 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
   const s = sb()
   // 1) snapshot the results already entered, then wipe the previous schedule.
   //    Scores come back at the end, but only onto fixtures that are provably the same match.
-  const prev = await run<PrevMatch[]>(s.from('matches')
-    .select('code,category_id,home_team_id,away_team_id,home_score,away_score,status')
-    .eq('tournament_id', tid))
-  const played = prev.filter(p => p.home_team_id && p.away_team_id && p.home_score != null && p.away_score != null)
+  const [prev, oldGroups] = await Promise.all([
+    run<PrevMatch[]>(s.from('matches').select('code,category_id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id', tid)),
+    run<Array<{ id: string; category_id: string; sort_order: number }>>(s.from('groups').select('id,category_id,sort_order').eq('tournament_id', tid)),
+  ])
+  // scoped to this tournament's groups: group_teams has no tournament column, and an unfiltered
+  // read would be paged by the API and silently make an untouched draw look like it had changed
+  const oldGt = oldGroups.length
+    ? await run<Array<{ group_id: string; team_id: string; seed: number }>>(
+        s.from('group_teams').select('group_id,team_id,seed').in('group_id', oldGroups.map(g => g.id)))
+    : []
+  const played = prev.filter(p => p.home_score != null && p.away_score != null)
   // safety net: keep the raw snapshot in settings_json too, so a bad republish is never a dead end
   if (played.length) {
     const cur = await run<{ settings_json: Record<string, unknown> }>(s.from('tournaments').select('settings_json').eq('id', tid).single())
@@ -148,17 +159,32 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
   })
   for (let i = 0; i < rows.length; i += 200) await run(s.from('matches').insert(rows.slice(i, i + 200)))
 
-  // 4) put the scores back. Chronological order, so each restored result propagates through the
-  //    DB trigger exactly as if it had been typed in again: winners feed the next match, group
-  //    standings resolve the bracket seeds, and matches further down become resolvable in turn.
-  const idx = indexPlayed(played)
+  // 4) put the scores back, chronologically, with a plain update per match — so each restored
+  //    result runs through the DB trigger exactly as if it had been typed in again: winners drop
+  //    into the next match and, once a group is complete, its standings resolve the bracket seeds.
+  //
+  //    A category whose draw is untouched keeps every one of its match codes, so its results are
+  //    matched by code and come back whole — that is the case when only another category changed.
+  //    A category that was redrawn has no stable codes, so there its results are matched by the
+  //    pair of teams, and a fixture that no longer exists loses its score, as it should.
+  const oldDraw = new Map<string, string[][]>()
+  for (const g of oldGroups.sort((x, y) => x.sort_order - y.sort_order)) {
+    const list = oldGt.filter(t => t.group_id === g.id).sort((x, y) => x.seed - y.seed).map(t => t.team_id)
+    oldDraw.set(g.category_id, [...(oldDraw.get(g.category_id) ?? []), list])
+  }
+  const intact = new Set(st.categories
+    .filter(c => c.groups && drawKey(c.groups.map(g => g.map(ti => c.teamIds![ti]))) === drawKey(oldDraw.get(c.id) ?? []))
+    .map(c => c.id))
+
+  const byCode = new Map(played.filter(p => p.code).map(p => [p.code!, p]))
+  const byPair = indexPlayed(played.filter(p => p.home_team_id && p.away_team_id))
   const order = allMatches.map((m, i) => ({ i, k: (m.day! * 10000) + (m.slot! * 100) + m.court! })).sort((x, y) => x.k - y.k)
   const teams = new Map(rows.map(r => [r.id, [r.home_team_id, r.away_team_id] as [string | null, string | null]]))
   const done = new Set<string>()
   const used = new Set<PrevMatch>()
   let restored = 0
-  // Several sweeps: the bracket seeds are filled by resolve_seeds() only once every group match is
-  // final, so a KO fixture can become identifiable only after an earlier sweep finished its group.
+  // Several sweeps: a fixture in a redrawn category is identifiable only once the matches feeding
+  // it have been restored, and bracket seeds only once the whole group stage is final again.
   for (let sweep = 0; sweep < 4; sweep++) {
     if (sweep > 0) {
       const fresh = await run<Array<{ id: string; home_team_id: string | null; away_team_id: string | null }>>(
@@ -170,17 +196,31 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
       const r = rows[i]
       if (done.has(r.id)) continue
       const [h, a] = teams.get(r.id)!
-      if (!h || !a) continue                       // still unresolved — nothing to match against
-      // the same pair may now be drawn the other way round — then the two scores swap with it
-      const straight = idx.get(pairKey(r.category_id, h, a))
-      const flipped = straight === undefined ? idx.get(pairKey(r.category_id, a, h)) : undefined
-      const hit = straight ?? flipped
-      if (!hit || used.has(hit)) { done.add(r.id); continue }   // never played, or an ambiguous repeat pair
-      const hs = flipped ? hit.away_score : hit.home_score, as = flipped ? hit.home_score : hit.away_score
-      await run(s.from('matches').update({ home_score: hs, away_score: as, status: hit.status }).eq('id', r.id))
+      let hit: PrevMatch | null | undefined, flip = false, settled = false
+
+      // same code in an untouched draw: the same fixture, whether or not its teams are known yet
+      const c = byCode.get(r.code)
+      if (c) {
+        if (h && a) {
+          if (c.home_team_id === h && c.away_team_id === a) { hit = c; settled = true }
+          else if (c.home_team_id === a && c.away_team_id === h) { hit = c; flip = true; settled = true }
+        } else if (intact.has(r.category_id)) { hit = c; settled = true }
+      }
+      // redrawn category: fall back to the pair of teams, wherever it now sits in the schedule
+      if (!hit && h && a) {
+        const straight = byPair.get(pairKey(r.category_id, h, a))
+        const flipped = straight === undefined ? byPair.get(pairKey(r.category_id, a, h)) : undefined
+        hit = straight ?? flipped; flip = !!flipped && !straight; settled = true
+      }
+      if (!hit || used.has(hit)) { if (settled) done.add(r.id); continue }
+
+      const hs = flip ? hit.away_score : hit.home_score, as = flip ? hit.home_score : hit.away_score
+      // one failed write must not cost the remaining results — the snapshot is in settings_json anyway
+      try { await run(s.from('matches').update({ home_score: hs, away_score: as, status: hit.status }).eq('id', r.id)) }
+      catch { done.add(r.id); continue }
       used.add(hit); done.add(r.id); restored++; progress++
-      // mirror the trigger locally so later fixtures in this same sweep know who they face
-      if (hs === as) continue
+      // mirror the trigger locally, so fixtures further down this same sweep know who they face
+      if (hs === as || h == null || a == null) continue
       const w = hs! > as! ? h : a, l = hs! > as! ? a : h
       for (const d of rows) {
         const t = teams.get(d.id)!
@@ -191,4 +231,43 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
     if (!progress) break
   }
   return { groups: groupRows.length, matches: rows.length, restored, lost: played.length - restored }
+}
+
+// ---------- ώρες προσέλευσης ----------
+// A tournament may want to announce only when each category shows up, without putting the whole
+// schedule online. These are published on their own, as a snapshot: they stay correct on the public
+// page even when no match rows exist there at all.
+export interface ArrivalRow { day: number; dayLabel: string; categoryId: string; category: string; color: string; first: string; arrive: string; phase: 'group' | 'ko' }
+export interface ArrivalKo { categoryId: string; category: string; color: string; day: number; dayLabel: string; time: string; court: number; label: string; home: string; away: string }
+export interface Arrivals { at: string; lead: number; rows: ArrivalRow[]; ko: ArrivalKo[] }
+
+/** First match per category per day, minus the lead — plus whichever knockout pairings are decided. */
+export function buildArrivals(st: E.SchedState, all: E.BuildResult, lead: number, resolved?: Map<string, { home: string; away: string }>): Arrivals {
+  const rows: ArrivalRow[] = []; const ko: ArrivalKo[] = []
+  all.grids.forEach((g, di) => {
+    const d = st.settings.days[di]
+    const T = (slot: number) => E.hhmm(E.mins(d.start) + slot * st.settings.slot)
+    const ms: E.SMatch[] = []; g.grid.forEach(row => row.forEach(m => { if (m) ms.push(m) }))
+    st.categories.forEach((c, ci) => {
+      const cm = ms.filter(m => m.cat === ci); if (!cm.length) return
+      const firstSlot = Math.min(...cm.map(m => m.slot!))
+      const opener = cm.find(m => m.slot === firstSlot)!
+      rows.push({
+        day: di + 1, dayLabel: d.label, categoryId: c.id, category: c.name, color: E.catColor(st, ci),
+        first: T(firstSlot), arrive: E.hhmm(Math.max(0, E.mins(T(firstSlot)) - lead)), phase: opener.ko ? 'ko' : 'group',
+      })
+      cm.filter(m => m.ko).forEach(m => {
+        const r = resolved?.get(E.matchKey(st, m)); if (!r) return
+        ko.push({ categoryId: c.id, category: c.name, color: E.catColor(st, ci), day: di + 1, dayLabel: d.label, time: T(m.slot!), court: m.court! + 1, label: m.label ?? 'Νοκ-άουτ', home: r.home, away: r.away })
+      })
+    })
+  })
+  rows.sort((a, b) => a.day - b.day || a.first.localeCompare(b.first) || a.category.localeCompare(b.category))
+  ko.sort((a, b) => a.day - b.day || a.time.localeCompare(b.time) || a.court - b.court)
+  return { at: new Date().toISOString(), lead, rows, ko }
+}
+
+/** Store the snapshot on the tournament; passing null takes the page down again. */
+export async function publishArrivals(tid: string, a: Arrivals | null) {
+  await run(sb().from('tournaments').update({ arrivals_json: a }).eq('id', tid))
 }
