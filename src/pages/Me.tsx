@@ -101,6 +101,11 @@ export function Me() {
 
   // no player row matched this email — nobody has written them on a declaration yet, so they make
   // their own profile here. A declaration that arrives later attaches to it by email.
+  // Ο σύνδεσμος στο email προσγειώνεται πάντα εδώ. Ο διαχειριστής όμως δεν είναι παίκτης: χωρίς
+  // αυτό, έβλεπε φόρμα δημιουργίας προφίλ που δεν του χρειάζεται. Αν έχει και δικό του προφίλ, μένει.
+  if (!me && authLoading) return <div className="wrap py-[120px] text-dim">{t.loading}</div>
+  if (!me && isAdmin) return <Navigate to="/admin" replace />
+
   if (!me) {
     const ok = draft.first.trim().length > 1 && draft.last.trim().length > 1
     const year = draft.birthYear.trim() ? Number(draft.birthYear.trim()) : null
