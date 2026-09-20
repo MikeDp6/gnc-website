@@ -14,21 +14,17 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { session, isAdmin } = useAuth()
-  const { pathname, search } = useLocation()
+  const { pathname } = useLocation()
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 60)
     f(); window.addEventListener('scroll', f, { passive: true })
     return () => window.removeEventListener('scroll', f)
   }, [])
   useEffect(() => { setOpen(false) }, [pathname])
-  // Ομάδες is its own list of stops; from a tournament page the highlight follows the tab in the
-  // address, so Πρόγραμμα and Ομάδες never light up at once.
   const onTour = pathname.startsWith('/tournaments/')
-  const teamsTab = new URLSearchParams(search).get('tab') === 'teams'
   const links = [
     { to: '/', label: t.nav.tournaments, end: true },
-    { to: '/tournaments', label: t.nav.schedule, active: pathname === '/tournaments' || (onTour && !teamsTab) },
-    { to: '/teams', label: t.nav.teams, active: pathname === '/teams' || (onTour && teamsTab) },
+    { to: '/tournaments', label: t.nav.schedule, active: pathname === '/tournaments' || onTour },
     { to: '/rankings', label: t.nav.rankings },
     { to: '/news', label: t.nav.news },
     { to: '/rentals', label: t.nav.rentals },

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
 import { useI18n } from '@/i18n'
@@ -19,13 +19,13 @@ import { BracketGrid } from '@/components/bracket/BracketGrid'
 import { NotFound } from './NotFound'
 import { PrintSchedule } from '@/components/PrintSchedule'
 
-type TabKey = 'schedule' | 'groups' | 'ko' | 'arrivals' | 'teams' | 'photos' | 'info'
-const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'arrivals', 'teams', 'photos', 'info']
+type TabKey = 'schedule' | 'groups' | 'ko' | 'arrivals' | 'photos' | 'info'
+const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'arrivals', 'photos', 'info']
 
 export function Tournament() {
   const { slug = '' } = useParams()
   const { t } = useI18n()
-  const { categories, categoryById, groups, matches, teams, tournamentBySlug, loading, photos } = useData()
+  const { categories, categoryById, groups, matches, tournamentBySlug, loading, photos } = useData()
   const [params, setParams] = useSearchParams()
   const tour = tournamentBySlug(slug)
   // the tab lives in the address, so the menu can link straight to Ομάδες and the highlight follows
@@ -169,24 +169,6 @@ export function Tournament() {
               </div>
             </Reveal>
           )}
-        </section>
-      )}
-
-      {view === 'teams' && (
-        <section className="wrap pt-[70px]">
-          <Heading a={t.tour.tabs.teams} b={`${teams.filter(x => x.tournamentId === tour.id).length || tour.teamsCount}`} size="md" className="mb-[26px]" />
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {cats.map((c, i) => {
-              const list = teams.filter(x => x.categoryId === c.id && (!x.tournamentId || x.tournamentId === tour.id))
-              return (
-                <Reveal key={c.id} delay={(i % 3) * 70} className="card p-5">
-                  <div className="mb-3 flex items-center justify-between"><b className="disp text-[28px]" style={{ color: catColor[c.key] }}>{c.name}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.length} {t.tour.teamsN}</span></div>
-                  {list.map(x => <Link key={x.id} to={`/teams/${x.id}`} className="flex items-center gap-3 border-t border-line py-[10px] text-[14px] font-semibold hover:text-orange"><i className="h-2 w-2 rounded-full" style={{ background: catColor[c.key] }} />{x.name}</Link>)}
-                  {!list.length && <div className="text-[13px] text-dim">{t.tour.noTeams}</div>}
-                </Reveal>
-              )
-            })}
-          </div>
         </section>
       )}
 
