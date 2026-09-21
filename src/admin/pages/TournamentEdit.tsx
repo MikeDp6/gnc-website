@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { downloadXlsx, type Cell } from '../xlsx'
+import { useCallback, useEffect, useState } from 'react'
+import { TeamsBoard } from '../components/TeamsBoard'
 import { Link, useParams } from 'react-router-dom'
 import * as api from '@/lib/adminApi'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
@@ -150,90 +150,8 @@ function Categories({ tid, say }: { tid: string; say: (m: string) => void }) {
 }
 
 // ---------- Ομάδες ----------
-function Teams({ tid, say }: { tid: string; say: (m: string) => void }) {
-  const [cats, setCats] = useState<Awaited<ReturnType<typeof api.listTournamentCategories>>>([])
-  const [all, setAll] = useState<Awaited<ReturnType<typeof api.listCategories>>>([])
-  const [teams, setTeams] = useState<api.TeamRow[]>([])
-  const [cat, setCat] = useState(''); const [paste, setPaste] = useState('')
-  const load = useCallback(() => api.listTeams(tid).then(setTeams).catch(e => say(e.message)), [tid, say])
-  useEffect(() => { api.listCategories().then(setAll).catch(() => {}); api.listTournamentCategories(tid).then(c => { setCats(c); if (c[0]) setCat(c[0].category_id) }).catch(() => {}); load() }, [tid, load])
-  const label = (cid: string) => all.find(c => c.id === cid)?.label ?? cid
-  const add = async () => {
-    const names = paste.split('\n').map(s => s.trim()).filter(Boolean)
-    if (!cat || !names.length) return
-    try { await api.addTeams(tid, names.map(name => ({ category_id: cat, name }))); setPaste(''); say(`Προστέθηκαν ${names.length}`); load() } catch (e) { say((e as Error).message) }
-  }
-  const setStatus = async (id: string, status: string) => { try { await api.updateTeam(id, { status }); load() } catch (e) { say((e as Error).message) } }
-  const rename = async (id: string, name: string) => { try { await api.updateTeam(id, { name }); load() } catch (e) { say((e as Error).message) } }
-  const checkin = async (t: api.TeamRow) => { try { await api.updateTeam(t.id, { checked_in_at: t.checked_in_at ? null : new Date().toISOString() }); load() } catch (e) { say((e as Error).message) } }
-  const remove = async (id: string) => { if (!confirm('Διαγραφή ομάδας;')) return; try { await api.deleteTeam(id); load() } catch (e) { say((e as Error).message) } }
-  const byCat = useMemo(() => cats.map(c => ({ c, list: teams.filter(t => t.category_id === c.category_id) })), [cats, teams])
-  const [exporting, setExporting] = useState(false)
-  const exportXlsx = async () => {
-    setExporting(true)
-    try {
-      const [rows, tour] = await Promise.all([api.exportTeams(tid), api.getTournament(tid)])
-      const ST: Record<string, string> = { pending: 'Εκκρεμεί', active: 'Ενεργή', waitlist: 'Λίστα αναμονής', removed: 'Αποσύρθηκε' }
-      const order = new Map(cats.map((c, i) => [c.category_id, i]))
-      rows.sort((a, b) => (order.get(a.category_id) ?? 99) - (order.get(b.category_id) ?? 99) || a.name.localeCompare(b.name, 'el'))
-      const when = (x: string | null) => x ? new Date(x).toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' }) : ''
-      const roster = (t: api.TeamExport) => [...t.team_players].sort((a, b) => (a.role === 'captain' ? -1 : 0) - (b.role === 'captain' ? -1 : 0))
-      const players: Cell[][] = [['Κατηγορία', 'Ομάδα', 'Κατάσταση', 'Ρόλος', 'Όνομα', 'Επώνυμο', 'Έτος γέννησης', 'Email', 'Κινητό', 'Κηδεμόνας', 'Επιβεβαίωσε', 'Πόλη ομάδας', 'Check-in', 'Δήλωση']]
-      const summary: Cell[][] = [['Κατηγορία', 'Ομάδα', 'Κατάσταση', 'Αρχηγός', 'Email αρχηγού', 'Κινητό αρχηγού', 'Παίκτες', 'Σύνθεση', 'Πόλη', 'Check-in', 'Δήλωση']]
-      for (const t of rows) {
-        const r = roster(t), cap = r.find(x => x.role === 'captain')?.players
-        for (const m of r) {
-          const p = m.players; if (!p) continue
-          players.push([label(t.category_id), t.name, ST[t.status] ?? t.status, m.role === 'captain' ? 'Αρχηγός' : 'Παίκτης', p.first_name, p.last_name, p.birth_year ?? '', p.email ?? '', p.phone ?? '', p.guardian_name ?? '', m.role === 'captain' || m.accepted_at ? 'Ναι' : 'Σε αναμονή', t.city ?? '', t.checked_in_at ? 'Ναι' : '', when(t.created_at)])
-        }
-        summary.push([label(t.category_id), t.name, ST[t.status] ?? t.status, cap ? `${cap.first_name} ${cap.last_name}` : '', cap?.email ?? '', cap?.phone ?? '', r.length, r.map(x => x.players ? `${x.players.first_name} ${x.players.last_name}` : '').filter(Boolean).join(', '), t.city ?? '', t.checked_in_at ? 'Ναι' : '', when(t.created_at)])
-      }
-      downloadXlsx(`${tour.slug}-omades-${api.ymd(new Date())}`, [
-        { name: 'Ομάδες', rows: summary, widths: [14, 26, 14, 24, 30, 16, 9, 60, 16, 10, 16] },
-        { name: 'Παίκτες', rows: players, widths: [14, 26, 14, 10, 16, 20, 14, 30, 16, 22, 13, 16, 10, 16] },
-      ])
-      say(`Εξαγωγή: ${rows.length} ομάδες, ${players.length - 1} παίκτες`)
-    } catch (e) { say((e as Error).message) }
-    setExporting(false)
-  }
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-      <div className="card p-5">
-        <div className="kicker mb-3">Προσθήκη ομάδων</div>
-        <Field label="Κατηγορία" className="mb-3"><Select value={cat} onChange={e => setCat(e.target.value)}>{cats.map(c => <option key={c.category_id} value={c.category_id}>{label(c.category_id)}</option>)}</Select></Field>
-        <Field label="Ονόματα — ένα ανά γραμμή (επικόλληση από Excel/PDF)"><textarea value={paste} onChange={e => setPaste(e.target.value)} rows={10} className="w-full rounded-[10px] border border-line bg-transparent px-3 py-2 text-[14px] outline-none focus:border-white/30" /></Field>
-        <div className="mt-3 flex items-center justify-between"><span className="text-[12px] text-mute">{paste.split('\n').filter(s => s.trim()).length} ομάδες</span><Btn onClick={add}>Προσθήκη</Btn></div>
-        <div className="mt-4 text-[12px] text-mute">Οι διπλές (ίδιο όνομα, ίδια κατηγορία) αγνοούνται. Οι δηλώσεις από το site μπαίνουν ως «Εκκρεμεί» και τις εγκρίνεις εδώ.</div>
-      </div>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[13px] text-dim">{teams.filter(t => t.status !== 'removed').length} ομάδες · {teams.filter(t => t.status === 'pending').length} εκκρεμούν</span>
-          <Btn variant="ghost" onClick={exportXlsx} disabled={exporting || !teams.length}>{exporting ? 'Ετοιμάζεται…' : '⬇ Εξαγωγή σε Excel'}</Btn>
-        </div>
-        {byCat.map(({ c, list }) => (
-          <div key={c.category_id} className="card p-4">
-            <div className="mb-2 flex items-center justify-between"><b className="disp text-[24px]">{label(c.category_id)}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.filter(t => t.status === 'active').length} ενεργές · {list.filter(t => t.status === 'pending').length} εκκρεμείς · {list.filter(t => t.status === 'waitlist').length} λίστα</span></div>
-            {list.map(t => (
-              <div key={t.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 border-t border-line py-2 text-[14px]">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Input defaultValue={t.name} title="Όνομα ομάδας — αλλάζει με το που φύγεις από το πεδίο"
-                    onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) rename(t.id, v); else e.target.value = t.name }}
-                    className={cn('py-1 font-semibold', t.status !== 'active' && 'text-dim')} />
-                  {t.city && <span className="shrink-0 text-[12px] text-mute">{t.city}</span>}
-                </div>
-                <Select value={t.status} onChange={e => setStatus(t.id, e.target.value)} className="w-[130px] py-1 text-[12px]"><option value="pending">Εκκρεμεί</option><option value="active">Ενεργή</option><option value="waitlist">Λίστα αναμονής</option><option value="removed">Αποσύρθηκε</option></Select>
-                <button onClick={() => checkin(t)} className={cn('rounded-lg border px-2 py-1 text-[11px] font-bold uppercase tracking-[.08em]', t.checked_in_at ? 'border-ok text-ok' : 'border-line text-dim')}>{t.checked_in_at ? '✓ Check-in' : 'Check-in'}</button>
-                <button onClick={() => remove(t.id)} className="text-[12px] text-mute hover:text-red">✕</button>
-              </div>
-            ))}
-            {!list.length && <div className="text-[13px] text-mute">Καμία ομάδα.</div>}
-          </div>
-        ))}
-        {!cats.length && <div className="card p-6 text-dim">Πρόσθεσε πρώτα κατηγορίες στη διοργάνωση.</div>}
-      </div>
-    </div>
-  )
-}
+// Όλες οι ομάδες της διοργάνωσης με τη σύνθεσή τους — επεξεργασία και στο γήπεδο (TeamsBoard).
+function Teams({ tid, say }: { tid: string; say: (m: string) => void }) { return <TeamsBoard tid={tid} say={say} /> }
 
 // ---------- Αγώνες & σκορ ----------
 function Results({ tid, say }: { tid: string; say: (m: string) => void }) {

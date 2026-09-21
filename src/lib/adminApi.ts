@@ -78,19 +78,56 @@ export const removeTournamentCategory = (tid: string, cid: string) => run(sb().f
 // ---------- teams ----------
 export interface TeamRow { id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null }
 /** invite_code is deliberately not selected — it is closed to direct reads since 020. */
-export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at').eq('tournament_id', tid).order('category_id').order('name') as unknown as PromiseLike<{ data: TeamExport[] | null; error: { message: string } | null }>)
+export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at').eq('tournament_id', tid).order('category_id').order('name'))
 export const addTeams = (tid: string, rows: Array<{ category_id: string; name: string; city?: string | null }>) =>
   run(sb().from('teams').upsert(rows.map(r => ({ tournament_id: tid, status: 'active', ...r })), { onConflict: 'tournament_id,category_id,name', ignoreDuplicates: true }))
+export interface RosterPlayer { id: string; user_id: string | null; first_name: string; last_name: string; birth_year: number | null; email: string | null; phone: string | null; guardian_name: string | null }
 /** Everything the Excel export needs: each team with its roster and the players' contact details. */
 export interface TeamExport {
   id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null; created_at: string; captain_id: string | null
-  team_players: Array<{ role: string; accepted_at: string | null; players: { id: string; first_name: string; last_name: string; birth_year: number | null; email: string | null; phone: string | null; guardian_name: string | null } | null }>
+  team_players: Array<{ role: string; accepted_at: string | null; players: RosterPlayer | null }>
 }
 export const exportTeams = (tid: string) => run<TeamExport[]>(sb().from('teams')
-  .select('id,category_id,name,city,status,checked_in_at,created_at,captain_id,team_players(role,accepted_at,players(id,first_name,last_name,birth_year,email,phone,guardian_name))')
+  .select('id,category_id,name,city,status,checked_in_at,created_at,captain_id,team_players(role,accepted_at,players(id,user_id,first_name,last_name,birth_year,email,phone,guardian_name))')
   .eq('tournament_id', tid).order('category_id').order('name') as unknown as PromiseLike<{ data: TeamExport[] | null; error: { message: string } | null }>)
 export const updateTeam = (id: string, patch: Partial<Pick<TeamRow, 'name' | 'city' | 'status' | 'category_id'>> & { checked_in_at?: string | null }) => run(sb().from('teams').update(patch).eq('id', id))
 export const deleteTeam = (id: string) => run(sb().from('teams').delete().eq('id', id))
+
+// ---------- roster (admin, also on the day at the court) ----------
+export type PlayerPatch = Partial<Pick<RosterPlayer, 'first_name' | 'last_name' | 'birth_year' | 'email' | 'phone' | 'guardian_name'>>
+/** Edits the person, not just this team's line: a player with a profile sees the change everywhere. */
+export const updatePlayer = (id: string, patch: PlayerPatch) => run(sb().from('players').update(patch).eq('id', id))
+export const setMemberConfirmed = (team: string, player: string, yes: boolean) =>
+  run(sb().from('team_players').update({ accepted_at: yes ? new Date().toISOString() : null }).match({ team_id: team, player_id: player }))
+/** Takes the player off this team only; the person and their history stay. */
+export const removeMember = (team: string, player: string) => run(sb().from('team_players').delete().match({ team_id: team, player_id: player }))
+export async function setCaptain(team: string, player: string) {
+  await run(sb().from('team_players').update({ role: 'player' }).eq('team_id', team).eq('role', 'captain'))
+  await run(sb().from('team_players').update({ role: 'captain', accepted_at: new Date().toISOString() }).match({ team_id: team, player_id: player }))
+  await run(sb().from('teams').update({ captain_id: player }).eq('id', team))
+}
+/**
+ * Adds a person to a team. An email that already belongs to a player reuses that player — one person,
+ * one history — and fills in whatever of the typed details they were missing.
+ */
+export async function addMember(team: string, p: { first_name: string; last_name: string; birth_year: number | null; email: string | null; phone: string | null }) {
+  let id: string | null = null
+  if (p.email) {
+    const found = await run<Array<RosterPlayer>>(sb().from('players').select('id,user_id,first_name,last_name,birth_year,email,phone,guardian_name').ilike('email', p.email).limit(1))
+    if (found[0]) {
+      id = found[0].id
+      const fill: PlayerPatch = {}
+      if (!found[0].phone && p.phone) fill.phone = p.phone
+      if (!found[0].birth_year && p.birth_year) fill.birth_year = p.birth_year
+      if (Object.keys(fill).length) await updatePlayer(id, fill)
+    }
+  }
+  if (!id) id = (await run<{ id: string }>(sb().from('players').insert({ ...p, since_year: new Date().getFullYear() }).select('id').single())).id
+  await run(sb().from('team_players').upsert({ team_id: team, player_id: id, role: 'player', accepted_at: new Date().toISOString() }, { onConflict: 'team_id,player_id', ignoreDuplicates: true }))
+  return id
+}
+export const createTeam = (tid: string, t: { category_id: string; name: string; city?: string | null; status?: string }) =>
+  run<{ id: string }>(sb().from('teams').insert({ tournament_id: tid, status: 'active', ...t }).select('id').single())
 
 // ---------- matches / results ----------
 export interface MatchRowA { id: string; code: string | null; category_id: string; phase: string; label: string; day_id: string | null; court: number | null; slot_time: string | null; home_team_id: string | null; away_team_id: string | null; home_label: string | null; away_label: string | null; home_score: number | null; away_score: number | null; status: string }
