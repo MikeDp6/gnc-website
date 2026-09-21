@@ -32,7 +32,8 @@ async function one(table, filter, select) {
 }
 
 export default async function handler(req, res) {
-  const { type = '', slug = '' } = req.query ?? {}
+  const { type = '', slug = '', t: regSlug = '' } = req.query ?? {}
+  let url = `${SITE}/${type}/${slug}`
   let title = 'GNC 3on3 — Τουρνουά 3on3 σε όλη την Ελλάδα'
   let desc = 'Πρόγραμμα, όμιλοι, νοκ-άουτ, δηλώσεις συμμετοχής και αρχείο διοργανώσεων σε όλη την Ελλάδα.'
   let image = `${SITE}/og.jpg`
@@ -43,8 +44,22 @@ export default async function handler(req, res) {
       const n = await one('news', `slug=eq.${encodeURIComponent(slug)}`, 'title,excerpt,image_url')
       if (n) { title = `${n.title} — GNC 3on3`; desc = n.excerpt || desc; image = abs(n.image_url); kind = 'article' }
     } else if (type === 'tournaments') {
-      const t = await one('tournaments', `slug=eq.${encodeURIComponent(slug)}`, 'name,venue,starts_on,ends_on,cover_url,cities(name)')
-      if (t) { title = `${t.name} — GNC 3on3`; desc = [dateRange(t.starts_on, t.ends_on), t.venue, t.cities?.name].filter(Boolean).join(' · '); image = abs(t.cover_url) }
+      const t = await one('tournaments', `slug=eq.${encodeURIComponent(slug)}`, 'name,venue,starts_on,ends_on,cover_url,poster_url,cities(name)')
+      // the poster is what people recognise from Instagram; the cover photo is only the fallback
+      if (t) { title = `${t.name} — GNC 3on3`; desc = [dateRange(t.starts_on, t.ends_on), t.venue, t.cities?.name].filter(Boolean).join(' · '); image = abs(t.poster_url || t.cover_url) }
+    } else if (type === 'register') {
+      // /register?t=<slug> — or plain /register, which opens on the tournament taking entries now
+      const sel = 'name,slug,venue,starts_on,ends_on,registration_deadline,cover_url,poster_url'
+      const t = regSlug
+        ? await one('tournaments', `slug=eq.${encodeURIComponent(regSlug)}`, sel)
+        : await one('tournaments', 'status=eq.registration&is_public=eq.true&order=starts_on.asc', sel)
+      url = `${SITE}/register${t ? `?t=${encodeURIComponent(t.slug)}` : ''}`
+      if (t) {
+        const dl = t.registration_deadline ? new Date(t.registration_deadline) : null
+        title = `Δήλωσε ομάδα — ${t.name}`
+        desc = [dateRange(t.starts_on, t.ends_on), t.venue, dl ? `Δηλώσεις ως ${dl.toLocaleDateString('el-GR', { day: 'numeric', month: 'long', timeZone: 'Europe/Athens' })}` : ''].filter(Boolean).join(' · ')
+        image = abs(t.poster_url || t.cover_url)
+      } else { title = 'Δήλωσε ομάδα — GNC 3on3' }
     } else if (type === 'cities') {
       const c = await one('cities', `id=eq.${encodeURIComponent(slug)}`, 'name,image_url')
       if (c) { title = `${c.name} — GNC 3on3`; desc = `Η στάση της περιοδείας GNC 3on3 στην πόλη ${c.name}.`; image = abs(c.image_url) }
@@ -53,7 +68,6 @@ export default async function handler(req, res) {
     // a card with the site defaults is still a working card
   }
 
-  const url = `${SITE}/${type}/${slug}`
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400')
   res.status(200).send(`<!doctype html><html lang="el"><head><meta charset="utf-8">
