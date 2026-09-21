@@ -9,6 +9,9 @@ import { Reveal } from '@/components/ui/Reveal'
 import { Photo } from '@/components/ui/Photo'
 import { Markdown } from '@/components/ui/Markdown'
 import { NotFound } from './NotFound'
+import { cn } from '@/lib/cn'
+import { titleSize } from '@/lib/titleSize'
+
 
 export function NewsList() {
   const { news } = useData()
@@ -22,12 +25,13 @@ export function NewsList() {
       <section className="wrap pt-6">
         <Heading a={t.sections.news1} b={t.sections.news2} className="mb-[34px]" as="h1" />
         {first && (
-          <Link to={`/news/${first.slug}`} className="card pop relative mb-6 block min-h-[420px] overflow-hidden rounded-band md:min-h-[560px]">
+          <Link to={`/news/${first.slug}`} className="card pop relative mb-6 flex min-h-[420px] flex-col justify-end overflow-hidden rounded-band md:min-h-[560px]">
             <Photo src={first.image} className="hero-in" position={first.imagePos ?? 'center 30%'} eager />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_30%,rgba(10,10,11,.85)_100%)]" />
-            <div className="glass absolute bottom-4 left-4 right-4 rounded-[18px] p-5 md:bottom-6 md:left-6 md:right-6 md:max-w-[820px] md:p-8">
+            {/* in the flow, not pinned: a long title makes the card taller instead of being cut */}
+            <div className="glass relative m-4 mt-24 rounded-[18px] p-5 md:m-6 md:mt-40 md:max-w-[820px] md:p-8">
               <div className="mb-3 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{first.tag}</b><span>{first.date}</span></div>
-              <div className="disp line-clamp-3 text-[38px] leading-[.92] text-white md:text-[56px]">{first.title}</div>
+              <div className={cn('disp leading-[.95] text-white', titleSize(first.title, 'feature'))}>{first.title}</div>
               <p className="mt-3 line-clamp-2 text-[15px] text-cement">{first.excerpt}</p>
               <span className="mt-4 inline-block text-[13px] font-bold uppercase tracking-[.08em] text-orange">{t.news.read}</span>
             </div>
@@ -40,7 +44,7 @@ export function NewsList() {
                 <div className="relative h-[220px]"><Photo src={a.image} position={a.imagePos ?? 'center 30%'} /></div>
                 <div className="px-[18px] pb-5 pt-4">
                   <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-                  <div className="disp line-clamp-3 text-[30px] leading-[.95]">{a.title}</div>
+                  <div className={cn('disp leading-[.95]', titleSize(a.title, 'card'))}>{a.title}</div>
                   <div className="mt-[10px] line-clamp-3 text-[13px] text-dim">{a.excerpt}</div>
                 </div>
               </Link>
@@ -78,12 +82,12 @@ export function NewsArticle() {
     <>
       <Crumb items={[{ label: 'News', to: '/news' }, { label: a.title }]} />
       <section className="wrap pt-6">
-        <div className="relative min-h-[320px] overflow-hidden rounded-band md:min-h-[560px]">
+        <div className="relative flex min-h-[320px] flex-col justify-end overflow-hidden rounded-band md:min-h-[560px]">
           <Photo src={a.image} className="hero-in" position={a.imagePos ?? 'center 30%'} eager />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.1)_30%,rgba(10,10,11,.9)_100%)]" />
-          <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 md:right-12">
+          <div className="relative px-6 pb-6 pt-28 md:px-12 md:pb-10 md:pt-48">
             <div className="rise-in mb-4 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim" style={{ animationDelay: '.4s' }}><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-            <h1 className="rise-in disp max-w-[1000px] text-[40px] text-white md:text-[76px]" style={{ animationDelay: '.5s' }}>{a.title}</h1>
+            <h1 className={cn('rise-in disp max-w-[1000px] leading-[.95] text-white', titleSize(a.title, 'hero'))} style={{ animationDelay: '.5s' }}>{a.title}</h1>
           </div>
         </div>
         <div className="mx-auto max-w-[760px] py-12">
@@ -105,7 +109,7 @@ export function NewsArticle() {
               {more.map(x => (
                 <Link key={x.id} to={`/news/${x.slug}`} className="card pop grid grid-cols-[110px_1fr] overflow-hidden rounded-[16px]">
                   <div className="relative"><Photo src={x.image} position={x.imagePos ?? 'center 30%'} /></div>
-                  <div className="p-4"><div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.1em] text-orange">{x.tag}</div><div className="disp line-clamp-3 text-[24px] leading-[.95]">{x.title}</div></div>
+                  <div className="p-4"><div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.1em] text-orange">{x.tag}</div><div className="disp text-[22px] leading-[.95]">{x.title}</div></div>
                 </Link>
               ))}
             </div>

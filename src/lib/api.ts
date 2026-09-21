@@ -30,6 +30,7 @@ type MatchRow = { id: string; tournament_id: string; category_id: string; phase:
 type WinnerRow = { tournament_id: string; category_id: string; team_id: string; place: number }
 type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blue' | 'orange' }
 type SponsorRow = { name: string; url: string | null; logo_url: string | null; tier?: Sponsor['tier'] | null; blurb?: string | null }
+import type { MediaLink } from '@/components/MediaCard'
 type PhotoRow = { id: string; url: string; caption: string | null; credit: string | null; tournament_id: string | null; city_id: string | null }
 type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null; partners?: CityPartner[] | null }
 type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; image_pos?: string | null; source_url: string | null }
@@ -66,7 +67,7 @@ export async function fetchBundle(): Promise<Bundle> {
     orElse(q<WinnerRow[]>(sb.from('category_places').select('tournament_id,category_id,team_id,place').lte('place', 1)), null)
       .then(r => r ?? q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place'))),
   ])
-  const [newsRows, rentalRows, seasonRows, statsRow, photoRows] = await Promise.all([
+  const [newsRows, rentalRows, seasonRows, statsRow, photoRows, linkRows] = await Promise.all([
     // image_pos arrives with migration 036; until it has run, fall back to the old column list
     orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,image_pos,source_url').eq('published', true).order('published_on', { ascending: false })), null)
       .then(r => r ?? orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null)),
@@ -74,6 +75,7 @@ export async function fetchBundle(): Promise<Bundle> {
     orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open,poster_url').order('starts_on')), null),
     orElse(q<StatsRow>(sb.from('site_stats').select('*').single()), null),
     orElse(q<PhotoRow[]>(sb.from('photos').select('id,url,caption,credit,tournament_id,city_id').order('sort_order')), null),
+    orElse(q<MediaLink[]>(sb.from('media_links').select('id,url,platform,kind,title,thumb_url,sort_order,tournament_id').order('sort_order')), null),
   ])
 
   // active tournament = the first one that is not finished; fall back to the latest
@@ -171,7 +173,7 @@ export async function fetchBundle(): Promise<Bundle> {
     ? { cities: statsRow.cities, tournaments: statsRow.tournaments, teams: statsRow.teams, players: statsRow.players, matches: statsRow.matches, sinceYear: statsRow.since_year, population: statsRow.population ?? 0, spectators: statsRow.spectators ?? 0 }
     : { cities: cityList.length, tournaments: tournaments.length, teams: teamList.length, players: playerList.length, matches: matchList.filter(m => m.status === 'final').length, sinceYear: 2018, population: 0, spectators: 0 }
 
-  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut, stats, photos }
+  return { categories, tournaments, teams: teamList, players: playerList, matches: matchList, groups: groupList, stops, archive, ticker: tickerList, sponsors: sponsors.map(s => s.name), news, rentals, cities: cityList, season, sponsorList: sponsorsOut, stats, photos, mediaLinks: linkRows ?? [] }
 }
 
 type PlayerRankRow = { player_id: string; display_name: string; city: string | null; category_id: string | null; tournaments: number; teams: number; played: number; wins: number; losses: number; gold: number; silver: number; bronze: number; points: number }

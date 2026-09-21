@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { cn } from '@/lib/cn'
+import { MediaCard } from '@/components/MediaCard'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '@/data/store'
 import { catColor } from '@/lib/categories'
@@ -25,7 +27,7 @@ const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'arrivals', 'photos', 'i
 export function Tournament() {
   const { slug = '' } = useParams()
   const { t } = useI18n()
-  const { categories, categoryById, groups, matches, tournamentBySlug, loading, photos } = useData()
+  const { categories, categoryById, groups, matches, tournamentBySlug, loading, photos, mediaLinks } = useData()
   const [params, setParams] = useSearchParams()
   const tour = tournamentBySlug(slug)
   // the tab lives in the address, so the menu can link straight to Ομάδες and the highlight follows
@@ -59,12 +61,13 @@ export function Tournament() {
   // knockout per category (every category that has one)
   const koByCat = cats.map(c => ({ c, ms: all.filter(m => m.categoryId === c.id && m.phase !== 'group') })).filter(x => x.ms.length)
   const gallery = photos.filter(p => p.tournamentId === tour.id)
+  const links = (mediaLinks ?? []).filter(m => m.tournament_id === tour.id)
   const arr = tour.arrivals
   // Arrival times are published separately, so a tournament can announce only those: when there is
   // no schedule online, the schedule/groups/knockout tabs have nothing to show and step aside.
   const hasSchedule = tour.schedulePublic !== false && all.length > 0
   const TAB_KEYS = ALL_KEYS.filter(k =>
-    (k !== 'photos' || gallery.length > 0) &&
+    (k !== 'photos' || gallery.length + links.length > 0) &&
     (k !== 'arrivals' || !!arr) &&
     (!['schedule', 'groups', 'ko'].includes(k) || hasSchedule))
   // a tab that is not offered (no schedule online, say) falls back to the first one that is
@@ -174,7 +177,12 @@ export function Tournament() {
 
       {view === 'photos' && (
         <section className="wrap pt-[70px]">
-          <Heading a={t.tour.tabs.photos} b={String(gallery.length)} size="md" className="mb-[26px]" />
+          <Heading a={t.tour.tabs.photos} b={String(links.length || gallery.length)} size="md" className="mb-[26px]" />
+          {links.length > 0 && (
+            <div className={cn('grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4', gallery.length > 0 && 'mb-10')}>
+              {links.map((m, i) => <Reveal key={m.id} delay={(i % 4) * 60}><MediaCard m={m} /></Reveal>)}
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {gallery.map((p, i) => (
               <Reveal key={p.id} delay={(i % 3) * 60}>

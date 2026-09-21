@@ -38,7 +38,7 @@ export function AdminLayout() {
         {link('/admin/season', 'Ημερολόγιο')}
         {link('/admin/news', 'News')}
         {link('/admin/rentals', 'Ενοικιάσεις')}
-        {link('/admin/photos', 'Φωτογραφίες')}
+        {link('/admin/photos', 'Φωτογραφίες & βίντεο')}
         {link('/admin/ticker', 'Ticker & χορηγοί')}
         <div className="mt-auto px-3 pt-6 text-[12px] text-mute">
           <button type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

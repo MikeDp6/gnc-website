@@ -156,6 +156,7 @@ export interface Bundle {
   sponsorList: Sponsor[]
   stats: SiteStats
   photos: Photo[]
+  mediaLinks?: import('@/components/MediaCard').MediaLink[]
 }
 
 export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }

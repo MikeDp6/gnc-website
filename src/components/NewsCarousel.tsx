@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { NewsItem } from '@/data/types'
 import { small } from '@/components/ui/Photo'
+import { cn } from '@/lib/cn'
+import { titleSize } from '@/lib/titleSize'
 
 const FALLBACK = '/img/hero-dark.jpg'
 
@@ -44,18 +46,18 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
               </div>
               <div className="flex flex-col justify-center px-4 py-4">
                 <div className="mb-[6px] flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
-                <div className="disp line-clamp-3 text-[24px] leading-[.95] md:text-[26px]">{a.title}</div>
+                <div className={cn('disp leading-[.95]', a.title.length > 80 ? 'text-[19px] md:text-[21px]' : 'text-[24px] md:text-[26px]')}>{a.title}</div>
               </div>
             </Link>
           ))}
         </div>
         {/* one big on the right */}
-        <Link key={feat.id} to={`/news/${feat.slug}`} className="rise-in card pop relative min-h-[420px] overflow-hidden rounded-[22px] lg:order-2 lg:min-h-[560px]">
+        <Link key={feat.id} to={`/news/${feat.slug}`} className="rise-in card pop relative flex min-h-[420px] flex-col justify-end overflow-hidden rounded-[22px] lg:order-2 lg:min-h-[560px]">
           <div className="absolute inset-0 bg-cover transition-transform duration-700 hover:scale-[1.03]" style={{ backgroundImage: `url(${feat.image ?? FALLBACK})`, backgroundPosition: feat.imagePos ?? 'center 30%' }} />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_35%,rgba(10,10,11,.85)_100%)]" />
-          <div className="glass absolute bottom-4 left-4 right-4 rounded-[18px] p-5 md:p-6">
+          <div className="glass relative m-4 mt-24 rounded-[18px] p-5 md:p-6">
             <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{feat.tag}</b><span>{feat.date}</span></div>
-            <div className="disp line-clamp-3 text-[34px] leading-[.92] text-white md:text-[44px]">{feat.title}</div>
+            <div className={cn('disp leading-[.95] text-white', titleSize(feat.title, 'feature'))}>{feat.title}</div>
             <div className="mt-3 line-clamp-2 max-w-[640px] text-[14px] text-cement">{feat.excerpt}</div>
           </div>
         </Link>
