@@ -62,7 +62,9 @@ export async function fetchBundle(): Promise<Bundle> {
     orElse(q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng,image_url,videos,years,partners').order('sort_order')), null).then(r => r ?? q<CityRow[]>(sb.from('cities').select('id,name,name_en,lat,lng').order('sort_order'))),
     q<TickerRow[]>(sb.from('ticker_items').select('tag,text,text_en,tone').eq('active', true).order('sort_order')),
     orElse(q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url,tier,blurb').eq('active', true).order('sort_order')), null).then(r => r ?? q<SponsorRow[]>(sb.from('sponsors').select('name,url,logo_url').eq('active', true).order('sort_order'))),
-    q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
+    // places come from the results themselves (category_places), with tournament_winners as the manual override inside it
+    orElse(q<WinnerRow[]>(sb.from('category_places').select('tournament_id,category_id,team_id,place').lte('place', 1)), null)
+      .then(r => r ?? q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place'))),
   ])
   const [newsRows, rentalRows, seasonRows, statsRow, photoRows] = await Promise.all([
     // image_pos arrives with migration 036; until it has run, fall back to the old column list
@@ -146,7 +148,7 @@ export async function fetchBundle(): Promise<Bundle> {
   const archive: ArchiveItem[] = tournaments.filter(t => t.status === 'done').reverse().map((t, i) => {
     const w = winners.filter(x => x.tournament_id === t.id && x.place === 1)
     const D = d(tours.find(x => x.id === t.id)!.starts_on)
-    return { id: t.id, city: t.city, when: `${MONTHS[D.getMonth()]} ${D.getFullYear()}`, title: `${t.teamsCount} ομάδες, ${t.categoryIds.length} κατηγορίες`,
+    return { id: t.id, city: t.city, when: `${MONTHS[D.getMonth()]} ${D.getFullYear()}`, title: `${t.categoryIds.length} κατηγορίες`,
       blurb: w.length ? 'Νικητές: ' + w.map(x => `${teams.find(tt => tt.id === x.team_id)?.name ?? '—'} (${catById.get(x.category_id)?.short ?? x.category_id})`).join(', ') : 'Αποτελέσματα, brackets και φωτογραφίες', tint: tints[i % 4] }
   })
 
