@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import * as E from '@/scheduler/engine'
 import { buildArrivals, fromDb, loadInputs, publish, publishArrivals, saveSched, type PublishPlan } from '@/scheduler/bridge'
 import * as api from '@/lib/adminApi'
@@ -77,7 +78,19 @@ export function Scheduler({ tid }: { tid: string }) {
     try {
       const a = buildArrivals(st, res.all, lead, resolved)
       await publishArrivals(tid, a)
-      say(`Δημοσιεύτηκαν ${a.rows.length} ώρες προσέλευσης` + (a.ko.length ? ` και ${a.ko.length} ζευγάρια νοκ-άουτ` : ''))
+      let msg = `Δημοσιεύτηκαν ${a.rows.length} ώρες προσέλευσης` + (a.ko.length ? ` και ${a.ko.length} ζευγάρια νοκ-άουτ` : '')
+      // then offer the email to the captains — counted first, so the question says how many
+      if (supabase) {
+        const dry = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid, dry_run: true } })
+        const info = dry.data as { recipients?: number; skipped?: number; update?: boolean } | null
+        if (info?.recipients && confirm(`Να σταλεί email με την ώρα προσέλευσης σε ${info.recipients} αρχηγούς εγκεκριμένων ομάδων;` + (info.update ? '\n\nΈχει ξανασταλεί — το θέμα θα γράφει «Ενημέρωση».' : '') + (info.skipped ? `\n\n${info.skipped} ομάδες δεν έχουν email αρχηγού και δεν θα λάβουν.` : ''))) {
+          const r = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid } })
+          const out = r.data as { sent?: number; failed?: string[] } | null
+          msg += out?.sent ? ` · στάλθηκαν ${out.sent} email` : ' · τα email ΔΕΝ στάλθηκαν'
+          if (out?.failed?.length) msg += ` (${out.failed[0]})`
+        } else if (dry.error) msg += ' · η αποστολή email δεν είναι διαθέσιμη'
+      }
+      say(msg)
     } catch (e) { say((e as Error).message) }
     setBusy(false)
   }
