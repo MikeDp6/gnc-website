@@ -187,10 +187,15 @@ function TeamCard({ t, open, onToggle, cats, label, saveTeam, savePlayer, act, p
         <button type="button" onClick={onToggle} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-[13px] hover:border-white/30" aria-label="Άνοιγμα">{open ? '▾' : '▸'}</button>
         <Input defaultValue={t.name} key={t.name} onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) saveTeam(t, { name: v }); else e.target.value = t.name }}
           className="min-w-[160px] flex-1 py-[6px] font-bold" />
-        <Select value={t.category_id} onChange={e => saveTeam(t, { category_id: e.target.value })} className="w-auto py-[6px] text-[12px]">
+        <Select value={t.category_id} onChange={e => { if (!confirm(`Μεταφορά της «${t.name}» στην ${label(e.target.value)}; Αν το πρόγραμμα έχει δημοσιευτεί, και οι δύο κατηγορίες θα ξαναφτιαχτούν στην επόμενη δημοσίευση.`)) { e.target.value = t.category_id; return } saveTeam(t, { category_id: e.target.value }) }} className="w-auto py-[6px] text-[12px]">
           {cats.map(c => <option key={c.category_id} value={c.category_id}>{label(c.category_id)}</option>)}
         </Select>
-        <Select value={t.status} onChange={e => saveTeam(t, { status: e.target.value })} className="w-auto py-[6px] text-[12px]">
+        <Select value={t.status} onChange={e => {
+          const v = e.target.value
+          // only active teams are in the schedule: changing that set means the category gets redrawn on the next publish
+          if ((v === 'active') !== (t.status === 'active') && !confirm(`Η αλλαγή σε «${ST[v]}» αλλάζει τις ομάδες που μπαίνουν στο πρόγραμμα της κατηγορίας.\n\nΑν το πρόγραμμα έχει δημοσιευτεί και ξαναπατήσεις «Δημοσίευση προγράμματος», η κατηγορία θα ξαναφτιαχτεί και θα χαθούν τα σκορ της.\n\nΣυνέχεια;`)) { e.target.value = t.status; return }
+          saveTeam(t, { status: v })
+        }} className="w-auto py-[6px] text-[12px]">
           {Object.entries(ST).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
         <button type="button" onClick={() => { const v = t.checked_in_at ? null : new Date().toISOString(); saveTeam(t, { checked_in_at: v }); patchTeam(t.id, { checked_in_at: v }) }}

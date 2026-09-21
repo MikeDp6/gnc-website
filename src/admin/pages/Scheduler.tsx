@@ -52,7 +52,10 @@ export function Scheduler({ tid }: { tid: string }) {
     // result untouched and which are rebuilt (and how many played results those hold).
     const ask = (p: PublishPlan) => {
       if (!p.rebuilt.length) return confirm('Ενημέρωση προγράμματος.\n\nΚανένα καταχωρημένο σκορ δεν αγγίζεται: οι αγώνες που έχουν παιχτεί μένουν στη θέση τους και αλλάζει μόνο η ώρα ή το γήπεδο όπου χρειάζεται.\n\nΣυνέχεια;')
-      return confirm(`ΠΡΟΣΟΧΗ — σε αυτές τις κατηγορίες άλλαξε η κλήρωση, η μορφή ή οι ομάδες, και οι αγώνες τους ξαναφτιάχνονται:\n\n${p.rebuilt.map(r => `• ${r.name}: ${r.played} σκορ`).join('\n')}\n\nΤα σκορ τους επανέρχονται μόνο όπου οι ίδιες δύο ομάδες παίζουν ξανά στην ίδια φάση· τα υπόλοιπα χάνονται.${p.kept.length ? `\n\nΑνέγγιχτες (όλα τα σκορ μένουν): ${p.kept.join(', ')}.` : ''}\n\nΑν δεν περίμενες να δεις κάποια κατηγορία εδώ, πάτα Άκυρο.`)
+      const n = p.rebuilt.reduce((k, r) => k + r.played, 0)
+      // results about to be thrown away: a plain OK is too easy to click, so the admin has to type it
+      const typed = prompt(`ΠΡΟΣΟΧΗ — θα ΣΒΗΣΤΟΥΝ σκορ.\n\nΣε αυτές τις κατηγορίες άλλαξαν ομάδες, κλήρωση ή μορφή, και οι αγώνες τους ξαναφτιάχνονται:\n\n${p.rebuilt.map(r => `• ${r.name}: ${r.played} σκορ`).join('\n')}\n\nΣυνήθης αιτία: μια ομάδα έγινε «Ενεργή» ή «Αποσύρθηκε» στην καρτέλα Ομάδες. Τα σκορ επανέρχονται μόνο όπου οι ίδιες δύο ομάδες ξαναπαίζουν στην ίδια φάση.\n\nΓια να συνεχίσεις γράψε: ΣΒΗΣΕ ${n}`)
+      return typed?.trim().toUpperCase() === `ΣΒΗΣΕ ${n}`
     }
     setBusy(true)
     try {
