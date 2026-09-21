@@ -78,9 +78,17 @@ export const removeTournamentCategory = (tid: string, cid: string) => run(sb().f
 // ---------- teams ----------
 export interface TeamRow { id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null }
 /** invite_code is deliberately not selected — it is closed to direct reads since 020. */
-export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at').eq('tournament_id', tid).order('category_id').order('name'))
+export const listTeams = (tid: string) => run<TeamRow[]>(sb().from('teams').select('id,category_id,name,city,status,checked_in_at').eq('tournament_id', tid).order('category_id').order('name') as unknown as PromiseLike<{ data: TeamExport[] | null; error: { message: string } | null }>)
 export const addTeams = (tid: string, rows: Array<{ category_id: string; name: string; city?: string | null }>) =>
   run(sb().from('teams').upsert(rows.map(r => ({ tournament_id: tid, status: 'active', ...r })), { onConflict: 'tournament_id,category_id,name', ignoreDuplicates: true }))
+/** Everything the Excel export needs: each team with its roster and the players' contact details. */
+export interface TeamExport {
+  id: string; category_id: string; name: string; city: string | null; status: string; checked_in_at: string | null; created_at: string; captain_id: string | null
+  team_players: Array<{ role: string; accepted_at: string | null; players: { id: string; first_name: string; last_name: string; birth_year: number | null; email: string | null; phone: string | null; guardian_name: string | null } | null }>
+}
+export const exportTeams = (tid: string) => run<TeamExport[]>(sb().from('teams')
+  .select('id,category_id,name,city,status,checked_in_at,created_at,captain_id,team_players(role,accepted_at,players(id,first_name,last_name,birth_year,email,phone,guardian_name))')
+  .eq('tournament_id', tid).order('category_id').order('name') as unknown as PromiseLike<{ data: TeamExport[] | null; error: { message: string } | null }>)
 export const updateTeam = (id: string, patch: Partial<Pick<TeamRow, 'name' | 'city' | 'status' | 'category_id'>> & { checked_in_at?: string | null }) => run(sb().from('teams').update(patch).eq('id', id))
 export const deleteTeam = (id: string) => run(sb().from('teams').delete().eq('id', id))
 

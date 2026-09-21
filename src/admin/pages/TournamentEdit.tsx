@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { downloadXlsx, type Cell } from '../xlsx'
 import { Link, useParams } from 'react-router-dom'
 import * as api from '@/lib/adminApi'
 import { Btn, Field, Input, PageTitle, Select, Toast } from '../ui'
@@ -38,6 +39,15 @@ export function TournamentEdit() {
   )
 }
 
+// datetime-local speaks local time without a zone; the column is timestamptz. Convert both ways,
+// otherwise "23:00" is stored as 23:00 UTC — 02:00 the next morning in Greece.
+const localInput = (iso: string | null | undefined) => {
+  if (!iso) return ''
+  const d = new Date(iso); if (isNaN(+d)) return ''
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 // ---------- Στοιχεία ----------
 function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<typeof api.getTournament>>>; onSaved: () => void; onError: (m: string) => void }) {
   const [f, setF] = useState({ ...t })
@@ -65,7 +75,7 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
         <Field label="Από"><Input type="date" value={f.starts_on} onChange={e => setF({ ...f, starts_on: e.target.value })} /></Field>
         <Field label="Έως"><Input type="date" value={f.ends_on} onChange={e => setF({ ...f, ends_on: e.target.value })} /></Field>
         <Field label="Κατάσταση"><Select value={f.status} onChange={e => setF({ ...f, status: e.target.value })}>{STATUS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
-        <Field label="Προθεσμία δηλώσεων"><Input type="datetime-local" value={(f.registration_deadline ?? '').slice(0, 16)} onChange={e => setF({ ...f, registration_deadline: e.target.value || null })} /></Field>
+        <Field label="Προθεσμία δηλώσεων"><Input type="datetime-local" value={localInput(f.registration_deadline)} onChange={e => setF({ ...f, registration_deadline: e.target.value ? new Date(e.target.value).toISOString() : null })} /></Field>
         <ImageField value={f.cover_url} onChange={v => setF({ ...f, cover_url: v })} folder="covers" label="Εικόνα εξωφύλλου — φωτογραφία γηπέδου, όχι αφίσα (μπαίνει πίσω από τον τίτλο)" className="md:col-span-2" />
         <ImageField value={f.poster_url} onChange={v => setF({ ...f, poster_url: v })} folder="posters" label="Αφίσα διοργάνωσης — κατακόρυφη, εμφανίζεται στις κάρτες του Προγράμματος και των Ομάδων" className="md:col-span-2" />
         <label className="flex items-center gap-3 text-[14px] md:col-span-2"><input type="checkbox" checked={f.is_public} onChange={e => setF({ ...f, is_public: e.target.checked })} className="h-4 w-4" /> Δημόσιο — φαίνεται στο site και στο app</label>
@@ -158,6 +168,34 @@ function Teams({ tid, say }: { tid: string; say: (m: string) => void }) {
   const checkin = async (t: api.TeamRow) => { try { await api.updateTeam(t.id, { checked_in_at: t.checked_in_at ? null : new Date().toISOString() }); load() } catch (e) { say((e as Error).message) } }
   const remove = async (id: string) => { if (!confirm('Διαγραφή ομάδας;')) return; try { await api.deleteTeam(id); load() } catch (e) { say((e as Error).message) } }
   const byCat = useMemo(() => cats.map(c => ({ c, list: teams.filter(t => t.category_id === c.category_id) })), [cats, teams])
+  const [exporting, setExporting] = useState(false)
+  const exportXlsx = async () => {
+    setExporting(true)
+    try {
+      const [rows, tour] = await Promise.all([api.exportTeams(tid), api.getTournament(tid)])
+      const ST: Record<string, string> = { pending: 'Εκκρεμεί', active: 'Ενεργή', waitlist: 'Λίστα αναμονής', removed: 'Αποσύρθηκε' }
+      const order = new Map(cats.map((c, i) => [c.category_id, i]))
+      rows.sort((a, b) => (order.get(a.category_id) ?? 99) - (order.get(b.category_id) ?? 99) || a.name.localeCompare(b.name, 'el'))
+      const when = (x: string | null) => x ? new Date(x).toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' }) : ''
+      const roster = (t: api.TeamExport) => [...t.team_players].sort((a, b) => (a.role === 'captain' ? -1 : 0) - (b.role === 'captain' ? -1 : 0))
+      const players: Cell[][] = [['Κατηγορία', 'Ομάδα', 'Κατάσταση', 'Ρόλος', 'Όνομα', 'Επώνυμο', 'Έτος γέννησης', 'Email', 'Κινητό', 'Κηδεμόνας', 'Επιβεβαίωσε', 'Πόλη ομάδας', 'Check-in', 'Δήλωση']]
+      const summary: Cell[][] = [['Κατηγορία', 'Ομάδα', 'Κατάσταση', 'Αρχηγός', 'Email αρχηγού', 'Κινητό αρχηγού', 'Παίκτες', 'Σύνθεση', 'Πόλη', 'Check-in', 'Δήλωση']]
+      for (const t of rows) {
+        const r = roster(t), cap = r.find(x => x.role === 'captain')?.players
+        for (const m of r) {
+          const p = m.players; if (!p) continue
+          players.push([label(t.category_id), t.name, ST[t.status] ?? t.status, m.role === 'captain' ? 'Αρχηγός' : 'Παίκτης', p.first_name, p.last_name, p.birth_year ?? '', p.email ?? '', p.phone ?? '', p.guardian_name ?? '', m.role === 'captain' || m.accepted_at ? 'Ναι' : 'Σε αναμονή', t.city ?? '', t.checked_in_at ? 'Ναι' : '', when(t.created_at)])
+        }
+        summary.push([label(t.category_id), t.name, ST[t.status] ?? t.status, cap ? `${cap.first_name} ${cap.last_name}` : '', cap?.email ?? '', cap?.phone ?? '', r.length, r.map(x => x.players ? `${x.players.first_name} ${x.players.last_name}` : '').filter(Boolean).join(', '), t.city ?? '', t.checked_in_at ? 'Ναι' : '', when(t.created_at)])
+      }
+      downloadXlsx(`${tour.slug}-omades-${api.ymd(new Date())}`, [
+        { name: 'Ομάδες', rows: summary, widths: [14, 26, 14, 24, 30, 16, 9, 60, 16, 10, 16] },
+        { name: 'Παίκτες', rows: players, widths: [14, 26, 14, 10, 16, 20, 14, 30, 16, 22, 13, 16, 10, 16] },
+      ])
+      say(`Εξαγωγή: ${rows.length} ομάδες, ${players.length - 1} παίκτες`)
+    } catch (e) { say((e as Error).message) }
+    setExporting(false)
+  }
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
       <div className="card p-5">
@@ -168,6 +206,10 @@ function Teams({ tid, say }: { tid: string; say: (m: string) => void }) {
         <div className="mt-4 text-[12px] text-mute">Οι διπλές (ίδιο όνομα, ίδια κατηγορία) αγνοούνται. Οι δηλώσεις από το site μπαίνουν ως «Εκκρεμεί» και τις εγκρίνεις εδώ.</div>
       </div>
       <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-[13px] text-dim">{teams.filter(t => t.status !== 'removed').length} ομάδες · {teams.filter(t => t.status === 'pending').length} εκκρεμούν</span>
+          <Btn variant="ghost" onClick={exportXlsx} disabled={exporting || !teams.length}>{exporting ? 'Ετοιμάζεται…' : '⬇ Εξαγωγή σε Excel'}</Btn>
+        </div>
         {byCat.map(({ c, list }) => (
           <div key={c.category_id} className="card p-4">
             <div className="mb-2 flex items-center justify-between"><b className="disp text-[24px]">{label(c.category_id)}</b><span className="text-[12px] font-bold uppercase tracking-[.1em] text-dim">{list.filter(t => t.status === 'active').length} ενεργές · {list.filter(t => t.status === 'pending').length} εκκρεμείς · {list.filter(t => t.status === 'waitlist').length} λίστα</span></div>
