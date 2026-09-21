@@ -32,7 +32,7 @@ type TickerRow = { tag: string; text: string; text_en: string | null; tone: 'blu
 type SponsorRow = { name: string; url: string | null; logo_url: string | null; tier?: Sponsor['tier'] | null; blurb?: string | null }
 type PhotoRow = { id: string; url: string; caption: string | null; credit: string | null; tournament_id: string | null; city_id: string | null }
 type CityRow = { id: string; name: string; name_en: string | null; lat: number | null; lng: number | null; image_url?: string | null; videos?: CityVideo[] | null; years?: number[] | null; partners?: CityPartner[] | null }
-type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; source_url: string | null }
+type NewsRow = { id: string; slug: string; title: string; excerpt: string | null; body: string | null; tag: string; published_on: string; image_url: string | null; image_pos?: string | null; source_url: string | null }
 type RentalRow = { id: string; name: string; blurb: string | null; price: string; image_url: string | null }
 type SeasonRow = { id: string; city_id: string | null; label: string | null; venue: string | null; starts_on: string; ends_on: string; done: boolean; registration_open: boolean; poster_url: string | null }
 type StatsRow = { cities: number; tournaments: number; teams: number; players: number; matches: number; since_year: number; population: number; spectators: number }
@@ -65,7 +65,9 @@ export async function fetchBundle(): Promise<Bundle> {
     q<WinnerRow[]>(sb.from('tournament_winners').select('tournament_id,category_id,team_id,place')),
   ])
   const [newsRows, rentalRows, seasonRows, statsRow, photoRows] = await Promise.all([
-    orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null),
+    // image_pos arrives with migration 036; until it has run, fall back to the old column list
+    orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,image_pos,source_url').eq('published', true).order('published_on', { ascending: false })), null)
+      .then(r => r ?? orElse(q<NewsRow[]>(sb.from('news').select('id,slug,title,excerpt,body,tag,published_on,image_url,source_url').eq('published', true).order('published_on', { ascending: false })), null)),
     orElse(q<RentalRow[]>(sb.from('rentals').select('id,name,blurb,price,image_url').eq('active', true).order('sort_order')), null),
     orElse(q<SeasonRow[]>(sb.from('season_events').select('id,city_id,label,venue,starts_on,ends_on,done,registration_open,poster_url').order('starts_on')), null),
     orElse(q<StatsRow>(sb.from('site_stats').select('*').single()), null),
@@ -150,7 +152,7 @@ export async function fetchBundle(): Promise<Bundle> {
 
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
 
-  const news: NewsItem[] = newsRows ? newsRows.map((n, i) => ({ id: n.id, slug: n.slug, tag: n.tag, date: shortDate(n.published_on), publishedOn: n.published_on ?? undefined, title: n.title, excerpt: n.excerpt ?? '', body: n.body ?? undefined, tint: tints[i % 4], image: n.image_url ?? undefined, source: n.source_url ?? undefined })) : mockNews
+  const news: NewsItem[] = newsRows ? newsRows.map((n, i) => ({ id: n.id, slug: n.slug, tag: n.tag, date: shortDate(n.published_on), publishedOn: n.published_on ?? undefined, title: n.title, excerpt: n.excerpt ?? '', body: n.body ?? undefined, tint: tints[i % 4], image: n.image_url ?? undefined, imagePos: n.image_pos ?? undefined, source: n.source_url ?? undefined })) : mockNews
   const rentals: RentalItem[] = rentalRows ? rentalRows.map(r => ({ id: r.id, name: r.name, blurb: r.blurb ?? '', price: r.price, image: r.image_url ?? undefined })) : mockRentals
   const cityList: City[] = cities.filter(c => c.lat != null && c.lng != null).map(c => {
     const m = mockCities.find(x => x.id === c.id)   // media fallback until 008 has run

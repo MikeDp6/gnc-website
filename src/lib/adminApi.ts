@@ -17,16 +17,48 @@ export const listTournaments = () => run<Array<TournamentInput & { id: string; s
   sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,schedule_public,registration_deadline,cover_url,poster_url,settings_json').order('starts_on', { ascending: false }))
 export const getTournament = (id: string) => run<TournamentInput & { id: string; settings_json: Record<string, unknown> }>(
   sb().from('tournaments').select('id,slug,name,name_en,city_id,venue,address,starts_on,ends_on,courts,status,is_public,schedule_public,registration_deadline,cover_url,poster_url,settings_json').eq('id', id).single())
+/** Calendar date as YYYY-MM-DD in local time. toISOString() is UTC: in Greece local midnight is 21:00
+ *  or 22:00 of the previous day there, which is how day 1 of 10/10 used to be stored as 09/10. */
+export const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const calendar = (from: string, to: string) => {
+  const out: string[] = []
+  for (let d = new Date(from + 'T12:00:00'), b = new Date(to + 'T12:00:00'); d <= b; d.setDate(d.getDate() + 1)) out.push(ymd(d))
+  return out
+}
+
 export const createTournament = async (t: TournamentInput) => {
   const row = await run<{ id: string }>(sb().from('tournaments').insert(t).select('id').single())
   // one day per calendar day between starts_on and ends_on
-  const days: Array<{ tournament_id: string; day_index: number; date: string; courts: number }> = []
-  const a = new Date(t.starts_on + 'T00:00:00'), b = new Date(t.ends_on + 'T00:00:00')
-  for (let d = new Date(a), i = 1; d <= b; d.setDate(d.getDate() + 1), i++) days.push({ tournament_id: row.id, day_index: i, date: d.toISOString().slice(0, 10), courts: t.courts })
+  const days = calendar(t.starts_on, t.ends_on).map((date, i) => ({ tournament_id: row.id, day_index: i + 1, date, courts: t.courts }))
   if (days.length) await run(sb().from('tournament_days').insert(days))
   return row.id
 }
-export const updateTournament = (id: string, t: Partial<TournamentInput> & { settings_json?: Record<string, unknown> }) => run(sb().from('tournaments').update(t).eq('id', id))
+
+/**
+ * Keep the schedule days in step with the tournament dates. Existing days are re-dated in place (their
+ * times, courts and any matches stay attached); missing days are added; surplus days are removed only
+ * when no match sits on them — otherwise the change is refused rather than silently orphaning games.
+ */
+async function syncDays(id: string, from: string, to: string, courts?: number) {
+  const want = calendar(from, to)
+  const have = await run<Array<{ id: string; day_index: number; date: string }>>(sb().from('tournament_days').select('id,day_index,date').eq('tournament_id', id).order('day_index'))
+  const extra = have.slice(want.length)
+  if (extra.length) {
+    const used = await run<Array<{ id: string }>>(sb().from('matches').select('id').in('day_id', extra.map(d => d.id)).limit(1))
+    if (used.length) throw new Error('Οι νέες ημερομηνίες έχουν λιγότερες μέρες, αλλά υπάρχουν αγώνες στις μέρες που περισσεύουν. Μετακίνησέ τους πρώτα από το Πρόγραμμα.')
+    await run(sb().from('tournament_days').delete().in('id', extra.map(d => d.id)))
+  }
+  for (let i = 0; i < Math.min(want.length, have.length); i++) {
+    if (have[i].date !== want[i]) await run(sb().from('tournament_days').update({ date: want[i] }).eq('id', have[i].id))
+  }
+  const add = want.slice(have.length).map((date, k) => ({ tournament_id: id, day_index: have.length + k + 1, date, ...(courts ? { courts } : {}) }))
+  if (add.length) await run(sb().from('tournament_days').insert(add))
+}
+
+export const updateTournament = async (id: string, t: Partial<TournamentInput> & { settings_json?: Record<string, unknown> }) => {
+  await run(sb().from('tournaments').update(t).eq('id', id))
+  if (t.starts_on && t.ends_on) await syncDays(id, t.starts_on, t.ends_on, t.courts)
+}
 export const deleteTournament = (id: string) => run(sb().from('tournaments').delete().eq('id', id))
 
 // ---------- reference ----------

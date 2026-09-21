@@ -40,7 +40,7 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
           {rest.map(a => (
             <Link key={a.id} to={`/news/${a.slug}`} className="card pop grid flex-1 grid-cols-[132px_1fr] items-stretch overflow-hidden rounded-[18px]">
               <div className="relative overflow-hidden">
-                <img src={small(a.image ?? FALLBACK) ?? a.image ?? FALLBACK} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={small(a.image ?? FALLBACK) ?? a.image ?? FALLBACK} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.imagePos ?? 'center 30%' }} />
               </div>
               <div className="flex flex-col justify-center px-4 py-4">
                 <div className="mb-[6px] flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
@@ -51,7 +51,7 @@ export function NewsCarousel({ items, interval = 6000 }: { items: NewsItem[]; in
         </div>
         {/* one big on the right */}
         <Link key={feat.id} to={`/news/${feat.slug}`} className="rise-in card pop relative min-h-[420px] overflow-hidden rounded-[22px] lg:order-2 lg:min-h-[560px]">
-          <div className="absolute inset-0 bg-cover bg-[center_30%] transition-transform duration-700 hover:scale-[1.03]" style={{ backgroundImage: `url(${feat.image ?? FALLBACK})` }} />
+          <div className="absolute inset-0 bg-cover transition-transform duration-700 hover:scale-[1.03]" style={{ backgroundImage: `url(${feat.image ?? FALLBACK})`, backgroundPosition: feat.imagePos ?? 'center 30%' }} />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_35%,rgba(10,10,11,.85)_100%)]" />
           <div className="glass absolute bottom-4 left-4 right-4 rounded-[18px] p-5 md:p-6">
             <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{feat.tag}</b><span>{feat.date}</span></div>

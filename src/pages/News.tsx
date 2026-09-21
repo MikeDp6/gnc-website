@@ -14,6 +14,7 @@ export function NewsList() {
   const { news } = useData()
   const { t } = useI18n()
   const [first, ...rest] = news
+  const [shown, setShown] = useState(12)
   useMeta('News', 'Νέα, αποτελέσματα και ανακοινώσεις από τα τουρνουά GNC 3on3.')
   return (
     <>
@@ -22,7 +23,7 @@ export function NewsList() {
         <Heading a={t.sections.news1} b={t.sections.news2} className="mb-[34px]" as="h1" />
         {first && (
           <Link to={`/news/${first.slug}`} className="card pop relative mb-6 block min-h-[420px] overflow-hidden rounded-band md:min-h-[560px]">
-            <Photo src={first.image} className="hero-in" position="center 30%" />
+            <Photo src={first.image} className="hero-in" position={first.imagePos ?? 'center 30%'} eager />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,0)_30%,rgba(10,10,11,.85)_100%)]" />
             <div className="glass absolute bottom-4 left-4 right-4 rounded-[18px] p-5 md:bottom-6 md:left-6 md:right-6 md:max-w-[820px] md:p-8">
               <div className="mb-3 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{first.tag}</b><span>{first.date}</span></div>
@@ -33,10 +34,10 @@ export function NewsList() {
           </Link>
         )}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rest.map((a, i) => (
+          {rest.slice(0, shown).map((a, i) => (
             <Reveal key={a.id} delay={(i % 3) * 70}>
               <Link to={`/news/${a.slug}`} className="card pop block overflow-hidden rounded-[18px]">
-                <div className="relative h-[220px]"><Photo src={a.image} position="center 30%" /></div>
+                <div className="relative h-[220px]"><Photo src={a.image} position={a.imagePos ?? 'center 30%'} /></div>
                 <div className="px-[18px] pb-5 pt-4">
                   <div className="mb-2 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim"><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
                   <div className="disp line-clamp-3 text-[30px] leading-[.95]">{a.title}</div>
@@ -46,6 +47,11 @@ export function NewsList() {
             </Reveal>
           ))}
         </div>
+        {rest.length > shown && (
+          <div className="mt-8 flex justify-center">
+            <button type="button" onClick={() => setShown(n => n + 12)} className="rounded-full border border-line px-6 py-3 text-[13px] font-bold uppercase tracking-[.08em] text-white hover:border-white/40">{t.news.more} · {rest.length - shown}</button>
+          </div>
+        )}
       </section>
     </>
   )
@@ -73,7 +79,7 @@ export function NewsArticle() {
       <Crumb items={[{ label: 'News', to: '/news' }, { label: a.title }]} />
       <section className="wrap pt-6">
         <div className="relative min-h-[320px] overflow-hidden rounded-band md:min-h-[560px]">
-          <Photo src={a.image} className="hero-in" position="center 30%" />
+          <Photo src={a.image} className="hero-in" position={a.imagePos ?? 'center 30%'} eager />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,11,.1)_30%,rgba(10,10,11,.9)_100%)]" />
           <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 md:right-12">
             <div className="rise-in mb-4 flex gap-[10px] text-[11px] font-extrabold uppercase tracking-[.1em] text-dim" style={{ animationDelay: '.4s' }}><b className="text-orange">{a.tag}</b><span>{a.date}</span></div>
@@ -98,7 +104,7 @@ export function NewsArticle() {
             <div className="grid gap-4 md:grid-cols-3">
               {more.map(x => (
                 <Link key={x.id} to={`/news/${x.slug}`} className="card pop grid grid-cols-[110px_1fr] overflow-hidden rounded-[16px]">
-                  <div className="relative"><Photo src={x.image} /></div>
+                  <div className="relative"><Photo src={x.image} position={x.imagePos ?? 'center 30%'} /></div>
                   <div className="p-4"><div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.1em] text-orange">{x.tag}</div><div className="disp line-clamp-3 text-[24px] leading-[.95]">{x.title}</div></div>
                 </Link>
               ))}

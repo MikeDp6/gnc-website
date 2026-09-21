@@ -16,7 +16,7 @@ export function PrintSchedule({ tour }: { tour: Tournament }) {
         <img src="/img/logo.png" alt="" style={{ height: 54 }} />
         <div>
           <div className="print-title">{tour.name}</div>
-          <div className="print-sub">{tour.dates} · {tour.venue}{tour.address ? ` · ${tour.address}` : ''} · {tour.courts} γήπεδα · {tour.teamsCount} ομάδες</div>
+          <div className="print-sub">{tour.dates} · {tour.venue}{tour.address ? ` · ${tour.address}` : ''} · {tour.courts} γήπεδα</div>
         </div>
         <div className="print-sub" style={{ marginLeft: 'auto', textAlign: 'right' }}>gnc3on3.gr<br />Πρόγραμμα αγώνων</div>
       </div>

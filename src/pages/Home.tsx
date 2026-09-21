@@ -66,14 +66,14 @@ export function Home() {
             <div className="lg:sticky lg:top-[120px]">
               <StackCard tone="blue" label={t.status.startsIn}
                 big={<Countdown to={next.startsAt} className="mono tracking-[-.02em]" />}
-                title={next.name} meta={`${next.days[0]} · ${next.teamsCount} ${t.status.teams} · ${next.categoryIds.length} ${t.status.cats} · ${next.venue}`}
-                cta={{ label: t.status.schedule, to: `/tournaments/${next.slug}` }} right={`${next.courts} ${t.status.courts}`} />
+                title={next.name} meta={`${next.days[0]} · ${next.categoryIds.length} ${t.status.cats} · ${next.venue}`}
+                cta={next.status === 'registration' ? { label: t.hero.cta1 + ' →', to: `/register?t=${next.slug}` } : { label: t.status.schedule, to: `/tournaments/${next.slug}` }} right={`${next.courts} ${t.status.courts}`} />
             </div>
             <div className="lg:sticky lg:top-[144px]">
               <StackCard tone="slate" label={t.status.done}
                 big={archive[0]?.city ?? lastDone?.city ?? t.sections.archive1} title={archive[0] ? t.status.winners : `${t.sections.archive1} ${t.sections.archive2}`}
                 meta={archive[0]?.blurb ?? t.footer.tagline}
-                cta={{ label: t.status.results, to: '/archive' }} right={lastDone ? `${lastDone.teamsCount} ${t.status.teams}` : `66 ${t.status.teams}`} />
+                cta={{ label: t.status.results, to: '/archive' }} right={lastDone?.venue ?? ""} />
             </div>
           </div>
         </div>

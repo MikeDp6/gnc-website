@@ -62,6 +62,14 @@ export const hasBio = () => !!read()?.bio
 
 export function clearQuick() { write(null) }
 
+/** supabase-js hides the body of a non-2xx reply behind error.context; the real message lives there. */
+async function fnBody(data: unknown, error: unknown): Promise<{ error?: string; left?: number; device?: string; token_hash?: string } | null> {
+  if (data) return data as never
+  const ctx = (error as { context?: Response } | null)?.context
+  if (ctx && typeof ctx.json === 'function') { try { return await ctx.clone().json() } catch { /* not json */ } }
+  return null
+}
+
 /** Καταχώριση PIN για αυτή τη συσκευή. Απαιτεί ενεργή συνεδρία — ο server δένει το PIN στον χρήστη. */
 export async function enrolPin(pin: string, email: string): Promise<string | null> {
   if (!/^\d{4}$/.test(pin)) return 'Το PIN θέλει ακριβώς 4 ψηφία.'
@@ -69,8 +77,9 @@ export async function enrolPin(pin: string, email: string): Promise<string | nul
   try {
     const label = typeof navigator !== 'undefined' ? navigator.platform || 'Συσκευή' : 'Συσκευή'
     const { data, error } = await fn().functions.invoke('device-pin', { body: { action: 'enrol', pin, label } })
-    if (error) return (data as { error?: string })?.error ?? error.message
-    const device = (data as { device?: string })?.device
+    const body = await fnBody(data, error)
+    if (error) return body?.error ?? error.message
+    const device = body?.device
     if (!device) return 'Δεν ήταν δυνατή η καταχώριση.'
     write({ device, email })
     return null
@@ -82,7 +91,7 @@ export async function unlockWithPin(pin: string): Promise<{ tokenHash?: string; 
   const v = read(); if (!v) return { error: 'Δεν υπάρχει γρήγορη είσοδος σε αυτή τη συσκευή.' }
   try {
     const { data, error } = await fn().functions.invoke('device-pin', { body: { action: 'unlock', device: v.device, pin } })
-    const body = data as { token_hash?: string; error?: string; left?: number } | null
+    const body = await fnBody(data, error)
     if (error || !body?.token_hash) {
       const msg = body?.error ?? 'Λάθος PIN'
       return { error: body?.left != null ? `${msg}. Απομένουν ${body.left} προσπάθειες.` : msg }

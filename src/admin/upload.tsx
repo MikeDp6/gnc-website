@@ -2,9 +2,34 @@ import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Input, slugify } from './ui'
 
+/**
+ * Photos straight from a phone are 4000px and 5–10 MB; nobody sees more than ~2000px on the site.
+ * Shrink anything bigger before it leaves the browser: the long side goes to `max`, JPEG stays JPEG
+ * (quality .86), PNG stays PNG so logos keep their transparency. SVG / GIF pass through untouched.
+ * A format the browser cannot decode (iPhone HEIC in Chrome) is refused with a clear message instead
+ * of being stored as a file no visitor can see.
+ */
+export async function shrinkImage(file: File, max = 2000): Promise<File> {
+  if (!/^image\/(jpe?g|png|webp|heic|heif)$/i.test(file.type) && !/\.(heic|heif)$/i.test(file.name)) return file
+  let bmp: ImageBitmap
+  try { bmp = await createImageBitmap(file) }
+  catch { throw new Error('Αυτή η μορφή εικόνας δεν ανοίγει στον browser (π.χ. HEIC από iPhone). Στείλ\' την ως JPG — στο iPhone: Ρυθμίσεις → Κάμερα → Μορφές → «Πιο συμβατή».') }
+  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
+  const png = file.type === 'image/png'
+  if (scale === 1 && file.size < 1.5e6 && !/heic|heif/i.test(file.type)) { bmp.close(); return file }
+  const c = document.createElement('canvas')
+  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale)
+  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height); bmp.close()
+  const blob = await new Promise<Blob | null>(r => c.toBlob(r, png ? 'image/png' : 'image/jpeg', 0.86))
+  if (!blob || blob.size >= file.size) return file
+  const name = file.name.replace(/\.[^.]+$/, '') + (png ? '.png' : '.jpg')
+  return new File([blob], name, { type: blob.type })
+}
+
 /** Upload a file to the public `media` bucket (folder/filename) and return its public URL. Admin-only through storage RLS. */
-export async function uploadMedia(file: File, folder: string): Promise<string> {
+export async function uploadMedia(raw: File, folder: string): Promise<string> {
   if (!supabase) throw new Error('Supabase not configured')
+  const file = await shrinkImage(raw)
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const base = slugify(file.name.replace(/\.[^.]+$/, '')) || 'file'
   const path = `${folder}/${Date.now().toString(36)}-${base}.${ext}`

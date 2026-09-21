@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as E from '@/scheduler/engine'
-import { buildArrivals, fromDb, loadInputs, publish, publishArrivals, saveSched } from '@/scheduler/bridge'
+import { buildArrivals, fromDb, loadInputs, publish, publishArrivals, saveSched, type PublishPlan } from '@/scheduler/bridge'
 import * as api from '@/lib/adminApi'
 import { Btn, Select, Toast } from '../ui'
 import { cn } from '@/lib/cn'
@@ -47,9 +47,22 @@ export function Scheduler({ tid }: { tid: string }) {
   const doPublish = async () => {
     if (!res) return
     if (res.all.unscheduled.length) return say('Υπάρχουν αγώνες εκτός προγράμματος — δεν δημοσιεύεται')
-    if (!confirm('Θα αντικατασταθούν όμιλοι και αγώνες της διοργάνωσης. Οι κατηγορίες που δεν πείραξες κρατούν όλα τους τα σκορ. Σε κατηγορία που ξανακληρώνεται χάνονται όσα σκορ δεν αντιστοιχούν πια σε αγώνα. Συνέχεια;')) return
+    // The plan comes from publish() itself, before it touches a row: which categories keep every
+    // result untouched and which are rebuilt (and how many played results those hold).
+    const ask = (p: PublishPlan) => {
+      if (!p.rebuilt.length) return confirm('Ενημέρωση προγράμματος.\n\nΚανένα καταχωρημένο σκορ δεν αγγίζεται: οι αγώνες που έχουν παιχτεί μένουν στη θέση τους και αλλάζει μόνο η ώρα ή το γήπεδο όπου χρειάζεται.\n\nΣυνέχεια;')
+      return confirm(`ΠΡΟΣΟΧΗ — σε αυτές τις κατηγορίες άλλαξε η κλήρωση, η μορφή ή οι ομάδες, και οι αγώνες τους ξαναφτιάχνονται:\n\n${p.rebuilt.map(r => `• ${r.name}: ${r.played} σκορ`).join('\n')}\n\nΤα σκορ τους επανέρχονται μόνο όπου οι ίδιες δύο ομάδες παίζουν ξανά στην ίδια φάση· τα υπόλοιπα χάνονται.${p.kept.length ? `\n\nΑνέγγιχτες (όλα τα σκορ μένουν): ${p.kept.join(', ')}.` : ''}\n\nΑν δεν περίμενες να δεις κάποια κατηγορία εδώ, πάτα Άκυρο.`)
+    }
     setBusy(true)
-    try { await saveSched(tid, st); const r = await publish(tid, st, res.all); await loadResolved(); say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες` + (r.restored || r.lost ? ` · ${r.restored} σκορ διατηρήθηκαν${r.lost ? `, ${r.lost} χάθηκαν` : ''}` : '')) } catch (e) { say((e as Error).message) }
+    try {
+      await saveSched(tid, st)
+      const r = await publish(tid, st, res.all, ask)
+      if (r.cancelled) say('Η δημοσίευση ακυρώθηκε — δεν άλλαξε τίποτα')
+      else {
+        await loadResolved()
+        say(`Δημοσιεύτηκαν ${r.groups} όμιλοι και ${r.matches} αγώνες` + (r.kept ? ` · ${r.kept} σκορ ανέγγιχτα` : '') + (r.restored ? ` · ${r.restored} επανήλθαν` : '') + (r.lost ? ` · ${r.lost} χάθηκαν` : ''))
+      }
+    } catch (e) { say((e as Error).message) }
     setBusy(false)
   }
   // Published on their own, so a tournament can announce only the arrival times and keep the

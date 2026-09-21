@@ -49,6 +49,7 @@ function Details({ t, onSaved, onError }: { t: NonNullable<Awaited<ReturnType<ty
       const { id: _id, settings_json: _s, ...rest } = f
       await api.updateTournament(t.id, rest)
       for (const d of days) await api.updateDay(d.id, { start_time: d.start_time, end_time: d.end_time, courts: d.courts })
+      setDays(await api.listDays(t.id))   // dates follow Από / Έως — show them as stored now
       onSaved()
     } catch (e) { onError((e as Error).message) }
   }

@@ -40,7 +40,7 @@ export function City() {
             <div className="flex flex-col gap-3">
               {upcoming.map(t => (
                 <Link key={t.id} to={`/tournaments/${t.slug}`} className="card pop flex items-center justify-between gap-4 border-orange px-5 py-4">
-                  <div><div className="text-[17px] font-bold">{t.name}</div><div className="text-[13px] text-dim">{t.dates} · {t.venue} · {t.teamsCount} ομάδες</div></div>
+                  <div><div className="text-[17px] font-bold">{t.name}</div><div className="text-[13px] text-dim">{t.dates} · {t.venue}</div></div>
                   <span className="rounded-full bg-orange px-3 py-2 text-[11px] font-extrabold uppercase tracking-[.12em] text-[#111]">{t.status === 'registration' ? 'Δηλώσεις' : 'Πρόγραμμα'}</span>
                 </Link>
               ))}

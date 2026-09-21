@@ -167,7 +167,7 @@ export type SponsorTier = 'main' | 'official' | 'partner' | 'media'
 export interface Sponsor { name: string; url?: string; logo?: string; tier: SponsorTier; blurb?: string }
 export interface Photo { id: string; url: string; caption?: string; credit?: string; tournamentId?: string; cityId?: string }
 
-export interface NewsItem { id: string; slug: string; tag: string; date: string; publishedOn?: string; title: string; excerpt: string; body?: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; source?: string }
+export interface NewsItem { id: string; slug: string; tag: string; date: string; publishedOn?: string; title: string; excerpt: string; body?: string; tint: 'orange' | 'blue' | 'mono' | 'teal'; image?: string; imagePos?: string; source?: string }
 export interface RentalItem { id: string; name: string; blurb: string; price: string; image?: string }
 
 /** A team the signed-in player belongs to, as my_teams() returns it. */

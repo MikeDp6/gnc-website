@@ -89,28 +89,40 @@ export async function saveSched(tid: string, st: E.SchedState) {
 
 export const bracketPair = E.bracketPair
 
-interface PrevMatch { code: string | null; category_id: string; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null; status: string }
+interface PrevMatch { id: string; code: string | null; category_id: string; group_id: string | null; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null; status: string }
 
 /** The draw of a category, as a string: groups in order, each listing its teams in seed order.
  *  Identical strings mean every fixture of that category is literally the same match as before. */
 const drawKey = (groups: string[][]) => groups.map(g => g.join(',')).join(' | ')
 
-/** A fixture is "the same match" when the same two teams of the same category meet again. */
-const pairKey = (cat: string, h: string, a: string) => cat + '|' + h + '|' + a
-/** Index the played matches by pair; a pair that occurs twice (e.g. group + KO) is ambiguous and dropped. */
+/** A fixture is "the same match" when the same two teams of the same category meet again **in the same
+ *  stage**: a group game and a semifinal between the same two teams are two different matches. */
+type Stage = 'g' | 'k'
+const pairKey = (cat: string, stage: Stage, h: string, a: string) => cat + '|' + stage + '|' + h + '|' + a
+/** Index the played matches by pair; a pair that occurs twice in the same stage is ambiguous and dropped. */
 function indexPlayed(played: PrevMatch[]) {
   const m = new Map<string, PrevMatch | null>()
-  for (const p of played) { const k = pairKey(p.category_id, p.home_team_id!, p.away_team_id!); m.set(k, m.has(k) ? null : p) }
+  for (const p of played) { const k = pairKey(p.category_id, p.group_id ? 'g' : 'k', p.home_team_id!, p.away_team_id!); m.set(k, m.has(k) ? null : p) }
   return m
 }
 
-/** Publish: replace groups/group_teams/matches of the tournament with the engine result. */
-export async function publish(tid: string, st: E.SchedState, all: E.BuildResult) {
+/** What a republish is about to do, shown to the admin before anything is touched. */
+export interface PublishPlan { kept: string[]; rebuilt: Array<{ name: string; played: number }> }
+export interface PublishResult { groups: number; matches: number; kept: number; restored: number; lost: number; cancelled?: boolean }
+
+/**
+ * Publish: bring groups / group_teams / matches of the tournament in line with the engine result.
+ *
+ * A category whose draw and fixtures are exactly what is already stored is **kept**: its rows are never
+ * deleted, only moved in day / time / court. Its scores, teams and bracket never leave the table, so no
+ * restore step can get them wrong. Only categories that really changed (new draw, other format, other Q,
+ * teams added or removed) are deleted and rebuilt, and only their played results go through the
+ * best-effort restore. `ask` sees that plan first and can cancel before a single row is written.
+ */
+export async function publish(tid: string, st: E.SchedState, all: E.BuildResult, ask?: (p: PublishPlan) => boolean): Promise<PublishResult> {
   const s = sb()
-  // 1) snapshot the results already entered, then wipe the previous schedule.
-  //    Scores come back at the end, but only onto fixtures that are provably the same match.
   const [prev, oldGroups] = await Promise.all([
-    run<PrevMatch[]>(s.from('matches').select('code,category_id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id', tid)),
+    run<PrevMatch[]>(s.from('matches').select('id,code,category_id,group_id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id', tid)),
     run<Array<{ id: string; category_id: string; sort_order: number }>>(s.from('groups').select('id,category_id,sort_order').eq('tournament_id', tid)),
   ])
   // scoped to this tournament's groups: group_teams has no tournament column, and an unfiltered
@@ -120,33 +132,83 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
         s.from('group_teams').select('group_id,team_id,seed').in('group_id', oldGroups.map(g => g.id)))
     : []
   const played = prev.filter(p => p.home_score != null && p.away_score != null)
+
+  const allMatches: E.SMatch[] = []
+  all.grids.forEach(g => g.grid.forEach(row => row.forEach(m => { if (m) allMatches.push(m) })))
+  const keyOf = (m: E.SMatch) => E.matchKey(st, m)
+
+  // 1) which categories are untouched
+  const oldDraw = new Map<string, string[][]>()
+  for (const g of [...oldGroups].sort((x, y) => x.sort_order - y.sort_order)) {
+    const list = oldGt.filter(t => t.group_id === g.id).sort((x, y) => x.seed - y.seed).map(t => t.team_id)
+    oldDraw.set(g.category_id, [...(oldDraw.get(g.category_id) ?? []), list])
+  }
+  const sameDraw = new Set<string>(), keep = new Set<string>()
+  for (const c of st.categories) {
+    if (!c.groups) continue
+    if (drawKey(c.groups.map(g => g.map(ti => c.teamIds![ti]))) !== drawKey(oldDraw.get(c.id) ?? [])) continue
+    sameDraw.add(c.id)
+    const was = prev.filter(p => p.category_id === c.id)
+    const now = allMatches.filter(m => st.categories[m.cat].id === c.id).map(keyOf)
+    if (!was.length || was.length !== now.length || was.some(p => !p.code)) continue
+    const codes = new Set(was.map(p => p.code!))
+    if (codes.size === now.length && now.every(k => codes.has(k))) keep.add(c.id)
+  }
+  const rebuilt = (catId: string) => !keep.has(catId)
+  const atRisk = played.filter(p => rebuilt(p.category_id))
+
+  // 2) show the plan before touching anything
+  if (ask) {
+    const names = new Map(st.categories.map(c => [c.id, c.name]))
+    const by = new Map<string, number>()
+    atRisk.forEach(p => by.set(p.category_id, (by.get(p.category_id) ?? 0) + 1))
+    const plan: PublishPlan = {
+      kept: st.categories.filter(c => keep.has(c.id)).map(c => c.name),
+      rebuilt: [...by].map(([id, n]) => ({ name: names.get(id) ?? id, played: n })),
+    }
+    if (!ask(plan)) return { groups: 0, matches: 0, kept: 0, restored: 0, lost: 0, cancelled: true }
+  }
+
   // safety net: keep the raw snapshot in settings_json too, so a bad republish is never a dead end
   if (played.length) {
     const cur = await run<{ settings_json: Record<string, unknown> }>(s.from('tournaments').select('settings_json').eq('id', tid).single())
     await run(s.from('tournaments').update({ settings_json: { ...(cur.settings_json ?? {}), results_backup: { at: new Date().toISOString(), rows: played } } }).eq('id', tid))
   }
-  await run(s.from('matches').delete().eq('tournament_id', tid))
-  await run(s.from('groups').delete().eq('tournament_id', tid))
-  // 2) groups
+
+  // 3) remove only what gets rebuilt
+  const dropM = prev.filter(p => rebuilt(p.category_id)).map(p => p.id)
+  for (let i = 0; i < dropM.length; i += 100) await run(s.from('matches').delete().in('id', dropM.slice(i, i + 100)))
+  const dropG = oldGroups.filter(g => rebuilt(g.category_id)).map(g => g.id)
+  for (let i = 0; i < dropG.length; i += 100) await run(s.from('groups').delete().in('id', dropG.slice(i, i + 100)))
+
+  // 4) groups of the rebuilt categories
   const groupRows: Array<{ id: string; tournament_id: string; category_id: string; name: string; sort_order: number }> = []
   const gtRows: Array<{ group_id: string; team_id: string; seed: number }> = []
-  const gid = (ci: number, gi: number) => groupRows.find(g => g.category_id === st.categories[ci].id && g.sort_order === gi)!.id
-  st.categories.forEach(c => c.groups?.forEach((g, gi) => {
-    const id = crypto.randomUUID()
-    groupRows.push({ id, tournament_id: tid, category_id: c.id, name: 'Όμιλος ' + E.GREEK[gi], sort_order: gi })
-    g.forEach((ti, i) => gtRows.push({ group_id: id, team_id: c.teamIds![ti], seed: i + 1 }))
-  }))
+  st.categories.forEach(c => {
+    if (keep.has(c.id)) return
+    c.groups?.forEach((g, gi) => {
+      const id = crypto.randomUUID()
+      groupRows.push({ id, tournament_id: tid, category_id: c.id, name: 'Όμιλος ' + E.GREEK[gi], sort_order: gi })
+      g.forEach((ti, i) => gtRows.push({ group_id: id, team_id: c.teamIds![ti], seed: i + 1 }))
+    })
+  })
   if (groupRows.length) await run(s.from('groups').insert(groupRows))
   if (gtRows.length) await run(s.from('group_teams').insert(gtRows))
-  // 3) matches — ids first so KO feeds can reference them
+  const gid = (ci: number, gi: number) => {
+    const c = st.categories[ci]
+    return keep.has(c.id)
+      ? oldGroups.find(g => g.category_id === c.id && g.sort_order === gi)!.id
+      : groupRows.find(g => g.category_id === c.id && g.sort_order === gi)!.id
+  }
+
+  // 5) match rows — kept categories reuse their stored ids, so their KO feeds stay valid as they are
+  const oldId = new Map(prev.filter(p => p.code && keep.has(p.category_id)).map(p => [p.code!, p.id]))
   const ids = new Map<string, string>()
-  const allMatches: E.SMatch[] = []
-  all.grids.forEach(g => g.grid.forEach(row => row.forEach(m => { if (m) allMatches.push(m) })))
-  allMatches.forEach(m => ids.set(E.matchKey(st, m), crypto.randomUUID()))
+  allMatches.forEach(m => { const k = keyOf(m); ids.set(k, oldId.get(k) ?? crypto.randomUUID()) })
   const rows = allMatches.map(m => {
     const c = st.categories[m.cat]; const d = st.settings.days[m.day!]
     const time = E.hhmm(E.mins(d.start) + m.slot! * st.settings.slot)
-    const base = { id: ids.get(E.matchKey(st, m))!, tournament_id: tid, category_id: c.id, code: E.matchKey(st, m), day_id: d.id, court: m.court! + 1, slot_time: time, round: m.round, match_number: m.idx + 1, manual_override: !!st.overrides?.[E.matchKey(st, m)] }
+    const base = { id: ids.get(keyOf(m))!, tournament_id: tid, category_id: c.id, code: keyOf(m), day_id: d.id, court: m.court! + 1, slot_time: time, round: m.round, match_number: m.idx + 1, manual_override: !!st.overrides?.[keyOf(m)] }
     if (!m.ko) {
       const g = c.groups![m.grp!]
       const side = (src: E.Src) => ('pos' in src) ? { team: c.teamIds![g[src.pos]], label: null, source: null }
@@ -165,72 +227,65 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
     else { [hl, al] = (m.teams ?? '').split(' – '); hs = null; as = null }
     return { ...base, phase, label: m.label ?? 'Νοκ-άουτ', group_id: null, home_team_id: null, away_team_id: null, home_label: hl ?? null, away_label: al ?? null, home_source: hs, away_source: as }
   })
-  for (let i = 0; i < rows.length; i += 200) await run(s.from('matches').insert(rows.slice(i, i + 200)))
-
-  // 4) put the scores back, chronologically, with a plain update per match — so each restored
-  //    result runs through the DB trigger exactly as if it had been typed in again: winners drop
-  //    into the next match and, once a group is complete, its standings resolve the bracket seeds.
-  //
-  //    A category whose draw is untouched keeps every one of its match codes, so its results are
-  //    matched by code and come back whole — that is the case when only another category changed.
-  //    A category that was redrawn has no stable codes, so there its results are matched by the
-  //    pair of teams, and a fixture that no longer exists loses its score, as it should.
-  const oldDraw = new Map<string, string[][]>()
-  for (const g of oldGroups.sort((x, y) => x.sort_order - y.sort_order)) {
-    const list = oldGt.filter(t => t.group_id === g.id).sort((x, y) => x.seed - y.seed).map(t => t.team_id)
-    oldDraw.set(g.category_id, [...(oldDraw.get(g.category_id) ?? []), list])
+  const fresh = rows.filter(r => !keep.has(r.category_id))
+  const moved = rows.filter(r => keep.has(r.category_id))
+  for (let i = 0; i < fresh.length; i += 200) await run(s.from('matches').insert(fresh.slice(i, i + 200)))
+  // kept fixtures: same row, same teams, same score — only when and where it is played may change.
+  // None of these columns is watched by the result trigger, so nothing propagates or resolves again.
+  for (let i = 0; i < moved.length; i += 10) {
+    await Promise.all(moved.slice(i, i + 10).map(r => run(s.from('matches')
+      .update({ day_id: r.day_id, court: r.court, slot_time: r.slot_time, round: r.round, match_number: r.match_number, manual_override: r.manual_override })
+      .eq('id', r.id))))
   }
-  const intact = new Set(st.categories
-    .filter(c => c.groups && drawKey(c.groups.map(g => g.map(ti => c.teamIds![ti]))) === drawKey(oldDraw.get(c.id) ?? []))
-    .map(c => c.id))
 
-  const byCode = new Map(played.filter(p => p.code).map(p => [p.code!, p]))
-  const byPair = indexPlayed(played.filter(p => p.home_team_id && p.away_team_id))
-  const order = allMatches.map((m, i) => ({ i, k: (m.day! * 10000) + (m.slot! * 100) + m.court! })).sort((x, y) => x.k - y.k)
-  const teams = new Map(rows.map(r => [r.id, [r.home_team_id, r.away_team_id] as [string | null, string | null]]))
+  // 6) rebuilt categories: put back what can be proven to be the same match, chronologically, with a
+  //    plain update per match — so each result runs through the DB trigger as if typed in again.
+  //    By code only for group games of an unchanged draw; everything else needs the same two teams
+  //    in the same stage. A knockout game never inherits a group result.
+  const byCode = new Map(atRisk.filter(p => p.code).map(p => [p.code!, p]))
+  const byPair = indexPlayed(atRisk.filter(p => p.home_team_id && p.away_team_id))
+  const freshIdx = new Set(fresh.map(r => r.id))
+  const order = allMatches.map((m, i) => ({ i, k: (m.day! * 10000) + (m.slot! * 100) + m.court! }))
+    .filter(o => freshIdx.has(rows[o.i].id)).sort((x, y) => x.k - y.k)
+  const teams = new Map(fresh.map(r => [r.id, [r.home_team_id, r.away_team_id] as [string | null, string | null]]))
   const done = new Set<string>()
   const used = new Set<PrevMatch>()
   let restored = 0
-  // Several sweeps: a fixture in a redrawn category is identifiable only once the matches feeding
-  // it have been restored, and bracket seeds only once the whole group stage is final again.
-  for (let sweep = 0; sweep < 4; sweep++) {
+  for (let sweep = 0; sweep < 4 && atRisk.length; sweep++) {
     if (sweep > 0) {
-      const fresh = await run<Array<{ id: string; home_team_id: string | null; away_team_id: string | null }>>(
+      const now = await run<Array<{ id: string; home_team_id: string | null; away_team_id: string | null }>>(
         s.from('matches').select('id,home_team_id,away_team_id').eq('tournament_id', tid))
-      for (const f of fresh) { const t = teams.get(f.id); if (t) { t[0] = t[0] ?? f.home_team_id; t[1] = t[1] ?? f.away_team_id } }
+      for (const f of now) { const t = teams.get(f.id); if (t) { t[0] = t[0] ?? f.home_team_id; t[1] = t[1] ?? f.away_team_id } }
     }
     let progress = 0
     for (const { i } of order) {
       const r = rows[i]
       if (done.has(r.id)) continue
       const [h, a] = teams.get(r.id)!
+      const stage: Stage = r.group_id ? 'g' : 'k'
       let hit: PrevMatch | null | undefined, flip = false, settled = false
 
-      // same code in an untouched draw: the same fixture, whether or not its teams are known yet
-      const c = byCode.get(r.code)
-      if (c) {
+      const c = stage === 'g' ? byCode.get(r.code) : undefined
+      if (c && c.group_id) {
         if (h && a) {
           if (c.home_team_id === h && c.away_team_id === a) { hit = c; settled = true }
           else if (c.home_team_id === a && c.away_team_id === h) { hit = c; flip = true; settled = true }
-        } else if (intact.has(r.category_id)) { hit = c; settled = true }
+        } else if (sameDraw.has(r.category_id)) { hit = c; settled = true }
       }
-      // redrawn category: fall back to the pair of teams, wherever it now sits in the schedule
       if (!hit && h && a) {
-        const straight = byPair.get(pairKey(r.category_id, h, a))
-        const flipped = straight === undefined ? byPair.get(pairKey(r.category_id, a, h)) : undefined
+        const straight = byPair.get(pairKey(r.category_id, stage, h, a))
+        const flipped = straight === undefined ? byPair.get(pairKey(r.category_id, stage, a, h)) : undefined
         hit = straight ?? flipped; flip = !!flipped && !straight; settled = true
       }
       if (!hit || used.has(hit)) { if (settled) done.add(r.id); continue }
 
       const hs = flip ? hit.away_score : hit.home_score, as = flip ? hit.home_score : hit.away_score
-      // one failed write must not cost the remaining results — the snapshot is in settings_json anyway
       try { await run(s.from('matches').update({ home_score: hs, away_score: as, status: hit.status }).eq('id', r.id)) }
       catch { done.add(r.id); continue }
       used.add(hit); done.add(r.id); restored++; progress++
-      // mirror the trigger locally, so fixtures further down this same sweep know who they face
       if (hs === as || h == null || a == null) continue
       const w = hs! > as! ? h : a, l = hs! > as! ? a : h
-      for (const d of rows) {
+      for (const d of fresh) {
         const t = teams.get(d.id)!
         if (d.home_source === 'W:' + r.id) t[0] = w; else if (d.home_source === 'L:' + r.id) t[0] = l
         if (d.away_source === 'W:' + r.id) t[1] = w; else if (d.away_source === 'L:' + r.id) t[1] = l
@@ -238,7 +293,8 @@ export async function publish(tid: string, st: E.SchedState, all: E.BuildResult)
     }
     if (!progress) break
   }
-  return { groups: groupRows.length, matches: rows.length, restored, lost: played.length - restored }
+  const keptGroups = oldGroups.filter(g => keep.has(g.category_id)).length
+  return { groups: groupRows.length + keptGroups, matches: rows.length, kept: played.length - atRisk.length, restored, lost: atRisk.length - restored }
 }
 
 // ---------- ώρες προσέλευσης ----------
