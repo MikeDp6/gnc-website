@@ -205,7 +205,7 @@ export function Tournament() {
         <section className="wrap grid gap-5 pt-[70px] lg:grid-cols-[2fr_1fr]">
           <div className="card p-6">
             <h4 className="kicker mb-[14px]">{t.tour.info}</h4>
-            {[[t.tour.venue, tour.venue], [t.tour.address, tour.address ?? '—'], [t.tour.hours, tour.days.join(' · ')], [t.tour.game, '10΄ ή πρώτος στους 21'], [t.tour.checkin, 'QR ομάδας στην είσοδο']].map(([k, v]) => (
+            {[[t.tour.venue, tour.venue], [t.tour.address, tour.address ?? '—'], [t.tour.hours, tour.days.join(' · ')], [t.tour.game, '10΄ ή πρώτος στους 21'], [t.tour.checkin, 'Στη γραμματεία του γηπέδου']].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-t border-line py-[11px] text-[14px]"><span className="text-dim">{k}</span><b className="text-right font-semibold">{v}</b></div>
             ))}
             <div className="mt-[18px] flex flex-col gap-2"><Button className="w-full" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tour.address ?? `${tour.venue} ${tour.city}`)}`}>{t.tour.directions}</Button><Button variant="ghost" className="w-full" to={`/live/${tour.slug}`}>📺 {t.live.title} · TV</Button></div>

@@ -164,11 +164,11 @@ export function Register() {
           <aside className="flex flex-col gap-4">
             <div className="card p-6">
               <div className="kicker mb-3">Τι χρειάζεσαι</div>
-              <ul className="space-y-2 text-[14px] text-dim"><li>· Όνομα ομάδας</li><li>· Στοιχεία αρχηγού (email, κινητό)</li><li>· 2–3 συμπαίκτες (μπορούν να μπουν αργότερα)</li><li>· Γονική συναίνεση για U11–U18</li></ul>
+              <ul className="space-y-2 text-[14px] text-dim"><li>· Όνομα ομάδας</li><li>· Στοιχεία αρχηγού (ονοματεπώνυμο, έτος γέννησης, email, κινητό)</li><li>· 2–3 συμπαίκτες με ονοματεπώνυμο και έτος γέννησης (μπορούν να μπουν και αργότερα)</li><li>· Γονική συναίνεση για U11–U18</li></ul>
             </div>
             <div className="card p-6">
               <div className="kicker mb-3">Μετά τη δήλωση</div>
-              <ul className="space-y-2 text-[14px] text-dim"><li>· Έγκριση ή λίστα αναμονής από τη διοργάνωση</li><li>· Το πρόγραμμα με email και στο app</li><li>· Ειδοποίηση 15΄ πριν από κάθε αγώνα σου</li><li>· QR check-in στην είσοδο</li></ul>
+              <ul className="space-y-2 text-[14px] text-dim"><li>· Email επιβεβαίωσης με τα στοιχεία της δήλωσης</li><li>· Σύνδεσμος για να επιβεβαιώσουν οι συμπαίκτες σου</li><li>· Email με την ώρα προσέλευσης πριν τη διοργάνωση</li><li>· Πρόγραμμα και αποτελέσματα στη σελίδα της διοργάνωσης</li><li>· Check-in στη γραμματεία του γηπέδου</li></ul>
             </div>
             {tour && <div className="card p-6"><div className="kicker mb-2">Επιλεγμένη διοργάνωση</div><div className="disp text-[30px]">{tour.name}</div><div className="mt-1 text-[13px] text-dim">{tour.dates} · {tour.venue}</div></div>}
           </aside>
