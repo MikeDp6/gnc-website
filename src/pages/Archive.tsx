@@ -12,7 +12,11 @@ import { cn } from '@/lib/cn'
 export function Archive() {
   const { archive, tournaments, cities, season } = useData()
   const { lang } = useI18n()
-  const withVideo = cities.filter(c => c.videos?.length || c.image)
+  // the archive reads newest first: season stops by date, cities by their latest year, results by date
+  const seasonDesc = season.map((e, i) => ({ e, i })).sort((a, b) => (b.e.startsOn ?? '').localeCompare(a.e.startsOn ?? '') || b.i - a.i).map(x => x.e)
+  const last = (c: { years?: number[] }) => Math.max(0, ...(c.years ?? []))
+  const withVideo = cities.filter(c => c.videos?.length || c.image).map((c, i) => ({ c, i })).sort((a, b) => last(b.c) - last(a.c) || a.i - b.i).map(x => x.c)
+  const archiveDesc = archive.map(a => ({ a, d: tournaments.find(t => t.id === a.id)?.startsAt ?? '' })).sort((x, y) => String(y.d).localeCompare(String(x.d))).map(x => x.a)
   useMeta('Η περιοδεία & το αρχείο', `${cities.length} πόλεις, ${season.length} διοργανώσεις το 2026 — όλες οι στάσεις της περιοδείας GNC 3on3.`)
   const cname = (c: { name: string; nameEn?: string }) => lang === 'en' && c.nameEn ? c.nameEn : c.name
   return (
@@ -23,18 +27,13 @@ export function Archive() {
           <div>
             <Heading a="Η περιοδεία" b="& το αρχείο" as="h1" />
             <p className="mt-4 max-w-[520px] text-[16px] text-dim">Κάθε καλοκαίρι, σε κάθε γωνιά της χώρας, δωρεάν. Από την Αθήνα και τη Θεσσαλονίκη έως την Κρήτη και την Πάτρα — η κορυφαία διοργάνωση street basketball της Ελλάδας.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {[[cities.length, 'Πόλεις'], [season.length, 'Διοργανώσεις 2026'], ['2018', 'Από']].map(([v, l]) => (
-                <div key={l} className="glass min-w-[110px] rounded-[16px] px-[18px] py-[14px]"><b className="disp block text-[44px] leading-none text-orange">{v}</b><span className="mt-1 block text-[11px] font-bold uppercase tracking-[.12em] text-dim">{l}</span></div>
-              ))}
-            </div>
           </div>
           <div className="card rounded-band p-4"><GreeceMap className="h-[360px]" /></div>
         </div>
 
         <div className="mt-14 flex items-end justify-between"><Heading a="Σεζόν" b="2026" size="md" /><span className="text-[12px] text-dim">#NEXTSTOPYOURCITY</span></div>
         <div className="mt-6 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {season.map((e, i) => (
+          {seasonDesc.map((e, i) => (
             <Reveal key={e.id} delay={(i % 3) * 40}>
               <Link to={`/cities/${e.cityId}`} className={cn('card pop grid grid-cols-[56px_1fr_auto] items-center gap-3 px-4 py-3', !e.done && 'border-blue')}>
                 <div className="disp text-[24px] leading-none">{e.month}</div>
@@ -65,7 +64,7 @@ export function Archive() {
           <>
             <div className="mt-14"><Heading a="Με το" b="σύστημα" size="md" /><p className="mt-2 text-[13px] text-dim">Διοργανώσεις με πλήρες αρχείο ομάδων, ομίλων και αποτελεσμάτων.</p></div>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {archive.map((a, i) => {
+              {archiveDesc.map((a, i) => {
                 const tour = tournaments.find(x => x.id === a.id)
                 const inner = (
                   <>

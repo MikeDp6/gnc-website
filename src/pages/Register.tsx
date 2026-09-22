@@ -60,7 +60,13 @@ export function Register() {
     setBusy(true); setErr(null)
     try {
       const r = await registerTeam({ tournamentId: tour.id, categoryId: cid, teamName: team.name, city: team.city, first: cap.first, last: cap.last, email: cap.email, phone: cap.phone, birthYear: cap.birth ? +cap.birth : undefined, guardian: minor ? cap.guardian : undefined, mates })
-      setDone({ code: r.invite_code, status: r.status })
+      // with auto-approval the database turns 'pending' into 'active' on insert — show what really happened
+      let status: string = r.status
+      if (status === 'pending' && supabase) {
+        const got = await supabase.from('teams').select('status').eq('id', r.team_id).maybeSingle()
+        if (got.data?.status) status = got.data.status
+      }
+      setDone({ code: r.invite_code, status })
       // email επιβεβαίωσης στον αρχηγό — δεν καθυστερεί ούτε χαλάει τη δήλωση αν αποτύχει
       supabase?.functions.invoke('registration-email', { body: { team_id: r.team_id, code: r.invite_code } }).catch(() => {})
     } catch (x) { setErr((x as Error).message) }
@@ -79,8 +85,8 @@ export function Register() {
             {err && <div className="mb-4 rounded-[10px] border border-red/60 bg-red/10 px-4 py-3 text-[13px]">{err}</div>}
             {done ? (
               <div>
-                <div className="disp text-[44px] text-ok">{done.status === 'waitlist' ? 'Μπήκες στη λίστα αναμονής' : 'Η δήλωση καταχωρήθηκε'}</div>
-                <p className="mt-3 text-[15px] text-dim">Η ομάδα <b className="text-white">{team.name}</b> {done.status === 'waitlist' ? 'μπήκε στη λίστα αναμονής της κατηγορίας' : 'μπήκε ως «Εκκρεμεί» στην κατηγορία'} {cid && categoryById(cid).name}. Σου στείλαμε email στο <b className="text-white">{cap.email}</b> με τα στοιχεία της δήλωσης και τον σύνδεσμο για τους συμπαίκτες — δες και τα ανεπιθύμητα.</p>
+                <div className="disp text-[44px] text-ok">{done.status === 'waitlist' ? 'Μπήκες στη λίστα αναμονής' : done.status === 'active' ? 'Η ομάδα σου είναι μέσα' : 'Η δήλωση καταχωρήθηκε'}</div>
+                <p className="mt-3 text-[15px] text-dim">Η ομάδα <b className="text-white">{team.name}</b> {done.status === 'waitlist' ? 'μπήκε στη λίστα αναμονής της κατηγορίας' : done.status === 'active' ? 'δηλώθηκε στην κατηγορία' : 'μπήκε ως «Εκκρεμεί» στην κατηγορία'} {cid && categoryById(cid).name}. Σου στείλαμε email στο <b className="text-white">{cap.email}</b> με τα στοιχεία της δήλωσης και τον σύνδεσμο για τους συμπαίκτες — δες και τα ανεπιθύμητα.</p>
                 <div className="mt-6 rounded-[14px] border border-orange/60 bg-orange/10 p-5">
                   <div className="kicker mb-2">Σύνδεσμος πρόσκλησης συμπαικτών</div>
                   <div className="mono break-all text-[15px] font-bold">{window.location.origin}/join/{done.code}</div>

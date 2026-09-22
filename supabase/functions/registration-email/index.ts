@@ -95,7 +95,9 @@ Deno.serve(async req => {
       Γεια σου ${esc(cap.first_name)}, η ομάδα <b style="color:#F5F4F1;">${esc(team.name)}</b> δηλώθηκε στο <b style="color:#F5F4F1;">${esc(tour.name)}</b>.
       ${waitlist
         ? 'Η κατηγορία έχει ήδη συμπληρωθεί, οπότε η ομάδα μπήκε στη <b style="color:#FF8700;">λίστα αναμονής</b>. Αν ανοίξει θέση θα σας ενημερώσουμε.'
-        : 'Η δήλωση περιμένει την <b style="color:#FF8700;">έγκριση της διοργάνωσης</b>. Μόλις εγκριθεί, η ομάδα θα εμφανιστεί στο πρόγραμμα.'}
+        : team.status === 'active'
+          ? 'Η ομάδα σας <b style="color:#FF8700;">είναι μέσα</b>. Τις ώρες προσέλευσης θα τις λάβετε με email πριν τη διοργάνωση.'
+          : 'Η δήλωση περιμένει την <b style="color:#FF8700;">έγκριση της διοργάνωσης</b>. Μόλις εγκριθεί, η ομάδα θα εμφανιστεί στο πρόγραμμα.'}
     </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
       ${row('Διοργάνωση', esc(tour.name))}

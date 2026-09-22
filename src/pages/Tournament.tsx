@@ -65,7 +65,8 @@ export function Tournament() {
   const arr = tour.arrivals
   // Arrival times are published separately, so a tournament can announce only those: when there is
   // no schedule online, the schedule/groups/knockout tabs have nothing to show and step aside.
-  const hasSchedule = tour.schedulePublic !== false && all.length > 0
+  // a finished tournament always shows its results: hiding the schedule is only for before and during
+  const hasSchedule = (tour.schedulePublic !== false || tour.status === 'done') && all.length > 0
   const TAB_KEYS = ALL_KEYS.filter(k =>
     (k !== 'photos' || gallery.length + links.length > 0) &&
     (k !== 'arrivals' || !!arr) &&

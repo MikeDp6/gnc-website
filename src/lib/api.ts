@@ -164,7 +164,7 @@ export async function fetchBundle(): Promise<Bundle> {
   })
   const season: SeasonEvent[] = seasonRows ? seasonRows.map(e => {
     const city = cities.find(c => c.id === e.city_id)
-    return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined, poster: e.poster_url ?? undefined }
+    return { id: e.id, cityId: e.city_id ?? '', city: city?.name ?? e.label ?? '', dates: e.starts_on === e.ends_on ? ddmm(e.starts_on) : `${ddmm(e.starts_on)} - ${ddmm(e.ends_on)}`, venue: e.venue ?? '', month: MONTHS_SHORT[d(e.starts_on).getMonth()], done: e.done, label: e.label ?? undefined, poster: e.poster_url ?? undefined, startsOn: e.starts_on }
   }) : season2026
   const sponsorsOut: Sponsor[] = sponsors.length ? sponsors.map(s => ({ name: s.name, url: s.url ?? undefined, logo: s.logo_url ?? undefined, tier: s.tier ?? 'partner', blurb: s.blurb ?? undefined })) : sponsorList
   const photos: Photo[] = (photoRows ?? []).map(p => ({ id: p.id, url: p.url, caption: p.caption ?? undefined, credit: p.credit ?? undefined, tournamentId: p.tournament_id ?? undefined, cityId: p.city_id ?? undefined }))

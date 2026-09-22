@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Photo } from '@/data/types'
 import { cn } from '@/lib/cn'
 import { pauseScroll, resumeScroll } from '@/lib/smoothScroll'
@@ -48,7 +49,9 @@ export function PhotoGrid({ photos, initial = 12 }: { photos: Photo[]; initial?:
         </button>
       )}
 
-      {cur && (
+      {/* portal: the grid sits inside animated (transformed) sections, which would trap a fixed overlay
+          inside them — the viewer then showed up the size of the section, over the rest of the page */}
+      {cur && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#07070a]/97 p-4 backdrop-blur-md" onClick={() => setOpen(null)}>
           <button type="button" aria-label="Κλείσιμο" onClick={() => setOpen(null)}
             className="glass absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full text-[20px]">×</button>
@@ -67,7 +70,8 @@ export function PhotoGrid({ photos, initial = 12 }: { photos: Photo[]; initial?:
             )}
             <div className="mt-1 text-center text-[12px] text-mute">{open! + 1} / {n}</div>
           </figure>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

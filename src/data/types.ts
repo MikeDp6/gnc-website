@@ -163,7 +163,7 @@ export interface CityVideo { kind: 'youtube' | 'instagram'; id: string }
 export interface CityPartner { name: string; role?: string; url?: string }
 export interface City { id: string; name: string; nameEn?: string; lat: number; lng: number; image?: string; years?: number[]; videos?: CityVideo[]; partners?: CityPartner[] }
 /** One row of the yearly calendar (from gnc3on3.gr/calendar) — lighter than a full Tournament */
-export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string; poster?: string }
+export interface SeasonEvent { id: string; cityId: string; city: string; dates: string; venue: string; month: string; done: boolean; label?: string; poster?: string; startsOn?: string }
 export type SponsorTier = 'main' | 'official' | 'partner' | 'media'
 export interface Sponsor { name: string; url?: string; logo?: string; tier: SponsorTier; blurb?: string }
 export interface Photo { id: string; url: string; caption?: string; credit?: string; tournamentId?: string; cityId?: string }

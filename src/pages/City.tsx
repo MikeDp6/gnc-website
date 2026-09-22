@@ -32,8 +32,7 @@ export function City() {
   return (
     <>
       <Crumb items={[{ label: 'Περιοδεία', to: '/archive' }, { label: name }]} />
-      <Band kicker={`Στάση της περιοδείας${years.length ? ` · ${years.join(' · ')}` : ''}`} title={name} cover={city.image ?? mine[0]?.cover}
-        stats={[{ v: years.length || events.length || '—', l: 'Διοργανώσεις' }, ...(shots.length ? [{ v: shots.length, l: 'Φωτογραφίες' }] : []), { v: (yt.length + ig.length) || '—', l: 'Βίντεο' }, ...(upcoming[0] ? [{ v: upcoming[0].dates.split(' ')[0], l: 'Επόμενη', accent: '#FF8700' }] : [])]} />
+      <Band kicker={`Στάση της περιοδείας${years.length ? ` · ${years.join(' · ')}` : ''}`} title={name} cover={city.image ?? mine[0]?.cover} />
       <section className="wrap grid gap-8 pt-8 lg:grid-cols-[1.2fr_1fr]">
         <div>
           {upcoming.length > 0 && (
