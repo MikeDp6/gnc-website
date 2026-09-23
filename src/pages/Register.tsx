@@ -49,6 +49,18 @@ export function Register() {
   }, [tid, years])
   const catOk = !allowed || !cid || allowed.some(a => a.id === cid)
   const suggested = allowed?.find(a => a.suggested)
+  // Τα κουμπιά ήταν σβηστά χωρίς εξήγηση. Εδώ μαζεύεται τι ακριβώς λείπει, και φαίνεται δίπλα τους.
+  const capMissing = [
+    !team.name.trim() && 'το όνομα της ομάδας',
+    cap.first.trim().length < 2 && 'το όνομα του αρχηγού',
+    cap.last.trim().length < 2 && 'το επώνυμο του αρχηγού',
+    !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cap.email.trim()) && 'ένα σωστό email αρχηγού',
+    !cap.phone.trim() && 'το κινητό του αρχηγού',
+    !/^\d{4}$/.test(cap.birth.trim()) && 'το έτος γέννησης του αρχηγού (4 ψηφία)',
+  ].filter(Boolean) as string[]
+  const rosterMissing = mates
+    .map((m, i) => !mateOk(m) && `τα στοιχεία του ${i + 1}ου συμπαίκτη (όνομα, επώνυμο, έτος γέννησης)`)
+    .filter(Boolean) as string[]
   const [done, setDone] = useState<{ code: string; status: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -107,7 +119,10 @@ export function Register() {
                     ))}
                   </div>
                 </div>
-                <div className="flex justify-end"><Button onClick={() => cid && setStep(1)} className={cn(!cid && 'opacity-50')}>Συνέχεια →</Button></div>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  {!cid && <span className="text-[13px] text-orange">Διάλεξε κατηγορία για να συνεχίσεις.</span>}
+                  <Button onClick={() => cid && setStep(1)} className={cn(!cid && 'opacity-50')}>Συνέχεια →</Button>
+                </div>
               </div>
             ) : step === 1 ? (
               <div className="grid gap-4 md:grid-cols-2">
@@ -125,7 +140,13 @@ export function Register() {
                     <label className="flex items-start gap-3 text-[13px] text-dim md:col-span-2"><input type="checkbox" required checked={cap.consent} onChange={e => setCap({ ...cap, consent: e.target.checked })} className="mt-1" />Ως γονέας/κηδεμόνας συναινώ στη συμμετοχή του ανηλίκου στη διοργάνωση και στη χρήση φωτογραφιών από την εκδήλωση.</label>
                   </>
                 )}
-                <div className="flex justify-between md:col-span-2"><Button variant="ghost" onClick={() => setStep(0)}>← Πίσω</Button><Button onClick={() => team.name && cap.first && cap.last && cap.email && /^\d{4}$/.test(cap.birth) && setStep(2)}>Συνέχεια →</Button></div>
+                {capMissing.length > 0 && (
+                  <div className="rounded-[12px] border border-orange/50 bg-orange/10 px-4 py-3 text-[13px] text-orange md:col-span-2">
+                    Για να συνεχίσεις λείπει: {capMissing.join(' · ')}.
+                  </div>
+                )}
+                <div className="flex justify-between md:col-span-2"><Button variant="ghost" onClick={() => setStep(0)}>← Πίσω</Button>
+                  <Button onClick={() => capMissing.length === 0 && setStep(2)} className={cn(capMissing.length > 0 && 'opacity-50')}>Συνέχεια →</Button></div>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -157,6 +178,11 @@ export function Register() {
                   </div>
                 ))}
                 <label className="flex items-start gap-3 text-[13px] text-dim"><input type="checkbox" required className="mt-1" />Αποδέχομαι τον <Link className="text-white underline" to="/kanonismoi">κανονισμό</Link> και τους <Link className="text-white underline" to="/oroi">όρους συμμετοχής</Link> της διοργάνωσης (4 παίκτες, μισό γήπεδο, 10΄ ή πρώτος στους 21).</label>
+                {(rosterMissing.length > 0 || !catOk) && (
+                  <div className="rounded-[12px] border border-orange/50 bg-orange/10 px-4 py-3 text-[13px] text-orange">
+                    Για να καταχωρηθεί η δήλωση λείπει: {[...rosterMissing, !catOk && 'σωστή κατηγορία για τις ηλικίες της ομάδας'].filter(Boolean).join(' · ')}.
+                  </div>
+                )}
                 <div className="flex justify-between"><Button variant="ghost" onClick={() => setStep(1)}>← Πίσω</Button><Button type="submit" variant="orange" className={cn((busy || !rosterOk || !catOk) && 'pointer-events-none opacity-50')}>{busy ? 'Καταχώρηση…' : 'Καταχώρηση δήλωσης'}</Button></div>
               </div>
             )}
