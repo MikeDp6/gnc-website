@@ -146,12 +146,20 @@ export async function fetchBundle(): Promise<Bundle> {
     return { id: t.id, name: t.name, dateShort: { day: String(D.getDate()), month: MONTHS[D.getMonth()] }, detail: `${t.dates} · ${t.venue}`, status: i === 0 ? 'next' : t.status === 'registration' ? 'registration' : 'soon' }
   })
 
+  // the bundle only carries the current tournament's teams, so the winners of past ones are fetched by id
+  const winnerIds = [...new Set(winners.map(w => w.team_id).filter(id => !teams.some(t => t.id === id)))]
+  const winnerNames = new Map<string, string>(teams.map(t => [t.id, t.name]))
+  if (winnerIds.length) {
+    const rows = await orElse(q<Array<{ id: string; name: string }>>(sb.from('teams').select('id,name').in('id', winnerIds)), [])
+    rows.forEach(r => winnerNames.set(r.id, r.name))
+  }
+
   const tints: ArchiveItem['tint'][] = ['orange', 'blue', 'mono', 'teal']
   const archive: ArchiveItem[] = tournaments.filter(t => t.status === 'done').reverse().map((t, i) => {
     const w = winners.filter(x => x.tournament_id === t.id && x.place === 1)
     const D = d(tours.find(x => x.id === t.id)!.starts_on)
     return { id: t.id, city: t.city, when: `${MONTHS[D.getMonth()]} ${D.getFullYear()}`, title: `${t.categoryIds.length} κατηγορίες`,
-      blurb: w.length ? 'Νικητές: ' + w.map(x => `${teams.find(tt => tt.id === x.team_id)?.name ?? '—'} (${catById.get(x.category_id)?.short ?? x.category_id})`).join(', ') : 'Αποτελέσματα, brackets και φωτογραφίες', tint: tints[i % 4] }
+      blurb: w.length ? 'Νικητές: ' + w.map(x => `${winnerNames.get(x.team_id) ?? '—'} (${catById.get(x.category_id)?.short ?? x.category_id})`).join(', ') : 'Αποτελέσματα, brackets και φωτογραφίες', tint: tints[i % 4] }
   })
 
   const tickerList: TickerItem[] = ticker.map(x => ({ tag: x.tag, text: x.text, textEn: x.text_en ?? undefined, tone: x.tone }))
@@ -192,4 +200,44 @@ export function subscribeMatches(onChange: () => void): () => void {
   if (!sb) return () => {}
   const ch = sb.channel('public:matches').on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, onChange).subscribe()
   return () => { sb.removeChannel(ch) }
+}
+
+
+/**
+ * Teams, groups and matches of ONE tournament, fetched when someone opens a page of a finished
+ * tournament. The bundle carries only the current stop, to keep every visit small.
+ */
+export async function fetchTournamentExtra(tid: string): Promise<{ teams: Team[]; groups: Group[]; matches: Match[] } | null> {
+  const sb = supabase
+  if (!sb) return null
+  const q = <T,>(p: PromiseLike<{ data: T | null; error: unknown }>) => p.then(({ data }) => (data ?? []) as T)
+  const [teams, groups, standings, matches, tcs, days, tps] = await Promise.all([
+    q<TeamRow[]>(sb.from('teams').select('id,tournament_id,category_id,name,city,captain_id,status,checked_in_at').eq('tournament_id', tid).order('name')),
+    q<GroupRow[]>(sb.from('groups').select('id,tournament_id,category_id,name,sort_order,note').eq('tournament_id', tid).order('sort_order')),
+    q<StandRow[]>(sb.from('group_standings').select('*')),
+    q<MatchRow[]>(sb.from('matches').select('id,tournament_id,category_id,phase,label,group_id,day_id,court,slot_time,home_team_id,away_team_id,home_label,away_label,home_score,away_score,status').eq('tournament_id', tid).order('slot_time')),
+    q<TCRow[]>(sb.from('tournament_categories').select('tournament_id,category_id,qualifiers,sort_order').eq('tournament_id', tid)),
+    q<DayRow[]>(sb.from('tournament_days').select('id,tournament_id,day_index,date,start_time').eq('tournament_id', tid).order('day_index')),
+    q<TPRow[]>(sb.from('team_players').select('team_id,player_id,role')),
+  ])
+  const dayIndex = new Map(days.map(x => [x.id, x.day_index]))
+  return {
+    teams: teams.map(t => ({ id: t.id, name: t.name, categoryId: t.category_id, tournamentId: t.tournament_id, city: t.city ?? undefined, captainId: t.captain_id ?? undefined, playerIds: tps.filter(x => x.team_id === t.id).map(x => x.player_id) })),
+    groups: groups.map(g => {
+      const tc = tcs.find(x => x.category_id === g.category_id)
+      const nGroups = groups.filter(x => x.category_id === g.category_id).length || 1
+      const perGroup = tc?.qualifiers ? Math.ceil(tc.qualifiers / nGroups) : 0
+      const rows = standings.filter(s2 => s2.group_id === g.id)
+        .sort((a, b) => b.points - a.points || (b.points_for - b.points_against) - (a.points_for - a.points_against) || b.points_for - a.points_for)
+      return { id: g.id, categoryId: g.category_id, name: g.name, note: g.note ?? undefined,
+        rows: rows.map((r, i) => ({ teamId: r.team_id, played: r.played, wins: r.wins, losses: r.losses, pointsFor: r.points_for, pointsAgainst: r.points_against, points: r.points, qualifies: i < perGroup })) }
+    }),
+    matches: matches.map(m => ({
+      id: m.id, tournamentId: m.tournament_id, categoryId: m.category_id, phase: m.phase, label: m.label,
+      day: (dayIndex.get(m.day_id ?? '') ?? 1) as 1 | 2, time: (m.slot_time ?? '').slice(0, 5), court: m.court ?? 1,
+      homeId: m.home_team_id ?? undefined, awayId: m.away_team_id ?? undefined, homeLabel: m.home_label ?? undefined, awayLabel: m.away_label ?? undefined,
+      homeScore: m.home_score ?? undefined, awayScore: m.away_score ?? undefined,
+      status: m.status === 'final' ? 'final' : m.status === 'live' ? 'live' : 'scheduled',
+    })),
+  }
 }

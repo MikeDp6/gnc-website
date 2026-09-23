@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useCallback, useRef } from 'react'
 import type { Bundle } from './types'
 import { mockBundle } from './mock'
-import { fetchBundle, subscribeMatches } from '@/lib/api'
+import { fetchBundle, fetchTournamentExtra, subscribeMatches } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 
 interface Store extends Bundle {
@@ -11,6 +11,8 @@ interface Store extends Bundle {
   categoryById: (id: string) => Bundle['categories'][number]
   playerById: (id?: string) => Bundle['players'][number] | undefined
   tournamentBySlug: (slug: string) => Bundle['tournaments'][number] | undefined
+  /** Φέρνει τα δεδομένα μιας παλιότερης διοργάνωσης όταν ανοίξει η σελίδα της. */
+  loadTournament: (tid?: string) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -53,13 +55,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const value = useMemo<Store>(() => ({
-    ...bundle, loading, source,
-    teamById: id => bundle.teams.find(x => x.id === id),
-    categoryById: id => bundle.categories.find(x => x.id === id) ?? { id, key: 'o18', name: id, short: id },
-    playerById: id => bundle.players.find(x => x.id === id),
-    tournamentBySlug: slug => bundle.tournaments.find(x => x.slug === slug),
-  }), [bundle, loading, source])
+  // A finished tournament is not in the bundle (only the current stop is, to keep each visit light).
+  // Opening its page asks for its teams, groups and matches once; they are kept apart from the bundle
+  // and merged on top of it, so the periodic refresh of the bundle never drops them.
+  const [extra, setExtra] = useState<{ teams: Bundle['teams']; groups: Bundle['groups']; matches: Bundle['matches'] }>({ teams: [], groups: [], matches: [] })
+  const asked = useRef(new Set<string>())
+  const loadTournament = useCallback((tid?: string) => {
+    if (!tid || asked.current.has(tid)) return
+    asked.current.add(tid)
+    fetchTournamentExtra(tid).then(x => {
+      if (!x) return
+      setExtra(e => ({ teams: [...e.teams, ...x.teams], groups: [...e.groups, ...x.groups], matches: [...e.matches, ...x.matches] }))
+    }).catch(() => { asked.current.delete(tid) })
+  }, [])
+
+  const value = useMemo<Store>(() => {
+    const add = <T extends { id: string }>(base: T[], more: T[]) => {
+      if (!more.length) return base
+      const seen = new Set(base.map(i => i.id))
+      return [...base, ...more.filter(i => !seen.has(i.id))]
+    }
+    const teams = add(bundle.teams, extra.teams)
+    const groups = add(bundle.groups, extra.groups)
+    const matches = add(bundle.matches, extra.matches)
+    return {
+      ...bundle, teams, groups, matches, loading, source,
+      teamById: id => teams.find(x => x.id === id),
+      categoryById: id => bundle.categories.find(x => x.id === id) ?? { id, key: 'o18', name: id, short: id },
+      playerById: id => bundle.players.find(x => x.id === id),
+      tournamentBySlug: slug => bundle.tournaments.find(x => x.slug === slug),
+      loadTournament,
+    }
+  }, [bundle, extra, loading, source, loadTournament])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

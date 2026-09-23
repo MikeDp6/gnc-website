@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { MediaCard } from '@/components/MediaCard'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -27,7 +27,7 @@ const ALL_KEYS: TabKey[] = ['schedule', 'groups', 'ko', 'arrivals', 'photos', 'i
 export function Tournament() {
   const { slug = '' } = useParams()
   const { t } = useI18n()
-  const { categories, categoryById, groups, matches, tournamentBySlug, loading, photos, mediaLinks } = useData()
+  const { categories, categoryById, groups, matches, tournamentBySlug, loading, photos, mediaLinks, loadTournament } = useData()
   const [params, setParams] = useSearchParams()
   const tour = tournamentBySlug(slug)
   // the tab lives in the address, so the menu can link straight to Ομάδες and the highlight follows
@@ -38,6 +38,9 @@ export function Tournament() {
     if (k === 'schedule') n.delete('tab'); else n.set('tab', k)
     return n
   }, { replace: true })
+  // a finished tournament is not in the bundle: ask for its schedule and results once
+  const tourId = tournamentBySlug(slug)?.id
+  useEffect(() => { if (tourId && !matches.some(m => m.tournamentId === tourId)) loadTournament(tourId) }, [tourId, matches, loadTournament])
   const [day, setDay] = useState<1 | 2>(1)
   const [cat, setCat] = useState<string>('all')
   const list = useMemo(() => matches.filter(m => m.tournamentId === tour?.id && m.day === day && (cat === 'all' || m.categoryId === cat)), [matches, tour, day, cat])
