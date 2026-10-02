@@ -5,7 +5,7 @@ import { Btn, PageTitle, Toast } from '../ui'
 import { cn } from '@/lib/cn'
 
 type Pending = { id: string; name: string; category_id: string; status: string; city: string | null; created_at: string; tournament_id: string; tournaments: { name: string } | null; players: { display_name: string; email: string | null; phone: string | null } | null }
-type Req = { id: string; kind: string; name: string; email: string; phone: string | null; org: string | null; subject: string | null; item: string | null; event_date: string | null; message: string | null; handled: boolean; created_at: string }
+type Req = { id: string; kind: string; name: string; email: string; phone: string | null; org: string | null; subject: string | null; item: string | null; event_date: string | null; message: string | null; handled: boolean; created_at: string; reply: string | null; replied_at: string | null }
 
 /** Inbox: team registrations awaiting approval + contact/quote requests from the site. */
 export function Requests() {
@@ -21,6 +21,19 @@ export function Requests() {
   }, [say])
   useEffect(() => { load() }, [load])
   const setStatus = async (id: string, status: string) => { const r = await supabase!.from('teams').update({ status }).eq('id', id); if (r.error) say(r.error.message); else { say(status === 'active' ? 'Εγκρίθηκε' : 'Ενημερώθηκε'); load() } }
+  // Απάντηση με email μέσα από το admin: φεύγει από τη διεύθυνση της διοργάνωσης και μένει εδώ γραμμένη.
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const [sending, setSending] = useState(false)
+  const reply = async (r: Req) => {
+    if (!draft.trim() || !supabase) return
+    setSending(true)
+    const res = await supabase.functions.invoke('request-reply', { body: { id: r.id, message: draft.trim() } })
+    const err = res.error ? await (async () => { const c = (res.error as { context?: Response }).context; try { return (await c?.clone().json())?.error } catch { return null } })() : null
+    if (res.error) say(err ?? 'Δεν στάλθηκε το email')
+    else { say(`Στάλθηκε στο ${r.email}`); setOpenId(null); setDraft(''); load() }
+    setSending(false)
+  }
   const handled = async (id: string, v: boolean) => { const r = await supabase!.from('contact_requests').update({ handled: v }).eq('id', id); if (r.error) say(r.error.message); else load() }
   const fmt = (s: string) => new Date(s).toLocaleString('el-GR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
   return (
@@ -42,11 +55,34 @@ export function Requests() {
       <div className="mb-3 kicker">Επικοινωνία & προσφορές</div>
       <div className="card overflow-hidden">
         {reqs.map(r => (
-          <div key={r.id} className={cn('grid grid-cols-[90px_1fr_auto] items-start gap-3 border-t border-line px-4 py-3 text-[13px]', r.handled && 'opacity-50')}>
-            <div className="mono text-dim">{fmt(r.created_at)}<div className="mt-1 text-[10px] uppercase tracking-[.1em]">{r.kind === 'quote' ? 'Προσφορά' : 'Επικοινωνία'}</div></div>
-            <div><b>{r.name}</b>{r.org && <span className="text-dim"> · {r.org}</span>} <span className="text-dim">· {r.email}{r.phone ? ` · ${r.phone}` : ''}</span>
-              <div className="mt-1 text-dim">{r.item && <b className="text-white">{r.item} · </b>}{r.subject && <b className="text-white">{r.subject} · </b>}{r.event_date && <span>{r.event_date} · </span>}{r.message}</div></div>
-            <label className="flex items-center gap-2 text-[11px] uppercase tracking-[.08em] text-dim"><input type="checkbox" checked={r.handled} onChange={e => handled(r.id, e.target.checked)} />Έγινε</label>
+          <div key={r.id} className={cn('border-t border-line px-4 py-3 text-[13px]', r.handled && !r.reply && 'opacity-50')}>
+            <div className="grid grid-cols-[90px_1fr_auto] items-start gap-3">
+              <div className="mono text-dim">{fmt(r.created_at)}<div className="mt-1 text-[10px] uppercase tracking-[.1em]">{r.kind === 'quote' ? 'Προσφορά' : 'Επικοινωνία'}</div></div>
+              <div><b>{r.name}</b>{r.org && <span className="text-dim"> · {r.org}</span>} <span className="text-dim">· {r.email}{r.phone ? ` · ${r.phone}` : ''}</span>
+                <div className="mt-1 text-dim">{r.item && <b className="text-white">{r.item} · </b>}{r.subject && <b className="text-white">{r.subject} · </b>}{r.event_date && <span>{r.event_date} · </span>}{r.message}</div>
+                {r.reply && (
+                  <div className="mt-2 rounded-[10px] border border-ok/40 bg-ok/5 p-3 text-[12px]">
+                    <div className="mb-1 text-[10px] font-bold uppercase tracking-[.1em] text-ok">Απαντήθηκε {r.replied_at ? fmt(r.replied_at) : ''}</div>
+                    <div className="whitespace-pre-wrap text-dim">{r.reply}</div>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => { setOpenId(openId === r.id ? null : r.id); setDraft('') }} className="text-[11px] font-bold uppercase tracking-[.08em] text-orange">{r.reply ? 'Νέα απάντηση' : 'Απάντηση'}</button>
+                <label className="flex items-center gap-2 text-[11px] uppercase tracking-[.08em] text-dim"><input type="checkbox" checked={r.handled} onChange={e => handled(r.id, e.target.checked)} />Έγινε</label>
+              </div>
+            </div>
+            {openId === r.id && (
+              <div className="mt-3 grid gap-2">
+                <textarea autoFocus value={draft} onChange={e => setDraft(e.target.value)} rows={5} placeholder={`Απάντηση προς ${r.name} (${r.email})…`}
+                  className="w-full rounded-[10px] border border-line bg-transparent px-3 py-2 text-[14px] outline-none focus:border-white/30" />
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-mute">
+                  <Btn onClick={() => reply(r)} disabled={sending || !draft.trim()} className="px-3 py-1 text-[12px]">{sending ? 'Αποστολή…' : 'Αποστολή email'}</Btn>
+                  <button type="button" onClick={() => { setOpenId(null); setDraft('') }} className="px-2 text-dim hover:text-white">Άκυρο</button>
+                  <span>Φεύγει από τη διεύθυνση της διοργάνωσης· η απάντησή του έρχεται στο email σου.</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {!reqs.length && <div className="p-6 text-dim">Κανένα αίτημα.</div>}
