@@ -9,7 +9,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const URL_ = Deno.env.get('SUPABASE_URL')!
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const RESEND = Deno.env.get('RESEND_API_KEY')!
 const FROM = Deno.env.get('REGISTRATION_FROM') ?? Deno.env.get('NEWSLETTER_FROM') ?? 'GNC 3on3 <no-reply@send.gnc3on3.gr>'
 const REPLY_TO = Deno.env.get('REGISTRATION_REPLY_TO') ?? 'gnc3on3@gmail.com'
@@ -47,17 +46,16 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
 
-  const auth = req.headers.get('Authorization') ?? ''
-  if (!auth.startsWith('Bearer ')) return json({ error: 'Χρειάζεται σύνδεση' }, 401)
-  const asUser = createClient(URL_, ANON, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } })
-  const { data: me } = await asUser.auth.getUser()
-  if (!me?.user) return json({ error: 'Χρειάζεται σύνδεση' }, 401)
-  const { data: isAdmin } = await asUser.from('admins').select('role').eq('user_id', me.user.id).maybeSingle()
-  if (!isAdmin) return json({ error: 'Μόνο για διαχειριστές' }, 403)
+  const db = createClient(URL_, SERVICE, { auth: { persistSession: false } })
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+  if (!jwt) return json({ error: 'Χρειάζεται σύνδεση (δεν στάλθηκε token)' }, 401)
+  const { data: who, error: whoErr } = await db.auth.getUser(jwt)
+  if (whoErr || !who?.user) return json({ error: 'Η συνεδρία έληξε — βγες και ξαναμπές στο admin' }, 401)
+  const { data: isAdmin } = await db.from('admins').select('role').eq('user_id', who.user.id).maybeSingle()
+  if (!isAdmin) return json({ error: 'Ο λογαριασμός δεν είναι διαχειριστής' }, 403)
 
   let body: { tournament_id?: string; dry_run?: boolean }
   try { body = await req.json() } catch { return json({ error: 'bad body' }, 400) }
-  const db = createClient(URL_, SERVICE, { auth: { persistSession: false } })
 
   const { data: tour } = await db.from('tournaments')
     .select('id,name,slug,venue,address,arrivals_json,arrivals_emailed_at').eq('id', String(body.tournament_id ?? '')).maybeSingle()
