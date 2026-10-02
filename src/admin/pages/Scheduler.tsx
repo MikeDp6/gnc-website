@@ -84,10 +84,12 @@ export function Scheduler({ tid }: { tid: string }) {
       let msg = `Δημοσιεύτηκαν ${a.rows.length} ώρες προσέλευσης` + (a.ko.length ? ` και ${a.ko.length} ζευγάρια νοκ-άουτ` : '')
       // then offer the email to the captains — counted first, so the question says how many
       if (supabase) {
-        const dry = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid, dry_run: true } })
+        const token = (await supabase.auth.getSession()).data.session?.access_token
+        const hdr = token ? { Authorization: `Bearer ${token}` } : undefined
+        const dry = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid, dry_run: true }, headers: hdr })
         const info = dry.data as { recipients?: number; skipped?: number; update?: boolean } | null
         if (info?.recipients && confirm(`Να σταλεί email με την ώρα προσέλευσης σε ${info.recipients} αρχηγούς εγκεκριμένων ομάδων;` + (info.update ? '\n\nΈχει ξανασταλεί — το θέμα θα γράφει «Ενημέρωση».' : '') + (info.skipped ? `\n\n${info.skipped} ομάδες δεν έχουν email αρχηγού και δεν θα λάβουν.` : ''))) {
-          const r = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid } })
+          const r = await supabase.functions.invoke('arrivals-email', { body: { tournament_id: tid }, headers: hdr })
           const out = r.data as { sent?: number; failed?: string[] } | null
           msg += out?.sent ? ` · στάλθηκαν ${out.sent} email` : ' · τα email ΔΕΝ στάλθηκαν'
           if (out?.failed?.length) msg += ` (${out.failed[0]})`

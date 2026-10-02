@@ -28,7 +28,12 @@ export function Requests() {
   const reply = async (r: Req) => {
     if (!draft.trim() || !supabase) return
     setSending(true)
-    const res = await supabase.functions.invoke('request-reply', { body: { id: r.id, message: draft.trim() } })
+    // το token του διαχειριστή πάει ρητά: αλλιώς η κλήση μπορεί να φύγει με το ανώνυμο κλειδί
+    const token = (await supabase.auth.getSession()).data.session?.access_token
+    const res = await supabase.functions.invoke('request-reply', {
+      body: { id: r.id, message: draft.trim() },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
     const err = res.error ? await (async () => { const c = (res.error as { context?: Response }).context; try { return (await c?.clone().json())?.error } catch { return null } })() : null
     if (res.error) say(err ?? 'Δεν στάλθηκε το email')
     else { say(`Στάλθηκε στο ${r.email}`); setOpenId(null); setDraft(''); load() }
