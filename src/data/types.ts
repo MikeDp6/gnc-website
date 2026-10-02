@@ -120,6 +120,8 @@ export interface Stop {
   dateShort: { day: string; month: string }
   detail: string
   status: 'next' | 'registration' | 'soon' | 'done'
+  /** η αμέσως επόμενη στάση — για το πορτοκαλί περίγραμμα, ανεξάρτητα από την κατάσταση δηλώσεων */
+  next?: boolean
 }
 
 export interface ArchiveItem {

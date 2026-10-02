@@ -133,8 +133,10 @@ export function Home() {
                   </span>
                 </>
               )
-              const cls = cn('pop grid grid-cols-[64px_1fr_auto] items-center gap-4 rounded-[14px] border border-line bg-[rgba(20,20,22,.82)] px-4 py-3 backdrop-blur-md', s.status === 'next' && 'border-orange')
-              return tour ? <Link key={s.id} to={`/tournaments/${tour.slug}`} className={cls}>{inner}</Link> : <div key={s.id} className={cls}>{inner}</div>
+              const cls = cn('pop grid grid-cols-[64px_1fr_auto] items-center gap-4 rounded-[14px] border border-line bg-[rgba(20,20,22,.82)] px-4 py-3 backdrop-blur-md', s.next && 'border-orange')
+              // ανοιχτές δηλώσεις → κατευθείαν στη φόρμα της διοργάνωσης
+              const to = tour ? (s.status === 'registration' ? `/register?t=${tour.slug}` : `/tournaments/${tour.slug}`) : null
+              return to ? <Link key={s.id} to={to} className={cls}>{inner}</Link> : <div key={s.id} className={cls}>{inner}</div>
             })}
           </div>
         </Reveal>

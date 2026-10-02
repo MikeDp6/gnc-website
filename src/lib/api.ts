@@ -143,7 +143,8 @@ export async function fetchBundle(): Promise<Bundle> {
   // tour list = tournaments from today on, in order
   const stops: Stop[] = tournaments.filter(t => t.status !== 'done').map((t, i) => {
     const D = d(tours.find(x => x.id === t.id)!.starts_on)
-    return { id: t.id, name: t.name, dateShort: { day: String(D.getDate()), month: MONTHS[D.getMonth()] }, detail: `${t.dates} · ${t.venue}`, status: i === 0 ? 'next' : t.status === 'registration' ? 'registration' : 'soon' }
+    return { id: t.id, name: t.name, dateShort: { day: String(D.getDate()), month: MONTHS[D.getMonth()] }, detail: `${t.dates} · ${t.venue}`, // οι ανοιχτές δηλώσεις δείχνονται ως δηλώσεις, ακόμα κι όταν είναι η επόμενη στάση
+      status: t.status === 'registration' ? 'registration' : i === 0 ? 'next' : 'soon', next: i === 0 }
   })
 
   // the bundle only carries the current tournament's teams, so the winners of past ones are fetched by id
