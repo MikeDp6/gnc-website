@@ -19,7 +19,8 @@ const MINOR = ['u11', 'u13', 'u15', 'u18']
 export function Register() {
   useMeta('Δήλωσε ομάδα', 'Δήλωσε την ομάδα σου σε διοργάνωση GNC 3on3. Δωρεάν συμμετοχή, κατηγορίες από U11 έως 35+.')
   const { tournaments, categories, categoryById } = useData()
-  const open = tournaments.filter(t => t.status === 'registration' || t.status === 'upcoming')
+  // μόνο όσες έχουν ανοιχτές δηλώσεις· σε «Επερχόμενο» η φόρμα δεν τις προσφέρει καν
+  const open = tournaments.filter(t => t.status === 'registration')
   const [params] = useSearchParams()
   // the programme page links straight here with the stop already chosen
   const asked = open.find(x => x.slug === params.get('t'))
@@ -91,7 +92,13 @@ export function Register() {
       <section className="wrap pt-6">
         <Heading a="Δήλωσε" b="ομάδα" as="h1" />
         <p className="mt-4 max-w-[600px] text-[15px] text-dim">Τρία λεπτά από το κινητό. Δηλώνεις ομάδα και κατηγορία, δίνεις τα στοιχεία σου ως αρχηγός, και στέλνεις σύνδεσμο πρόσκλησης στους συμπαίκτες σου — ο καθένας συμπληρώνει μόνο τα δικά του.</p>
-        <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+        {!open.length && (
+          <div className="mt-8 rounded-[14px] border border-orange/60 bg-orange/10 p-6 text-[15px]">
+            <b className="text-white">Αυτή τη στιγμή δεν υπάρχουν ανοιχτές δηλώσεις.</b>
+            <div className="mt-2 text-dim">Οι δηλώσεις της επόμενης στάσης ανοίγουν λίγες εβδομάδες πριν. Δες το <Link to="/tournaments" className="font-bold text-orange">πρόγραμμα των διοργανώσεων</Link> ή γράψου στο newsletter για να το μάθεις πρώτος.</div>
+          </div>
+        )}
+        {open.length > 0 && <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <form onSubmit={submit} className="card rounded-band p-6 md:p-8">
             <Steps steps={STEPS} current={done ? 3 : step} />
             {err && <div className="mb-4 rounded-[10px] border border-red/60 bg-red/10 px-4 py-3 text-[13px]">{err}</div>}
@@ -198,7 +205,7 @@ export function Register() {
             </div>
             {tour && <div className="card p-6"><div className="kicker mb-2">Επιλεγμένη διοργάνωση</div><div className="disp text-[30px]">{tour.name}</div><div className="mt-1 text-[13px] text-dim">{tour.dates} · {tour.venue}</div></div>}
           </aside>
-        </div>
+        </div>}
       </section>
     </>
   )
