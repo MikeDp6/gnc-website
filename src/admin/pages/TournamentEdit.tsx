@@ -156,14 +156,21 @@ function Categories({ tid, say }: { tid: string; say: (m: string) => void }) {
 function Teams({ tid, say }: { tid: string; say: (m: string) => void }) { return <TeamsBoard tid={tid} say={say} /> }
 
 // ---------- Αγώνες & σκορ ----------
+type CatLite = { id: string; label: string; color_key: string }
+/** Κατηγορία του αγώνα, με το χρώμα της — για να ξεχωρίζει η γραμμή με μια ματιά. */
+function CatTag({ cats, id }: { cats: CatLite[]; id: string }) {
+  const c = cats.find(x => x.id === id)
+  return <div className="truncate text-[11px] font-bold uppercase tracking-[.06em]" style={{ color: c ? catColor[c.color_key as keyof typeof catColor] : undefined }}>{c?.label ?? id}</div>
+}
 function Results({ tid, say }: { tid: string; say: (m: string) => void }) {
   const [ms, setMs] = useState<api.MatchRowA[]>([])
   const [teams, setTeams] = useState<api.TeamRow[]>([])
   const [days, setDays] = useState<Awaited<ReturnType<typeof api.listDays>>>([])
   const [day, setDay] = useState<string>('')
   const [draft, setDraft] = useState<Record<string, { h: string; a: string }>>({})
+  const [cats, setCats] = useState<CatLite[]>([])
   const load = useCallback(() => api.listMatches(tid).then(setMs).catch(e => say(e.message)), [tid, say])
-  useEffect(() => { load(); api.listTeams(tid).then(setTeams).catch(() => {}); api.listDays(tid).then(d => { setDays(d); if (d[0]) setDay(d[0].id) }).catch(() => {}) }, [tid, load])
+  useEffect(() => { load(); api.listTeams(tid).then(setTeams).catch(() => {}); api.listDays(tid).then(d => { setDays(d); if (d[0]) setDay(d[0].id) }).catch(() => {}); api.listCategories().then(setCats).catch(() => {}) }, [tid, load])
   const name = (id: string | null, label: string | null) => teams.find(t => t.id === id)?.name ?? label ?? 'TBD'
   const list = ms.filter(m => m.day_id === day)
   const save = async (m: api.MatchRowA, status: 'scheduled' | 'live' | 'final') => {
@@ -179,8 +186,8 @@ function Results({ tid, say }: { tid: string; say: (m: string) => void }) {
         {list.map(m => {
           const d = draft[m.id] ?? { h: String(m.home_score ?? ''), a: String(m.away_score ?? '') }
           return (
-            <div key={m.id} className={cn('grid grid-cols-[70px_1fr_60px_24px_60px_1fr_auto] items-center gap-2 border-t border-line px-4 py-2 text-[14px]', m.status === 'live' && 'bg-orange/10', m.status === 'final' && 'opacity-80')}>
-              <div className="mono text-[13px]"><b>{(m.slot_time ?? '').slice(0, 5)}</b><div className="text-[11px] text-dim">Γ{m.court} · {m.label}</div></div>
+            <div key={m.id} className={cn('grid grid-cols-[124px_1fr_60px_24px_60px_1fr_auto] items-center gap-2 border-t border-line px-4 py-2 text-[14px]', m.status === 'live' && 'bg-orange/10', m.status === 'final' && 'opacity-80')}>
+              <div className="text-[13px]"><b className="mono">{(m.slot_time ?? '').slice(0, 5)}</b><CatTag cats={cats} id={m.category_id} /><div className="mono text-[11px] text-dim">Γ{m.court} · {m.label}</div></div>
               <div className="text-right font-semibold">{name(m.home_team_id, m.home_label)}</div>
               <Input type="number" min={0} value={d.h} onChange={e => setDraft({ ...draft, [m.id]: { ...d, h: e.target.value } })} className="mono px-2 py-1 text-center" />
               <div className="text-center text-mute">–</div>
