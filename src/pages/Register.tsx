@@ -32,9 +32,12 @@ export function Register() {
   const empty = { first: '', last: '', birthYear: '', email: '' }
   const [mates, setMates] = useState([{ ...empty }, { ...empty }, { ...empty }])
   const setMate = (i: number, patch: Partial<typeof empty>) => setMates(mates.map((x, j) => j === i ? { ...x, ...patch } : x))
-  // Ένας συμπαίκτης είναι προαιρετικός· μόλις αρχίσεις να τον γράφεις όμως, θέλει ολόκληρο όνομα και έτος.
+  // Το 3x3 θέλει τρεις παίκτες στο γήπεδο: οι δύο πρώτοι συμπαίκτες είναι υποχρεωτικοί, ο τρίτος
+  // (τέταρτος παίκτης) προαιρετικός. Μόλις αρχίσεις να τον γράφεις όμως, θέλει ολόκληρο όνομα και έτος.
   const started = (m: typeof empty) => !!(m.first.trim() || m.last.trim() || m.email.trim() || m.birthYear.trim())
-  const mateOk = (m: typeof empty) => !started(m) || (m.first.trim().length > 1 && m.last.trim().length > 1 && /^\d{4}$/.test(m.birthYear.trim()))
+  const filled = (m: typeof empty) => m.first.trim().length > 1 && m.last.trim().length > 1 && /^\d{4}$/.test(m.birthYear.trim())
+  const required = (i: number) => i < 2
+  const mateOk = (m: typeof empty, i: number) => required(i) ? filled(m) : (!started(m) || filled(m))
   const rosterOk = mates.every(mateOk)
   // Η κατηγορία δεν είναι ελεύθερη επιλογή: βγαίνει από τις ηλικίες. Ανεβαίνεις, δεν κατεβαίνεις.
   const years = useMemo(() => [
@@ -60,7 +63,7 @@ export function Register() {
     !/^\d{4}$/.test(cap.birth.trim()) && 'το έτος γέννησης του αρχηγού (4 ψηφία)',
   ].filter(Boolean) as string[]
   const rosterMissing = mates
-    .map((m, i) => !mateOk(m) && `τα στοιχεία του ${i + 1}ου συμπαίκτη (όνομα, επώνυμο, έτος γέννησης)`)
+    .map((m, i) => !mateOk(m, i) && `τα στοιχεία του ${i + 1}ου συμπαίκτη (όνομα, επώνυμο, έτος γέννησης)`)
     .filter(Boolean) as string[]
   const [done, setDone] = useState<{ code: string; status: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -174,14 +177,14 @@ export function Register() {
                 )}
                 {mates.map((m, i) => (
                   <div key={i} className="card grid gap-3 p-4 sm:grid-cols-2">
-                    <div className="kicker sm:col-span-2">Συμπαίκτης {i + 1}{i === 2 ? ' · προαιρετικός 4ος' : ''}</div>
+                    <div className="kicker sm:col-span-2">Συμπαίκτης {i + 1}{required(i) ? ' · υποχρεωτικός' : ' · προαιρετικός 4ος'}</div>
                     <Field label="Όνομα"><TextInput value={m.first} onChange={e => setMate(i, { first: e.target.value })} /></Field>
                     <Field label="Επώνυμο"><TextInput value={m.last} onChange={e => setMate(i, { last: e.target.value })} /></Field>
                     <Field label="Έτος γέννησης"><TextInput inputMode="numeric" maxLength={4} placeholder="2004" value={m.birthYear}
                       onChange={e => setMate(i, { birthYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} /></Field>
                     <Field label="Email (προαιρετικό)"><TextInput type="email" value={m.email} placeholder="email@example.com"
                       onChange={e => setMate(i, { email: e.target.value })} /></Field>
-                    {started(m) && !mateOk(m) && <div className="text-[12px] text-red sm:col-span-2">Συμπλήρωσε όνομα, επώνυμο και τετραψήφιο έτος γέννησης.</div>}
+                    {(started(m) || required(i)) && !mateOk(m, i) && <div className="text-[12px] text-red sm:col-span-2">Συμπλήρωσε όνομα, επώνυμο και τετραψήφιο έτος γέννησης.</div>}
                   </div>
                 ))}
                 <label className="flex items-start gap-3 text-[13px] text-dim"><input type="checkbox" required className="mt-1" />Αποδέχομαι τον <Link className="text-white underline" to="/kanonismoi">κανονισμό</Link> και τους <Link className="text-white underline" to="/oroi">όρους συμμετοχής</Link> της διοργάνωσης (4 παίκτες, μισό γήπεδο, 10΄ ή πρώτος στους 21).</label>
@@ -197,7 +200,7 @@ export function Register() {
           <aside className="flex flex-col gap-4">
             <div className="card p-6">
               <div className="kicker mb-3">Τι χρειάζεσαι</div>
-              <ul className="space-y-2 text-[14px] text-dim"><li>· Όνομα ομάδας</li><li>· Στοιχεία αρχηγού (ονοματεπώνυμο, έτος γέννησης, email, κινητό)</li><li>· 2–3 συμπαίκτες με ονοματεπώνυμο και έτος γέννησης (μπορούν να μπουν και αργότερα)</li><li>· Γονική συναίνεση για U11–U18</li></ul>
+              <ul className="space-y-2 text-[14px] text-dim"><li>· Όνομα ομάδας</li><li>· Στοιχεία αρχηγού (ονοματεπώνυμο, έτος γέννησης, email, κινητό)</li><li>· 2 συμπαίκτες υποχρεωτικά, με ονοματεπώνυμο και έτος γέννησης — η ομάδα θέλει τουλάχιστον 3 παίκτες· ο 4ος είναι προαιρετικός</li><li>· Γονική συναίνεση για U11–U18</li></ul>
             </div>
             <div className="card p-6">
               <div className="kicker mb-3">Μετά τη δήλωση</div>

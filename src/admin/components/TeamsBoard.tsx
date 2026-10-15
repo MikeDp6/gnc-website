@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from '@/lib/adminApi'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { Btn, Input, Select } from '../ui'
 import { downloadXlsx, type Cell } from '../xlsx'
@@ -23,6 +24,30 @@ export function TeamsBoard({ tid, say }: { tid: string; say: (m: string) => void
   const [bulk, setBulk] = useState(false); const [paste, setPaste] = useState(''); const [bulkCat, setBulkCat] = useState('')
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [exporting, setExporting] = useState(false)
+  const [mailing, setMailing] = useState(false)
+
+  // Υπενθύμιση στους αρχηγούς των ομάδων που δεν έχουν μαζέψει τρεις παίκτες. Πρώτα μετράει πόσοι
+  // θα λάβουν και ποιες ομάδες είναι, και μόνο μετά — και αφού το επιβεβαιώσεις — φεύγουν τα email.
+  const remindRoster = async () => {
+    if (!supabase) return say('Δεν έχει ρυθμιστεί το Supabase')
+    setMailing(true)
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const hdr = token ? { Authorization: `Bearer ${token}` } : undefined
+      const dry = await supabase.functions.invoke('roster-reminder', { body: { tournament_id: tid, dry_run: true }, headers: hdr })
+      if (dry.error) throw new Error('Η αποστολή email δεν είναι διαθέσιμη')
+      const info = dry.data as { recipients?: number; skipped?: number; incomplete?: number; teams?: Array<{ name: string; players: number; email: boolean }> } | null
+      if (!info?.incomplete) { say('Όλες οι ομάδες έχουν τουλάχιστον 3 παίκτες'); setMailing(false); return }
+      if (!info.recipients) { say(`${info.incomplete} ομάδες λείπουν παίκτες, αλλά καμία δεν έχει email αρχηγού`); setMailing(false); return }
+      const lines = (info.teams ?? []).map(t => `• ${t.name} — ${t.players} ${t.players === 1 ? 'παίκτης' : 'παίκτες'}${t.email ? '' : ' (χωρίς email)'}`).join('\n')
+      const deadline = prompt(`Θα σταλεί υπενθύμιση σε ${info.recipients} αρχηγούς:\n\n${lines}\n\nΜέχρι πότε έχουν περιθώριο; (π.χ. «Πέμπτη 16/10 στις 20:00»)\nΆφησέ το κενό για «μέχρι την έναρξη των αγώνων».`, '')
+      if (deadline == null) { setMailing(false); return }
+      const r = await supabase.functions.invoke('roster-reminder', { body: { tournament_id: tid, deadline }, headers: hdr })
+      const out = r.data as { sent?: number; skipped?: number; failed?: string[] } | null
+      say(out?.sent ? `Στάλθηκαν ${out.sent} υπενθυμίσεις` + (out.skipped ? ` · ${out.skipped} χωρίς email` : '') : 'Τα email ΔΕΝ στάλθηκαν' + (out?.failed?.length ? ` (${out.failed[0]})` : ''))
+    } catch (e) { say((e as Error).message) }
+    setMailing(false)
+  }
 
   const load = useCallback(() => api.exportTeams(tid).then(setTeams).catch(e => say(e.message)), [tid, say])
   useEffect(() => {
@@ -132,6 +157,7 @@ export function TeamsBoard({ tid, say }: { tid: string; say: (m: string) => void
         <Btn onClick={newTeam}>+ Νέα ομάδα</Btn>
         <Btn variant="ghost" onClick={() => setBulk(b => !b)}>Μαζική προσθήκη</Btn>
         <Btn variant="ghost" onClick={exportXlsx} disabled={exporting || !teams.length}>{exporting ? 'Ετοιμάζεται…' : '⬇ Excel'}</Btn>
+        <Btn variant="ghost" onClick={remindRoster} disabled={mailing || !teams.length}>{mailing ? 'Αποστολή…' : '✉ Υπενθύμιση ρόστερ'}</Btn>
         <button type="button" onClick={() => setOpen(s => s.size ? new Set() : new Set(shown.map(t => t.id)))} className="px-2 text-[12px] font-bold text-dim hover:text-white">{open.size ? 'Κλείσιμο όλων' : 'Άνοιγμα όλων'}</button>
       </div>
 
