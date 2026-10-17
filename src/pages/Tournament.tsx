@@ -70,10 +70,14 @@ export function Tournament() {
   // no schedule online, the schedule/groups/knockout tabs have nothing to show and step aside.
   // a finished tournament always shows its results: hiding the schedule is only for before and during
   const hasSchedule = (tour.schedulePublic !== false || tour.status === 'done') && all.length > 0
+  // Χωρίς αναλυτικό πρόγραμμα, όποιος πατήσει «Πρόγραμμα» ψάχνει ώρες: του δίνουμε τις ώρες προσέλευσης
+  // εκεί, αντί να εξαφανίζεται η καρτέλα. Η ξεχωριστή καρτέλα τότε περισσεύει και φεύγει.
+  const scheduleIsArrivals = !hasSchedule && !!arr
   const TAB_KEYS = ALL_KEYS.filter(k =>
     (k !== 'photos' || gallery.length + links.length > 0) &&
-    (k !== 'arrivals' || !!arr) &&
-    (!['schedule', 'groups', 'ko'].includes(k) || hasSchedule))
+    (k !== 'arrivals' || (!!arr && !scheduleIsArrivals)) &&
+    (k !== 'schedule' || hasSchedule || scheduleIsArrivals) &&
+    (!['groups', 'ko'].includes(k) || hasSchedule))
   // a tab that is not offered (no schedule online, say) falls back to the first one that is
   const view: TabKey = TAB_KEYS.includes(tab) ? tab : (TAB_KEYS[0] ?? 'info')
   const tabLabels = TAB_KEYS.map(k => t.tour.tabs[k])
@@ -91,7 +95,7 @@ export function Tournament() {
         right={hasSchedule ? <Button variant="ghost" className="border-orange text-orange" onClick={() => window.print()}>↓ {t.misc.schedulePdf}</Button> : undefined} />
       {hasSchedule && <PrintSchedule tour={tour} />}
 
-      {view === 'schedule' && (
+      {view === 'schedule' && hasSchedule && (
         <section className="wrap pt-[50px]">
           {/* filters stay in view while you scroll the day (glass bar under the nav) */}
           <div className="glass z-20 mb-[22px] flex flex-col gap-3 rounded-[24px] px-4 py-3 md:sticky md:top-[86px] md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-y-2 md:rounded-[34px] md:px-5 md:py-[10px]">
@@ -140,7 +144,7 @@ export function Tournament() {
         </section>
       )}
 
-      {view === 'arrivals' && arr && (
+      {(view === 'arrivals' || (view === 'schedule' && scheduleIsArrivals)) && arr && (
         <section className="wrap pt-[70px]">
           <Heading a={t.tour.tabs.arrivals} b={t.tour.arrivalsLead(arr.lead)} size="md" className="mb-[26px]" />
           {[...new Set(arr.rows.map(r => r.day))].map(dn => (

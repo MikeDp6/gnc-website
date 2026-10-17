@@ -35,7 +35,11 @@ export function TeamsBoard({ tid, say }: { tid: string; say: (m: string) => void
       const token = (await supabase.auth.getSession()).data.session?.access_token
       const hdr = token ? { Authorization: `Bearer ${token}` } : undefined
       const dry = await supabase.functions.invoke('roster-reminder', { body: { tournament_id: tid, dry_run: true }, headers: hdr })
-      if (dry.error) throw new Error('Η αποστολή email δεν είναι διαθέσιμη')
+      // Το σκέτο «δεν είναι διαθέσιμη» έκρυβε την αιτία. Το συνηθέστερο είναι ότι η συνάρτηση δεν έχει
+      // ανέβει ακόμα (supabase functions deploy roster-reminder) — τότε ο browser δεν παίρνει καν απάντηση.
+      if (dry.error) throw new Error(dry.error.message?.includes('Failed to send') || !dry.error.message
+        ? 'Η συνάρτηση roster-reminder δεν έχει ανέβει στο Supabase (supabase functions deploy roster-reminder)'
+        : dry.error.message)
       const info = dry.data as { recipients?: number; skipped?: number; incomplete?: number; teams?: Array<{ name: string; players: number; email: boolean }> } | null
       if (!info?.incomplete) { say('Όλες οι ομάδες έχουν τουλάχιστον 3 παίκτες'); setMailing(false); return }
       if (!info.recipients) { say(`${info.incomplete} ομάδες λείπουν παίκτες, αλλά καμία δεν έχει email αρχηγού`); setMailing(false); return }
