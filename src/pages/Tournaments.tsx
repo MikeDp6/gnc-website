@@ -39,7 +39,9 @@ export function Tournaments() {
     const kind: Kind = x.status === 'done' ? 'done'
       : live || x.status === 'live' ? 'live'
       : x.status === 'registration' ? 'registration'
-      : mine.length > 0 ? 'schedule' : 'soon'
+      // Οι ώρες προσέλευσης μετράνε κι αυτές ως πρόγραμμα: μια στάση που τις έχει δημοσιεύσει δεν
+      // είναι «σύντομα», έχει κάτι να δείξει και πρέπει να ανοίγει.
+      : mine.length > 0 || !!x.arrivals ? 'schedule' : 'soon'
     const s = STATE[kind]
     return {
       key: x.id, name: x.name, city: x.city, dates: x.dates, venue: x.venue, cover: x.cover, poster: x.poster,
