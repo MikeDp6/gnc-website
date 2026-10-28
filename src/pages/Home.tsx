@@ -19,7 +19,11 @@ import type { Match } from '@/data/types'
 export function Home() {
   const { t } = useI18n()
   const { categoryById, matches, stops, tournaments, teamById, news, rentals, cities, archive, stats } = useData()
-  const next = tournaments.find(x => x.status !== 'done') ?? tournaments[0]
+  // Όταν έχουν τελειώσει όλες, δεν υπάρχει «επόμενη»: κρατάμε την πιο πρόσφατη για φόντο και πόλη
+  // (όχι την παλαιότερη, όπως έκανε το σκέτο tournaments[0]) και κρύβουμε την αντίστροφη μέτρηση.
+  const upcomingTour = tournaments.find(x => x.status !== 'done')
+  const next = upcomingTour ?? [...tournaments].reverse()[0]
+  const hasNext = !!upcomingTour
   const lastDone = [...tournaments].reverse().find(x => x.status === 'done')
   useMeta(undefined, next ? `${t.hero.kicker}: ${next.name} · ${next.dates}. ${t.footer.tagline}` : undefined, next?.cover)
   if (!next) return null
@@ -57,17 +61,24 @@ export function Home() {
           </div>
           <div className="flex flex-col gap-6">
             <div className="lg:sticky lg:top-[96px]">
-              <StackCard tone="orange" label={`● ${t.status.live} · ${live[0] ? `${t.misc.court} ${live[0].court}` : next.venue}`} badge={t.status.optional}
+              <StackCard tone="orange" label={live[0] ? `● ${t.status.live} · ${t.misc.court} ${live[0].court}` : next.venue} badge={t.status.optional}
                 big={live[0] ? `${live[0].homeScore ?? 0} – ${live[0].awayScore ?? 0}` : '— : —'}
                 title={live[0] ? `${teamById(live[0].homeId)?.name} vs ${teamById(live[0].awayId)?.name}` : t.status.noLive}
                 meta={live[0] ? `${categoryById(live[0].categoryId).name} · ${live[0].label} · ${next.city}` : `${t.status.nextMatch} ${upcoming[0]?.time ?? ''} · ${next.city}`}
                 cta={{ label: t.status.seeLive, to: `/tournaments/${next.slug}` }} right={next.venue} />
             </div>
             <div className="lg:sticky lg:top-[120px]">
-              <StackCard tone="blue" label={t.status.startsIn}
-                big={<Countdown to={next.startsAt} className="mono tracking-[-.02em]" />}
-                title={next.name} meta={`${next.days[0]} · ${next.categoryIds.length} ${t.status.cats} · ${next.venue}`}
-                cta={next.status === 'registration' ? { label: t.hero.cta1 + ' →', to: `/register?t=${next.slug}` } : { label: t.status.schedule, to: `/tournaments/${next.slug}` }} right={`${next.courts} ${t.status.courts}`} />
+              {hasNext ? (
+                <StackCard tone="blue" label={t.status.startsIn}
+                  big={<Countdown to={next.startsAt} className="mono tracking-[-.02em]" />}
+                  title={next.name} meta={`${next.days[0]} · ${next.categoryIds.length} ${t.status.cats} · ${next.venue}`}
+                  cta={next.status === 'registration' ? { label: t.hero.cta1 + ' →', to: `/register?t=${next.slug}` } : { label: t.status.schedule, to: `/tournaments/${next.slug}` }} right={`${next.courts} ${t.status.courts}`} />
+              ) : (
+                <StackCard tone="blue" label={t.hero.kicker}
+                  big={t.hero.stop.soon}
+                  title={`${t.sections.schedule1} ${t.sections.schedule2}`} meta={t.hero.soon}
+                  cta={{ label: t.status.schedule, to: '/tournaments' }} right="" />
+              )}
             </div>
             <div className="lg:sticky lg:top-[144px]">
               <StackCard tone="slate" label={t.status.done}
