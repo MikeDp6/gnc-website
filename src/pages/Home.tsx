@@ -61,7 +61,7 @@ export function Home() {
           </div>
           <div className="flex flex-col gap-6">
             <div className="lg:sticky lg:top-[96px]">
-              <StackCard tone="orange" label={live[0] ? `● ${t.status.live} · ${t.misc.court} ${live[0].court}` : next.venue} badge={t.status.optional}
+              <StackCard tone="orange" label={live[0] ? `● ${t.status.live} · ${t.misc.court} ${live[0].court}` : next.venue}
                 big={live[0] ? `${live[0].homeScore ?? 0} – ${live[0].awayScore ?? 0}` : '— : —'}
                 title={live[0] ? `${teamById(live[0].homeId)?.name} vs ${teamById(live[0].awayId)?.name}` : t.status.noLive}
                 meta={live[0] ? `${categoryById(live[0].categoryId).name} · ${live[0].label} · ${next.city}` : `${t.status.nextMatch} ${upcoming[0]?.time ?? ''} · ${next.city}`}
